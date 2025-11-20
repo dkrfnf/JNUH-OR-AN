@@ -8,8 +8,8 @@ from streamlit_autorefresh import st_autorefresh
 ZONE_A = ["A1", "A2", "A3", "A4", "A5", "A6", "A7"]
 ZONE_B = ["B1", "B2", "B3", "B4", "C2", "Angio", "회복실"]
 ALL_ROOMS = ZONE_A + ZONE_B
-DATA_FILE = 'or_status.csv'
-# ★ 최종 아이콘 확정: [재생, 로마 숫자 2(Ⅱ), 정지(■)]
+# ★ 파일 이름 변경: 이전 데이터와의 충돌 방지를 위해 파일명을 변경함
+DATA_FILE = 'or_status_final.csv' 
 OP_STATUS = ["▶ 수술", "Ⅱ 대기", "■ 종료"]
 
 # 2초 자동 새로고침
@@ -28,6 +28,7 @@ def load_data():
         df = pd.DataFrame(data)
         df.to_csv(DATA_FILE, index=False)
         return df
+    # 이 부분은 유지하여, 혹시라도 잘못된 상태값이 들어오면 리셋합니다.
     df = pd.read_csv(DATA_FILE)
     if len(df) != len(ALL_ROOMS) or df.loc[0, 'Status'] not in OP_STATUS:
         os.remove(DATA_FILE)
@@ -39,7 +40,7 @@ def save_data(df):
 
 def reset_all_data():
     df = load_data()
-    df['Status'] = '▶ 수술' # 초기화 값도 변경
+    df['Status'] = '▶ 수술' 
     df['Morning'] = ''
     df['Lunch'] = ''
     df['Afternoon'] = ''
@@ -109,11 +110,9 @@ st.markdown("""
     div[data-testid="stVerticalBlockBorderWrapper"] > div { padding: 10px !important; }
     button p { font-size: 14px; font-weight: bold; }
 
-    /* 모바일 세로 간격 조정 */
     div[data-testid="stVerticalBlock"] > div > [data-testid="stVerticalBlock"] {
         margin-top: -10px !important;
     }
-    /* 모바일 너비 조정 */
     @media (max-width: 600px) {
         div[data-testid="stVerticalBlockBorderWrapper"] { max-width: 90vw; margin: auto; }
     }
@@ -136,7 +135,6 @@ def render_final_card(room_name, df):
     row = df[df['Room'] == room_name].iloc[0]
     status = row['Status']
 
-    # 색상 로직
     if "수술" in status:
         bg_color = "#E0F2FE"     
         icon_color = "#0EA5E9"   
