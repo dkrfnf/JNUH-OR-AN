@@ -8,7 +8,6 @@ from streamlit_autorefresh import st_autorefresh
 ZONE_A = ["A1", "A2", "A3", "A4", "A5", "A6", "A7"]
 ZONE_B = ["B1", "B2", "B3", "B4", "C2", "Angio", "회복실"]
 ALL_ROOMS = ZONE_A + ZONE_B
-# ★ 파일 이름 변경: 이전 데이터와의 충돌 방지를 위해 파일명을 변경함
 DATA_FILE = 'or_status_final.csv' 
 OP_STATUS = ["▶ 수술", "Ⅱ 대기", "■ 종료"]
 
@@ -28,7 +27,6 @@ def load_data():
         df = pd.DataFrame(data)
         df.to_csv(DATA_FILE, index=False)
         return df
-    # 이 부분은 유지하여, 혹시라도 잘못된 상태값이 들어오면 리셋합니다.
     df = pd.read_csv(DATA_FILE)
     if len(df) != len(ALL_ROOMS) or df.loc[0, 'Status'] not in OP_STATUS:
         os.remove(DATA_FILE)
@@ -186,6 +184,10 @@ def render_final_card(room_name, df):
         if val_m != row['Morning']: update_shift(room_name, 'Morning', val_m)
         if val_l != row['Lunch']: update_shift(room_name, 'Lunch', val_l)
         if val_a != row['Afternoon']: update_shift(room_name, 'Afternoon', val_a)
+
+        # ★ 새로고침 확인을 위해 최종 업데이트 시간 추가
+        st.markdown(f"<p style='text-align: right; font-size: 10px; color: #888; margin-top: 5px; margin-bottom: 0;'>최종 업데이트: **{row['Last_Update']}**</p>", unsafe_allow_html=True)
+
 
 left_col, right_col = st.columns(2, gap="small")
 
