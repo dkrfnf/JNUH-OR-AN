@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from datetime import datetime
+from datetime import datetime # pytz import 제거
 import os
 from streamlit_autorefresh import st_autorefresh
 
@@ -16,10 +16,12 @@ st_autorefresh(interval=2000, key="datarefresh")
 
 def load_data():
     if not os.path.exists(DATA_FILE):
+        # 시간 표시가 없으므로 서버 시간으로 설정
+        now_time = datetime.now().strftime("%H:%M") 
         data = {
             'Room': ALL_ROOMS,
             'Status': ['▶ 수술'] * len(ALL_ROOMS),
-            'Last_Update': [datetime.now().strftime("%H:%M")] * len(ALL_ROOMS),
+            'Last_Update': [now_time] * len(ALL_ROOMS), # 서버 시간 기록
             'Morning': [''] * len(ALL_ROOMS),
             'Lunch': [''] * len(ALL_ROOMS),
             'Afternoon': [''] * len(ALL_ROOMS)
@@ -37,12 +39,13 @@ def save_data(df):
     df.to_csv(DATA_FILE, index=False)
 
 def reset_all_data():
+    now_time = datetime.now().strftime("%H:%M") # 서버 시간 기록
     df = load_data()
-    df['Status'] = '▶ 수술' 
+    df['Status'] = '▶ 수술'
     df['Morning'] = ''
     df['Lunch'] = ''
     df['Afternoon'] = ''
-    df['Last_Update'] = datetime.now().strftime("%H:%M")
+    df['Last_Update'] = now_time 
     save_data(df)
 
     for room in ALL_ROOMS:
@@ -54,11 +57,12 @@ def reset_all_data():
     st.rerun()
 
 def update_status(room_name, new_status):
+    now_time = datetime.now().strftime("%H:%M") # 서버 시간 기록
     df = load_data()
     idx = df[df['Room'] == room_name].index[0]
     if df.loc[idx, 'Status'] != new_status:
         df.loc[idx, 'Status'] = new_status
-        df.loc[idx, 'Last_Update'] = datetime.now().strftime("%H:%M")
+        df.loc[idx, 'Last_Update'] = now_time 
         save_data(df)
         st.rerun()
 
@@ -184,10 +188,6 @@ def render_final_card(room_name, df):
         if val_m != row['Morning']: update_shift(room_name, 'Morning', val_m)
         if val_l != row['Lunch']: update_shift(room_name, 'Lunch', val_l)
         if val_a != row['Afternoon']: update_shift(room_name, 'Afternoon', val_a)
-
-        # ★ 새로고침 확인을 위해 최종 업데이트 시간 추가
-        st.markdown(f"<p style='text-align: right; font-size: 10px; color: #888; margin-top: 5px; margin-bottom: 0;'>최종 업데이트: **{row['Last_Update']}**</p>", unsafe_allow_html=True)
-
 
 left_col, right_col = st.columns(2, gap="small")
 
