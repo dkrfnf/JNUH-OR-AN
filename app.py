@@ -9,8 +9,8 @@ ZONE_A = ["A1", "A2", "A3", "A4", "A5", "A6", "A7"]
 ZONE_B = ["B1", "B2", "B3", "B4", "C2", "Angio", "회복실"]
 ALL_ROOMS = ZONE_A + ZONE_B
 DATA_FILE = 'or_status.csv'
-# ★ 최종 아이콘 확정: [재생, 일시정지, 정지(■)]
-OP_STATUS = ["▶ 수술", "⏸ 대기", "■ 종료"]
+# ★ 최종 아이콘 확정: [재생, 로마 숫자 2(Ⅱ), 정지(■)]
+OP_STATUS = ["▶ 수술", "Ⅱ 대기", "■ 종료"]
 
 # 2초 자동 새로고침
 st_autorefresh(interval=2000, key="datarefresh")
@@ -39,7 +39,7 @@ def save_data(df):
 
 def reset_all_data():
     df = load_data()
-    df['Status'] = '▶ 수술'
+    df['Status'] = '▶ 수술' # 초기화 값도 변경
     df['Morning'] = ''
     df['Lunch'] = ''
     df['Afternoon'] = ''
