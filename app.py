@@ -9,8 +9,8 @@ ZONE_A = ["A1", "A2", "A3", "A4", "A5", "A6", "A7"]
 ZONE_B = ["B1", "B2", "B3", "B4", "C2", "Angio", "회복실"]
 ALL_ROOMS = ZONE_A + ZONE_B
 DATA_FILE = 'or_status.csv'
-# ★ 아이콘 변경: [▶ 수술, ⌛ 대기, 🏁 종료] 적용
-OP_STATUS = ["▶ 수술", "⌛ 대기", "🏁 종료"]
+# ★ 아이콘 변경: '🔴 수술' -> '🍃 수술' (바람 부는 잎사귀)
+OP_STATUS = ["🍃 수술", "⌛ 대기", "🏁 종료"]
 
 # 2초 자동 새로고침
 st_autorefresh(interval=2000, key="datarefresh")
@@ -19,7 +19,7 @@ def load_data():
     if not os.path.exists(DATA_FILE):
         data = {
             'Room': ALL_ROOMS,
-            'Status': ['▶ 수술'] * len(ALL_ROOMS),
+            'Status': ['🍃 수술'] * len(ALL_ROOMS),
             'Last_Update': [datetime.now().strftime("%H:%M")] * len(ALL_ROOMS),
             'Morning': [''] * len(ALL_ROOMS),
             'Lunch': [''] * len(ALL_ROOMS),
@@ -39,7 +39,7 @@ def save_data(df):
 
 def reset_all_data():
     df = load_data()
-    df['Status'] = '▶ 수술'
+    df['Status'] = '🍃 수술'
     df['Morning'] = ''
     df['Lunch'] = ''
     df['Afternoon'] = ''
@@ -47,7 +47,7 @@ def reset_all_data():
     save_data(df)
 
     for room in ALL_ROOMS:
-        if f"st_{room}" in st.session_state: st.session_state[f"st_{room}"] = "▶ 수술"
+        if f"st_{room}" in st.session_state: st.session_state[f"st_{room}"] = "🍃 수술"
         if f"m_{room}" in st.session_state: st.session_state[f"m_{room}"] = ""
         if f"l_{room}" in st.session_state: st.session_state[f"l_{room}"] = ""
         if f"a_{room}" in st.session_state: st.session_state[f"a_{room}"] = ""
@@ -81,15 +81,13 @@ st.markdown("""
     hr { margin-top: 0.2rem !important; margin-bottom: 0.5rem !important; }
     h3, h4 { margin-bottom: 0rem !important; padding-top: 0rem !important; }
 
-    /* 선택창 스타일 */
     div[data-testid="stSelectbox"] div[data-baseweb="select"] > div {
         padding-top: 0px; padding-bottom: 0px; padding-left: 5px;
         height: 32px; min-height: 32px;
-        font-size: 14px; display: flex; align-items: center; /* 폰트 크기 유지 */
+        font-size: 15px; display: flex; align-items: center;
         border-color: #E0E0E0;
     }
     
-    /* 입력창 스타일 */
     div[data-testid="stTextInput"] div[data-baseweb="input"] {
         background-color: #FFFFFF !important; 
         border: 1px solid #CCCCCC !important;
@@ -104,14 +102,8 @@ st.markdown("""
         font-size: 14px;
     }
     
-    /* 세로 간격 조정 */
-    div[data-testid="stVerticalBlock"] > div > [data-testid="stVerticalBlock"] {
-        margin-top: -10px !important;
-    }
-    
-    /* 모바일 너비 조정 */
-    @media (max-width: 600px) {
-        div[data-testid="stVerticalBlockBorderWrapper"] { max-width: 90vw; margin: auto; }
+    div[data-testid="stTextInput"] div[data-baseweb="input"]:focus-within {
+        border: 1px solid #2196F3 !important;
     }
     
     div[data-testid="stVerticalBlockBorderWrapper"] > div { padding: 10px !important; }
@@ -135,7 +127,6 @@ def render_final_card(room_name, df):
     row = df[df['Room'] == room_name].iloc[0]
     status = row['Status']
 
-    # 색상 로직: 기존의 선명한 색상 유지
     if "수술" in status:
         bg_color = "#E0F2FE"     
         icon_color = "#0EA5E9"   
@@ -155,9 +146,9 @@ def render_final_card(room_name, df):
         c1, c2 = st.columns([2, 1])
         with c1:
             st.markdown(f"""
-                <div class="room-header" style='
+                <div style='
                     width: 45%; 
-                    font-size: 1.2rem; /* 1.2rem 유지 */
+                    font-size: 1.2rem;
                     font-weight:bold;
                     color:{text_color};
                     background-color:{bg_color};
