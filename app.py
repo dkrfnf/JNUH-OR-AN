@@ -9,7 +9,8 @@ ZONE_A = ["A1", "A2", "A3", "A4", "A5", "A6", "A7"]
 ZONE_B = ["B1", "B2", "B3", "B4", "C2", "Angio", "회복실"]
 ALL_ROOMS = ZONE_A + ZONE_B
 DATA_FILE = 'or_status.csv'
-OP_STATUS = ["▶ 수술", "⏸ 대기", "⏹ 종료"]
+# ★ 아이콘 변경: [▶ 수술, ⌛ 대기, 🏁 종료] 적용
+OP_STATUS = ["▶ 수술", "⌛ 대기", "🏁 종료"]
 
 # 2초 자동 새로고침
 st_autorefresh(interval=2000, key="datarefresh")
@@ -80,33 +81,37 @@ st.markdown("""
     hr { margin-top: 0.2rem !important; margin-bottom: 0.5rem !important; }
     h3, h4 { margin-bottom: 0rem !important; padding-top: 0rem !important; }
 
-    /* ★★★ 1. 폰트/높이 재조정 (잘림 방지) ★★★ */
+    /* 선택창 스타일 */
     div[data-testid="stSelectbox"] div[data-baseweb="select"] > div {
         padding-top: 0px; padding-bottom: 0px; padding-left: 5px;
-        height: 32px; min-height: 32px; /* 높이 약간 줄임 */
-        font-size: 14px; /* 글자 크기 14px로 축소 */
-        display: flex; align-items: center;
-    }
-    .stTextInput input { font-size: 13px; } /* 입력창 글자 크기 13px로 축소 */
-
-    /* ★★★ 2. 모바일 환경에서 입력 칸 너비 축소 ★★★ */
-    @media (max-width: 600px) {
-        /* 각 카드 내부의 세 칸(오전/점심/오후)의 부모 요소를 타겟하여 최대 너비 설정 */
-        div[data-testid="stVerticalBlockBorderWrapper"] {
-            max-width: 90vw; /* 전체 뷰포트 너비의 90%로 제한 */
-            margin: auto; /* 중앙 정렬 */
-        }
-        /* 방 이름 글자 크기도 미세 조정 */
-        .room-header { font-size: 1.1rem !important; }
+        height: 32px; min-height: 32px;
+        font-size: 14px; display: flex; align-items: center; /* 폰트 크기 유지 */
+        border-color: #E0E0E0;
     }
     
-    /* 기존 스타일 유지 */
+    /* 입력창 스타일 */
     div[data-testid="stTextInput"] div[data-baseweb="input"] {
         background-color: #FFFFFF !important; 
         border: 1px solid #CCCCCC !important;
         border-radius: 4px;
         padding-top: 0px; padding-bottom: 0px;
-        height: 35px; min-height: 35px;
+        height: 32px; min-height: 32px;
+    }
+    
+    div[data-testid="stTextInput"] input {
+        background-color: #FFFFFF !important; 
+        color: #000000 !important; 
+        font-size: 14px;
+    }
+    
+    /* 세로 간격 조정 */
+    div[data-testid="stVerticalBlock"] > div > [data-testid="stVerticalBlock"] {
+        margin-top: -10px !important;
+    }
+    
+    /* 모바일 너비 조정 */
+    @media (max-width: 600px) {
+        div[data-testid="stVerticalBlockBorderWrapper"] { max-width: 90vw; margin: auto; }
     }
     
     div[data-testid="stVerticalBlockBorderWrapper"] > div { padding: 10px !important; }
@@ -130,6 +135,7 @@ def render_final_card(room_name, df):
     row = df[df['Room'] == room_name].iloc[0]
     status = row['Status']
 
+    # 색상 로직: 기존의 선명한 색상 유지
     if "수술" in status:
         bg_color = "#E0F2FE"     
         icon_color = "#0EA5E9"   
@@ -151,7 +157,7 @@ def render_final_card(room_name, df):
             st.markdown(f"""
                 <div class="room-header" style='
                     width: 45%; 
-                    font-size: 1.1rem; /* 폰트 축소 적용 */
+                    font-size: 1.2rem; /* 1.2rem 유지 */
                     font-weight:bold;
                     color:{text_color};
                     background-color:{bg_color};
