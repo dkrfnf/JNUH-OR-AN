@@ -75,36 +75,27 @@ st.set_page_config(page_title="JNUH OR", layout="wide")
 st.markdown("""
     <style>
     .block-container { padding: 1rem; }
-    div[data-testid="stVerticalBlock"] > div { gap: 0rem; }
+    
+    /* ★ 수정: 수직 간격 제거 (Status 줄과 Input 줄 사이의 공백 제거) */
+    div[data-testid="stVerticalBlock"] > div > [data-testid="stVerticalBlock"] {
+        margin-top: -10px !important; /* 위쪽 마진을 음수로 당김 */
+    }
 
     hr { margin-top: 0.2rem !important; margin-bottom: 0.5rem !important; }
     h3, h4 { margin-bottom: 0rem !important; padding-top: 0rem !important; }
 
+    /* 글자 크기 미세 조정 (Fit) */
     div[data-testid="stSelectbox"] div[data-baseweb="select"] > div {
-        padding-top: 0px; padding-bottom: 0px; padding-left: 5px;
         height: 32px; min-height: 32px;
-        font-size: 15px; display: flex; align-items: center;
-        border-color: #E0E0E0;
+        font-size: 15px; 
     }
-    
     div[data-testid="stTextInput"] div[data-baseweb="input"] {
-        background-color: #FFFFFF !important; 
-        border: 1px solid #CCCCCC !important;
-        border-radius: 4px;
-        padding-top: 0px; padding-bottom: 0px;
         height: 32px; min-height: 32px;
     }
     
-    div[data-testid="stTextInput"] input {
-        background-color: #FFFFFF !important; 
-        color: #000000 !important; 
-        font-size: 14px;
-    }
-    
-    div[data-testid="stTextInput"] div[data-baseweb="input"]:focus-within {
-        border: 1px solid #2196F3 !important;
-    }
-    
+    /* 방 번호 글자 크기 조정 (다시 약간 줄여서 Fit하게) */
+    .room-header { font-size: 1.2rem !important; }
+
     div[data-testid="stVerticalBlockBorderWrapper"] > div { padding: 10px !important; }
     button p { font-size: 14px; font-weight: bold; }
     </style>
@@ -142,15 +133,16 @@ def render_final_card(room_name, df):
     current_icon = status.split(" ")[0] 
 
     with st.container(border=True):
+        # 1. 상태 표시 줄
         c1, c2 = st.columns([2, 1])
         with c1:
-             st.markdown(f"""
-                <div style='
-                    width: 43%;
-                    font-size: 1.30rem;
+            st.markdown(f"""
+                <div class="room-header" style='
+                    width: 45%; 
+                    font-size: 1.1rem; /* 1.35rem -> 1.2rem로 다시 줄임 */
                     font-weight: bold;
-                    color: {text_color};
-                    background-color: {bg_color};
+                    color:{text_color};
+                    background-color:{bg_color};
                     padding: 4px 0px; 
                     border-radius: 6px;
                     text-align: center;
@@ -168,7 +160,8 @@ def render_final_card(room_name, df):
                 label_visibility="collapsed"
             )
             if new_status != status: update_status(room_name, new_status)
-
+        
+        # 2. 입력 칸 줄 (이 줄이 위의 상태 표시 줄에 붙게 됩니다.)
         s1, s2, s3 = st.columns(3)
         val_m = s1.text_input("오전", value=row['Morning'], key=f"m_{room_name}", placeholder="", label_visibility="collapsed")
         val_l = s2.text_input("점심", value=row['Lunch'], key=f"l_{room_name}", placeholder="", label_visibility="collapsed")
