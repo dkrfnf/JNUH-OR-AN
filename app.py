@@ -129,27 +129,23 @@ def render_final_card(room_name, df):
     row = df[df['Room'] == room_name].iloc[0]
     status = row['Status']
     
-    # 상태별 색상 지정 (다시 HTML/CSS로 복귀)
     if "수술" in status:
         bg_color = "#E0F2FE"      
-        icon_color = "#0EA5E9"    
         text_color = "#0EA5E9"    
     elif "대기" in status:
         bg_color = "#FFF3E0"      
-        icon_color = "#EF6C00"    
         text_color = "#EF6C00"    
     else: 
         bg_color = "#E0E0E0"      
-        icon_color = "#000000"    
         text_color = "#000000"    
 
     current_icon = status.split(" ")[0] 
 
     with st.container(border=True):
         # 1열: [방 번호(뱃지)] | [상태 선택]
-        c1, c2 = st.columns([1, 1.2])
+        # gap="small"을 추가하여 두 요소 사이 간격을 벌림 (요청사항 반영)
+        c1, c2 = st.columns([1, 1.2], gap="small")
         with c1:
-            # 버튼 대신 깔끔한 뱃지 스타일로 복귀
             st.markdown(f"""
                 <div style='
                     width: 100%;
@@ -216,7 +212,7 @@ st.markdown("""
     .block-container { padding: 1rem; }
     div[data-testid="stVerticalBlock"] > div { gap: 0rem; }
     
-    /* 카드 내부 간격 */
+    /* 카드 내부 간격 설정 */
     div[data-testid="stVerticalBlockBorderWrapper"] > div > div > div {
         gap: 0.3rem !important; 
     }
@@ -256,28 +252,56 @@ st.markdown("""
         line-height: 1.5;
     }
     
-    /* 모바일 레이아웃: 공지사항 -> A -> B */
+    /* ★★★ [파스텔톤 저장 버튼 스타일] ★★★ */
+    /* 공지사항 아래에 있는 버튼(3번째 컬럼의 버튼) 타겟팅 */
+    div[data-testid="column"]:nth-of-type(3) button {
+        background-color: #E0F2F1 !important; /* 파스텔 민트 */
+        color: #00695C !important;            /* 진한 녹색 텍스트 */
+        border: 1px solid #80CBC4 !important; /* 테두리 색상 */
+        border-radius: 8px !important;
+        font-weight: bold !important;
+        transition: all 0.3s ease;
+    }
+    div[data-testid="column"]:nth-of-type(3) button:hover {
+        background-color: #B2DFDB !important; /* 호버 시 조금 더 진한 민트 */
+        border-color: #4DB6AC !important;
+    }
+    div[data-testid="column"]:nth-of-type(3) button:active {
+        background-color: #80CBC4 !important;
+        color: white !important;
+    }
+    
+    /* ★★★ [모바일 레이아웃 수정 - 순서 문제 완벽 해결] ★★★ */
     @media (max-width: 640px) {
-        div[data-testid="stHorizontalBlock"] {
+        /* 주의: 여기서는 전체 화면 레이아웃(Main Layout)만 타겟팅해야 합니다.
+           .block-container > div > div > div... Selector를 사용하여
+           카드 내부의 horizontal block은 건드리지 않도록 합니다.
+        */
+        
+        /* 메인 3단 컬럼 (A구역, B구역, 공지사항) */
+        .block-container > div > div > div[data-testid="stHorizontalBlock"] {
             display: flex !important;
             flex-direction: column !important;
         }
-        div[data-testid="stHorizontalBlock"] > div:nth-child(3) {
+        /* 3번째 자식(공지사항)을 맨 위로 */
+        .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(3) {
             order: 1; margin-bottom: 20px;
         }
-        div[data-testid="stHorizontalBlock"] > div:nth-child(1) {
+        /* 1번째 자식(A구역)을 중간으로 */
+        .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(1) {
             order: 2;
         }
-        div[data-testid="stHorizontalBlock"] > div:nth-child(2) {
+        /* 2번째 자식(B구역)을 마지막으로 */
+        .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(2) {
             order: 3;
         }
 
-        /* 카드 내부 정렬 유지 */
+        /* ★중요★ 카드 내부의 가로 정렬은 'row'로 강제하고 order 속성 초기화 */
         div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] {
             flex-direction: row !important;
         }
         div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] > div {
-            order: unset !important;
+            order: unset !important; /* 순서 섞임 방지 */
             margin-bottom: 0px !important;
         }
     }
@@ -309,10 +333,9 @@ with col_notice:
         placeholder="전달사항을 입력하세요...",
         on_change=save_notice_callback
     )
-    # [수정됨] 변경사항 저장 버튼
-    if st.button("변경사항 저장", use_container_width=True, type="primary"):
+    # [디자인 수정됨] 파스텔 톤 변경사항 저장 버튼
+    if st.button("변경사항 저장", use_container_width=True):
         save_notice_callback()
-        # 데이터도 한번 더 확실하게 저장
         save_data(df)
         st.toast("모든 변경사항이 저장되었습니다!", icon="✅")
 
