@@ -136,10 +136,10 @@ def render_final_card(room_name, df):
         icon_color = "#EF6C00"    
         text_color = "#EF6C00"    
     else: 
-        # [수정됨] 종료 상태 색상 진하게 변경
-        bg_color = "#E0E0E0"      # 진한 회색 배경
-        icon_color = "#000000"    # 완전 검정 아이콘
-        text_color = "#000000"    # 완전 검정 텍스트
+        # 종료 상태: 진한 회색 배경, 검정 글씨
+        bg_color = "#E0E0E0"      
+        icon_color = "#000000"    
+        text_color = "#000000"    
 
     current_icon = status.split(" ")[0] 
 
@@ -234,6 +234,28 @@ st.markdown("""
         line-height: 1.5;
     }
     
+    /* ★★★ [모바일 전용] 컬럼 순서 변경: 공지사항 -> A구역 -> B구역 ★★★ */
+    @media (max-width: 640px) {
+        /* 메인 컬럼 컨테이너 타겟팅 */
+        div[data-testid="stHorizontalBlock"] {
+            display: flex !important;
+            flex-direction: column !important;
+        }
+        /* 1. 공지사항 (원래 3번째) -> 1번으로 */
+        div[data-testid="stHorizontalBlock"] > div:nth-child(3) {
+            order: 1;
+            margin-bottom: 20px; /* 공지사항 아래 여백 */
+        }
+        /* 2. A구역 (원래 1번째) -> 2번으로 */
+        div[data-testid="stHorizontalBlock"] > div:nth-child(1) {
+            order: 2;
+        }
+        /* 3. B구역 (원래 2번째) -> 3번으로 */
+        div[data-testid="stHorizontalBlock"] > div:nth-child(2) {
+            order: 3;
+        }
+    }
+
     @media (max-width: 600px) {
         div[data-testid="stVerticalBlockBorderWrapper"] { max-width: 95vw; margin: auto; }
     }
@@ -246,6 +268,7 @@ st.markdown("---")
 df = load_data()
 sync_session_state(df)
 
+# [데스크탑 배열] A구역 | B구역 | 공지사항
 col_a, col_b, col_notice = st.columns([1, 1, 0.5], gap="small")
 
 render_zone(col_a, "A 구역", ZONE_A, df)
