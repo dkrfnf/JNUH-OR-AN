@@ -1,93 +1,110 @@
 import streamlit as st
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
-from streamlit_autorefresh import st_autorefresh
 
 # --- 설정 ---
 ZONE_A = ["A1", "A2", "A3", "A4", "A5", "A6", "A7"]
 ZONE_B = ["B1", "B2", "B3", "B4", "C2", "Angio", "회복실"]
 ALL_ROOMS = ZONE_A + ZONE_B
-DATA_FILE = 'or_status_final.csv' 
+# 파일명은 kst로 통일
+DATA_FILE = 'or_status_kst.csv' 
+NOTICE_FILE = 'notice.txt'
 OP_STATUS = ["▶ 수술", "Ⅱ 대기", "■ 종료"]
 
-# 2초 자동 새로고침
-st_autorefresh(interval=2000, key="datarefresh")
+# (streamlit_autorefresh는 UI 렌더링 시작 시 호출됨)
 
 # --- 보조 함수 ---
-def get_current_time():
-    """서버의 현재 시간을 HH:MM 형식으로 반환"""
-    return datetime.now().strftime("%H:%M")
+def get_korean_time():
+    """한국 시간(KST)을 HH:MM 형식으로 반환"""
+    kst_now = datetime.utcnow() + timedelta(hours=9)
+    return kst_now.strftime("%H:%M")
 
 def get_room_index(df, room_name):
-    """방 이름에 해당하는 DataFrame 인덱스 반환"""
+    """방 이름으로 DataFrame 인덱스 찾기"""
     return df[df['Room'] == room_name].index[0]
 
-# 데이터 로드 (UTF-8 인코딩)
+# --- 공지사항 파일 관리 ---
+def load_notice():
+    if not os.path.exists(NOTICE_FILE): return ""
+    try:
+        with open(NOTICE_FILE, "r", encoding="utf-8") as f:
+            return f.read()
+    except: return ""
+
+def save_notice_file(text):
+    with open(NOTICE_FILE, "w", encoding="utf-8") as f:
+        f.write(text)
+
+# --- 데이터 관리 ---
 def load_data():
-    if not os.path.exists(DATA_FILE):
-        now_time = get_current_time()
-        data = {
-            'Room': ALL_ROOMS,
-            'Status': ['▶ 수술'] * len(ALL_ROOMS),
-            'Last_Update': [now_time] * len(ALL_ROOMS),
-            'Morning': [''] * len(ALL_ROOMS),
-            'Lunch': [''] * len(ALL_ROOMS),
-            'Afternoon': [''] * len(ALL_ROOMS)
-        }
-        df = pd.DataFrame(data)
-        df.to_csv(DATA_FILE, index=False, encoding='utf-8')
-        return df
-    df = pd.read_csv(DATA_FILE, encoding='utf-8')
+    try:
+        if not os.path.exists(DATA_FILE):
+            now_time = get_korean_time()
+            data = {
+                'Room': ALL_ROOMS, 'Status': ['▶ 수술'] * len(ALL_ROOMS), 
+                'Last_Update': [now_time] * len(ALL_ROOMS),
+                'Morning': [''] * len(ALL_ROOMS), 'Lunch': [''] * len(ALL_ROOMS), 'Afternoon': [''] * len(ALL_ROOMS)
+            }
+            df = pd.DataFrame(data)
+            df.to_csv(DATA_FILE, index=False, encoding='utf-8')
+            return df
+        
+        df = pd.read_csv(DATA_FILE, encoding='utf-8')
+    except Exception:
+        # 파일이 손상되었을 경우 강제 삭제 및 재생성
+        if os.path.exists(DATA_FILE): os.remove(DATA_FILE)
+        return load_data()
+
     if len(df) != len(ALL_ROOMS) or df.loc[0, 'Status'] not in OP_STATUS:
         os.remove(DATA_FILE)
         return load_data()
     return df.fillna('')
 
-# 데이터 저장 (UTF-8 인코딩)
 def save_data(df):
     df.to_csv(DATA_FILE, index=False, encoding='utf-8')
 
-# --- 액션 함수 ---
+# --- 액션 함수 (콜백 포함) ---
 
-# ★ 1. 교대자 전체 저장 (Shift Global Save) ★
-def global_save_shifts():
-    """Session State에 있는 모든 교대자 정보를 CSV 파일에 일괄 저장합니다."""
+# 1. 모든 데이터 업데이트/저장 (상태, 교대자)
+def update_data_callback(room_name, col_name, session_key):
+    """상태 변경 또는 교대자 이름 입력 시 호출되어 데이터를 저장합니다."""
+    
+    # 텍스트 입력은 session_key에서 값을 가져옴, selectbox는 새로운 값(new_value)이 없음
+    new_value = st.session_state.get(session_key)
+    
     df = load_data()
-    now_time = get_current_time()
+    idx = get_room_index(df, room_name)
     data_changed = False
     
-    for room in ALL_ROOMS:
-        idx = get_room_index(df, room)
-        
-        # Morning 업데이트
-        m_key = f"m_{room}"
-        if m_key in st.session_state and df.loc[idx, 'Morning'] != st.session_state[m_key]:
-            df.loc[idx, 'Morning'] = st.session_state[m_key]
-            df.loc[idx, 'Last_Update'] = now_time
+    # Selectbox (Status) 처리
+    if col_name == 'Status':
+        if df.loc[idx, 'Status'] != new_value:
+            df.loc[idx, 'Status'] = new_value
+            df.loc[idx, 'Last_Update'] = get_korean_time()
             data_changed = True
-        
-        # Lunch 업데이트
-        l_key = f"l_{room}"
-        if l_key in st.session_state and df.loc[idx, 'Lunch'] != st.session_state[l_key]:
-            df.loc[idx, 'Lunch'] = st.session_state[l_key]
-            df.loc[idx, 'Last_Update'] = now_time
-            data_changed = True
-            
-        # Afternoon 업데이트
-        a_key = f"a_{room}"
-        if a_key in st.session_state and df.loc[idx, 'Afternoon'] != st.session_state[a_key]:
-            df.loc[idx, 'Afternoon'] = st.session_state[a_key]
-            df.loc[idx, 'Last_Update'] = now_time
-            data_changed = True
+    
+    # Text Input (Shift Names) 처리
+    elif df.loc[idx, col_name] != new_value:
+        df.loc[idx, col_name] = new_value
+        # 교대자 이름만 바뀌었을 경우, 시간 업데이트는 하지 않음 (상태 변경만 시간 기록)
+        # df.loc[idx, 'Last_Update'] = get_korean_time() 
+        data_changed = True
 
     if data_changed:
         save_data(df)
-    st.rerun() # 저장 후 새로고침
+        # 상태가 변경되었을 때만 강제 새로고침하여 즉시 반영 (텍스트 입력은 on_change로 자동 반영)
+        if col_name == 'Status':
+            st.rerun()
 
+# 2. 공지사항 업데이트
+def update_notice_callback():
+    save_notice_file(st.session_state["notice_input"])
+
+# 3. 전체 초기화
 def reset_all_data():
     df = load_data()
-    now_time = get_current_time()
+    now_time = get_korean_time()
     
     df['Status'] = '▶ 수술'
     df['Morning'] = ''
@@ -96,7 +113,10 @@ def reset_all_data():
     df['Last_Update'] = now_time
     save_data(df)
 
-    # Session State 초기화 (새로운 입력값을 위해)
+    save_notice_file("모든 수술방 상태가 초기화되었습니다.") # 공지사항 초기화 메시지
+    st.session_state["notice_input"] = "모든 수술방 상태가 초기화되었습니다."
+    
+    # 세션 상태 강제 초기화
     for room in ALL_ROOMS:
         if f"st_{room}" in st.session_state: st.session_state[f"st_{room}"] = "▶ 수술"
         if f"m_{room}" in st.session_state: st.session_state[f"m_{room}"] = ""
@@ -105,76 +125,48 @@ def reset_all_data():
 
     st.rerun()
 
-# 상태 업데이트 (이것만 즉시 저장 유지)
-def update_status(room_name, new_status):
-    df = load_data()
-    idx = get_room_index(df, room_name)
-    
-    if df.loc[idx, 'Status'] != new_status:
-        df.loc[idx, 'Status'] = new_status
-        df.loc[idx, 'Last_Update'] = get_current_time()
-        save_data(df)
-        st.rerun()
-
-# --- UI 렌더링 함수 ---
+# 4. UI 렌더링
 
 def render_final_card(room_name, df):
     row = df[df['Room'] == room_name].iloc[0]
     status = row['Status']
 
+    # 색상 로직
     if "수술" in status:
-        bg_color = "#E0F2FE"     
-        icon_color = "#0EA5E9"   
-        text_color = "#0EA5E9"   
+        bg_color, icon_color, text_color = "#E0F2FE", "#0EA5E9", "#0EA5E9"
     elif "대기" in status:
-        bg_color = "#FFF3E0"     
-        icon_color = "#EF6C00"   
-        text_color = "#EF6C00"   
+        bg_color, icon_color, text_color = "#FFF3E0", "#EF6C00", "#EF6C00"
     else: 
-        bg_color = "#F5F5F5"     
-        icon_color = "#616161"   
-        text_color = "#424242"
+        bg_color, icon_color, text_color = "#D6D6D6", "#424242", "#424242" # 종료 색상 조정
 
     current_icon = status.split(" ")[0] 
+    key_status, key_m, key_l, key_a = f"st_{room_name}", f"m_{room_name}", f"l_{room_name}", f"a_{room_name}"
 
     with st.container(border=True):
         c1, c2 = st.columns([2, 1])
         with c1:
             st.markdown(f"""
                 <div style='
-                    width: 45%; 
-                    font-size: 1.2rem;
-                    font-weight:bold;
-                    color:{text_color};
-                    background-color:{bg_color};
-                    padding: 4px 0px; 
-                    border-radius: 6px;
-                    text-align: center;
-                    display: block;
-                    margin-top: 1px;
-                '>
+                    width: 45%; font-size: 1.2rem; font-weight:bold; color:{text_color};
+                    background-color:{bg_color}; padding: 4px 0px; border-radius: 6px;
+                    text-align: center; display: block; margin-top: 1px;'>
                     <span style='color:{icon_color}; margin-right: 5px;'>{current_icon}</span>{room_name}
                 </div>
                 """, unsafe_allow_html=True)
         with c2:
-            new_status = st.selectbox(
-                "상태", OP_STATUS,
-                key=f"st_{room_name}",
-                index=OP_STATUS.index(status),
-                label_visibility="collapsed"
+            st.selectbox(
+                "상태", OP_STATUS, key=key_status,
+                index=OP_STATUS.index(status) if status in OP_STATUS else 0,
+                label_visibility="collapsed", on_change=update_data_callback, args=(room_name, 'Status', key_status)
             )
-            # 상태 변경은 즉시 업데이트 (수술 현황의 핵심)
-            if new_status != status: update_status(room_name, new_status)
 
+        # 교대자 입력 필드
         s1, s2, s3 = st.columns(3)
-        # ★ 변경: text_input은 이제 Session State에만 저장하며, 즉시 CSV에 쓰지 않습니다.
-        s1.text_input("오전", value=row['Morning'], key=f"m_{room_name}", placeholder="", label_visibility="collapsed")
-        s2.text_input("점심", value=row['Lunch'], key=f"l_{room_name}", placeholder="", label_visibility="collapsed")
-        s3.text_input("오후", value=row['Afternoon'], key=f"a_{room_name}", placeholder="", label_visibility="collapsed")
-        
-        # 교대자 입력시 개별 저장 로직 (if val_m != row['Morning']: update_shift...) 삭제됨
-        
-        st.markdown(f"<p style='text-align: right; font-size: 10px; color: #888; margin-top: 5px; margin-bottom: 0;'>최종 업데이트: **{row['Last_Update']}**</p>", unsafe_allow_html=True)
+        s1.text_input("오전", value=row['Morning'], key=key_m, placeholder="", label_visibility="collapsed", on_change=update_data_callback, args=(room_name, 'Morning', key_m))
+        s2.text_input("점심", value=row['Lunch'], key=key_l, placeholder="", label_visibility="collapsed", on_change=update_data_callback, args=(room_name, 'Lunch', key_l))
+        s3.text_input("오후", value=row['Afternoon'], key=key_a, placeholder="", label_visibility="collapsed", on_change=update_data_callback, args=(room_name, 'Afternoon', key_a))
+
+        st.markdown(f"<p style='text-align: right; font-size: 10px; color: #888; margin-top: 2px; margin-bottom: 0;'>최종 업데이트: **{row['Last_Update']}**</p>", unsafe_allow_html=True)
 
 
 def render_zone(col, title, zone_list, df):
@@ -184,12 +176,12 @@ def render_zone(col, title, zone_list, df):
             render_final_card(room, df)
 
 # --- 메인 실행 ---
-
 st.set_page_config(page_title="JNUH OR", layout="wide")
+
+# CSS는 그대로 유지
 
 st.markdown("""
     <style>
-    /* ... (CSS 코드는 그대로 유지) ... */
     .block-container { padding: 1rem; }
     div[data-testid="stVerticalBlock"] > div { gap: 0rem; }
 
@@ -233,22 +225,21 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- 상단 헤더 (버튼 재배치) ---
-# ★ 교대자 저장 버튼 추가 ★
-c_head1, c_head2, c_head3 = st.columns([4, 1, 1])
+# --- 상단 헤더 ---
+c_head1, c_head2 = st.columns([5, 1])
 with c_head1:
     st.markdown("### 🩺 JNUH OR Dashboard")
 with c_head2:
-    if st.button("💾 교대자 저장", use_container_width=True, on_click=global_save_shifts):
-        # on_click으로 함수가 호출되므로 이 블록은 비워둡니다.
-        pass
-with c_head3:
     if st.button("⟳ 하루 시작", use_container_width=True):
         reset_all_data()
 
 st.markdown("---")
 
-# 데이터 로드
+# 공지사항 섹션
+st.text_area("📢 공지사항", value=load_notice(), key="notice_input", placeholder="📢 공지사항...", on_change=update_notice_callback)
+st.markdown("---") # 공지사항과 현황판 구분
+
+# 데이터 로드 및 초기 동기화
 df = load_data()
 
 # 구역별 렌더링 실행
