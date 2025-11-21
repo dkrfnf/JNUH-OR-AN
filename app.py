@@ -72,14 +72,11 @@ def save_notice_callback():
 
 # --- 동기화 로직 ---
 def sync_session_state(df):
-    # 1. 수술실 현황 동기화
     for index, row in df.iterrows():
         room = row['Room']
-        
         key_status = f"st_{room}"
         if key_status not in st.session_state or st.session_state[key_status] != row['Status']:
             st.session_state[key_status] = row['Status']
-            
         key_m = f"m_{room}"
         if key_m not in st.session_state or st.session_state[key_m] != row['Morning']:
             st.session_state[key_m] = row['Morning']
@@ -90,7 +87,6 @@ def sync_session_state(df):
         if key_a not in st.session_state or st.session_state[key_a] != row['Afternoon']:
             st.session_state[key_a] = row['Afternoon']
 
-    # 2. 공지사항 동기화
     server_notice = load_notice()
     if "notice_area" not in st.session_state:
         st.session_state["notice_area"] = server_notice
@@ -231,25 +227,49 @@ st.markdown("""
         font-size: 14px !important; 
         font-weight: normal;        
         line-height: 1.5;
+        /* 버튼이 겹칠 공간 확보 */
+        padding-bottom: 35px !important; 
     }
     
-    /* ★★★ [모바일 레이아웃 수정] ★★★ */
-    @media (max-width: 640px) {
+    /* ★★★ [저장 버튼 오버레이 스타일] ★★★ */
+    /* 공지사항 컬럼(3번째)에 있는 버튼만 타겟팅하여 위치 이동 */
+    /* DOM 구조상 3번째 메인 컬럼 -> 그 안의 버튼 */
+    div[data-testid="stHorizontalBlock"] > div:nth-child(3) button {
+        float: right;
+        /* 위로 끌어올려서 textarea 안으로 넣기 */
+        transform: translateY(-45px); 
+        margin-right: 5px;
         
-        /* 1. 전체 화면 레이아웃: 세로로 쌓고 순서 변경 (공지사항이 위로) */
+        /* 버튼 디자인: 반투명, 그림자, 둥글게 */
+        background-color: rgba(255, 255, 255, 0.8) !important;
+        border: 1px solid #ddd !important;
+        border-radius: 8px !important;
+        z-index: 99 !important; /* 텍스트박스 위에 오도록 */
+        
+        /* 크기 조절 */
+        height: 2.2rem !important;
+        width: 2.2rem !important;
+        padding: 0px !important;
+    }
+    /* 버튼 호버 효과 */
+    div[data-testid="stHorizontalBlock"] > div:nth-child(3) button:hover {
+        background-color: #FFFFFF !important;
+        border-color: #aaa !important;
+        color: #000 !important;
+    }
+
+    /* ★★★ [모바일 레이아웃] ★★★ */
+    @media (max-width: 640px) {
         div[data-testid="stHorizontalBlock"] {
             flex-direction: column !important;
         }
-        div[data-testid="stHorizontalBlock"] > div:nth-child(3) { order: 1; margin-bottom: 20px; } /* 공지사항 */
-        div[data-testid="stHorizontalBlock"] > div:nth-child(1) { order: 2; } /* A구역 */
-        div[data-testid="stHorizontalBlock"] > div:nth-child(2) { order: 3; } /* B구역 */
+        div[data-testid="stHorizontalBlock"] > div:nth-child(3) { order: 1; margin-bottom: 20px; } 
+        div[data-testid="stHorizontalBlock"] > div:nth-child(1) { order: 2; } 
+        div[data-testid="stHorizontalBlock"] > div:nth-child(2) { order: 3; } 
 
-        /* 2. [중요] 카드 내부(수술실 입력칸)는 순서 변경 취소 및 가로 정렬 유지 */
-        /* 테두리(VerticalBlockBorderWrapper) 안에 있는 HorizontalBlock은 건드리지 마라 */
         div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] {
             flex-direction: row !important;
         }
-        /* 내부 항목들의 순서(order)를 0으로 초기화하여 원래 순서(오전->점심->오후)대로 보이게 함 */
         div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] > div:nth-child(1) { order: 0 !important; }
         div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] > div:nth-child(2) { order: 0 !important; }
         div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] > div:nth-child(3) { order: 0 !important; margin-bottom: 0 !important; }
@@ -283,6 +303,7 @@ with col_notice:
         on_change=save_notice_callback 
     )
     
+    # 버튼은 CSS로 위치를 강제 이동시킴
     if st.button("💾", help="저장하기"):
         save_notice_callback()
         st.toast("저장 완료!", icon="✅")
