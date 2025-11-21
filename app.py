@@ -9,7 +9,7 @@ ZONE_A = ["A1", "A2", "A3", "A4", "A5", "A6", "A7"]
 ZONE_B = ["B1", "B2", "B3", "B4", "C2", "Angio", "회복실"]
 ALL_ROOMS = ZONE_A + ZONE_B
 DATA_FILE = 'or_status_kst.csv'
-NOTICE_FILE = 'notice.txt'  # 공지사항 저장 파일
+NOTICE_FILE = 'notice.txt'
 OP_STATUS = ["▶ 수술", "Ⅱ 대기", "■ 종료"]
 
 # 2초 자동 새로고침
@@ -24,7 +24,7 @@ def get_korean_time():
 def get_room_index(df, room_name):
     return df[df['Room'] == room_name].index[0]
 
-# --- 데이터 로드/저장 (수술실 현황) ---
+# --- 데이터 로드/저장 ---
 def load_data():
     try:
         if not os.path.exists(DATA_FILE):
@@ -55,7 +55,6 @@ def load_data():
 def save_data(df):
     df.to_csv(DATA_FILE, index=False, encoding='utf-8')
 
-# --- 공지사항 로드/저장 ---
 def load_notice():
     if not os.path.exists(NOTICE_FILE):
         return ""
@@ -67,19 +66,22 @@ def load_notice():
 
 def save_notice_callback():
     new_notice = st.session_state["notice_area"]
-    with open(NOTICE_FILE, "w", encoding="utf-8") as f:
-        f.write(new_notice)
+    try:
+        with open(NOTICE_FILE, "w", encoding="utf-8") as f:
+            f.write(new_notice)
+            f.flush() 
+            os.fsync(f.fileno()) 
+    except:
+        pass
 
 # --- 동기화 로직 ---
 def sync_session_state(df):
-    # 1. 수술실 현황 동기화
+    # 1. 수술실 현황
     for index, row in df.iterrows():
         room = row['Room']
-        
         key_status = f"st_{room}"
         if key_status not in st.session_state or st.session_state[key_status] != row['Status']:
             st.session_state[key_status] = row['Status']
-            
         key_m = f"m_{room}"
         if key_m not in st.session_state or st.session_state[key_m] != row['Morning']:
             st.session_state[key_m] = row['Morning']
@@ -90,7 +92,7 @@ def sync_session_state(df):
         if key_a not in st.session_state or st.session_state[key_a] != row['Afternoon']:
             st.session_state[key_a] = row['Afternoon']
 
-    # 2. 공지사항 동기화
+    # 2. 공지사항
     server_notice = load_notice()
     if "notice_area" not in st.session_state:
         st.session_state["notice_area"] = server_notice
@@ -126,7 +128,8 @@ def update_data_callback(room_name, col_name, session_key):
 def render_final_card(room_name, df):
     row = df[df['Room'] == room_name].iloc[0]
     status = row['Status']
-
+    
+    # 상태별 색상 지정 (다시 HTML/CSS로 복귀)
     if "수술" in status:
         bg_color = "#E0F2FE"      
         icon_color = "#0EA5E9"    
@@ -136,7 +139,6 @@ def render_final_card(room_name, df):
         icon_color = "#EF6C00"    
         text_color = "#EF6C00"    
     else: 
-        # 종료 상태: 진한 회색 배경, 검정 글씨
         bg_color = "#E0E0E0"      
         icon_color = "#000000"    
         text_color = "#000000"    
@@ -144,22 +146,23 @@ def render_final_card(room_name, df):
     current_icon = status.split(" ")[0] 
 
     with st.container(border=True):
-        c1, c2 = st.columns([2, 1])
+        # 1열: [방 번호(뱃지)] | [상태 선택]
+        c1, c2 = st.columns([1, 1.2])
         with c1:
+            # 버튼 대신 깔끔한 뱃지 스타일로 복귀
             st.markdown(f"""
                 <div style='
-                    width: 45%; 
+                    width: 100%;
                     font-size: 1.2rem;
-                    font-weight:bold;
-                    color:{text_color};
-                    background-color:{bg_color};
-                    padding: 4px 0px; 
+                    font-weight: bold;
+                    color: {text_color};
+                    background-color: {bg_color};
+                    padding: 4px 0px;
                     border-radius: 6px;
                     text-align: center;
                     display: block;
-                    margin-top: 1px;
                 '>
-                    <span style='color:{icon_color}; margin-right: 5px;'>{current_icon}</span>{room_name}
+                    <span style='margin-right: 5px;'>{current_icon}</span>{room_name}
                 </div>
                 """, unsafe_allow_html=True)
         with c2:
@@ -173,6 +176,7 @@ def render_final_card(room_name, df):
                 args=(room_name, 'Status', key_status)
             )
 
+        # 2열: 입력창
         s1, s2, s3 = st.columns(3)
         key_m = f"m_{room_name}"
         key_l = f"l_{room_name}"
@@ -185,7 +189,17 @@ def render_final_card(room_name, df):
         s3.text_input("오후", key=key_a, placeholder="", label_visibility="collapsed",
                       on_change=update_data_callback, args=(room_name, 'Afternoon', key_a))
 
-        st.markdown(f"<p style='text-align: right; font-size: 10px; color: #888; margin-top: 5px; margin-bottom: 0;'>Update: {row['Last_Update']}</p>", unsafe_allow_html=True)
+        # 3열: 업데이트 시간
+        st.markdown(f"""
+            <div style='
+                text-align: right; 
+                font-size: 10px; 
+                color: #aaa; 
+                margin-top: 2px;
+            '>
+                Update: {row['Last_Update']}
+            </div>
+            """, unsafe_allow_html=True)
 
 def render_zone(col, title, zone_list, df):
     with col:
@@ -201,9 +215,16 @@ st.markdown("""
     <style>
     .block-container { padding: 1rem; }
     div[data-testid="stVerticalBlock"] > div { gap: 0rem; }
+    
+    /* 카드 내부 간격 */
+    div[data-testid="stVerticalBlockBorderWrapper"] > div > div > div {
+        gap: 0.3rem !important; 
+    }
+
     hr { margin-top: 0.2rem !important; margin-bottom: 0.5rem !important; }
     h3, h4 { margin-bottom: 0rem !important; padding-top: 0rem !important; }
     
+    /* Selectbox & Input */
     div[data-testid="stSelectbox"] div[data-baseweb="select"] > div {
         padding-top: 0px; padding-bottom: 0px; padding-left: 5px;
         height: 32px; min-height: 32px;
@@ -226,33 +247,38 @@ st.markdown("""
         border: 1px solid #2196F3 !important;
     }
     
+    /* 공지사항 텍스트 영역 */
     div[data-testid="stTextArea"] textarea {
         background-color: #FFF9C4 !important;
         color: #333 !important;
-        font-size: 1.1rem !important;
-        font-weight: 500;
+        font-size: 14px !important; 
+        font-weight: normal;        
         line-height: 1.5;
     }
     
-    /* ★★★ [모바일 전용] 컬럼 순서 변경: 공지사항 -> A구역 -> B구역 ★★★ */
+    /* 모바일 레이아웃: 공지사항 -> A -> B */
     @media (max-width: 640px) {
-        /* 메인 컬럼 컨테이너 타겟팅 */
         div[data-testid="stHorizontalBlock"] {
             display: flex !important;
             flex-direction: column !important;
         }
-        /* 1. 공지사항 (원래 3번째) -> 1번으로 */
         div[data-testid="stHorizontalBlock"] > div:nth-child(3) {
-            order: 1;
-            margin-bottom: 20px; /* 공지사항 아래 여백 */
+            order: 1; margin-bottom: 20px;
         }
-        /* 2. A구역 (원래 1번째) -> 2번으로 */
         div[data-testid="stHorizontalBlock"] > div:nth-child(1) {
             order: 2;
         }
-        /* 3. B구역 (원래 2번째) -> 3번으로 */
         div[data-testid="stHorizontalBlock"] > div:nth-child(2) {
             order: 3;
+        }
+
+        /* 카드 내부 정렬 유지 */
+        div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] {
+            flex-direction: row !important;
+        }
+        div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] > div {
+            order: unset !important;
+            margin-bottom: 0px !important;
         }
     }
 
@@ -268,7 +294,6 @@ st.markdown("---")
 df = load_data()
 sync_session_state(df)
 
-# [데스크탑 배열] A구역 | B구역 | 공지사항
 col_a, col_b, col_notice = st.columns([1, 1, 0.5], gap="small")
 
 render_zone(col_a, "A 구역", ZONE_A, df)
@@ -284,6 +309,12 @@ with col_notice:
         placeholder="전달사항을 입력하세요...",
         on_change=save_notice_callback
     )
+    # [수정됨] 변경사항 저장 버튼
+    if st.button("변경사항 저장", use_container_width=True, type="primary"):
+        save_notice_callback()
+        # 데이터도 한번 더 확실하게 저장
+        save_data(df)
+        st.toast("모든 변경사항이 저장되었습니다!", icon="✅")
 
 st.markdown("---")
 
