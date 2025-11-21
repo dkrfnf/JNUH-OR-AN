@@ -1,23 +1,24 @@
 import streamlit as st
 import pandas as pd
-from datetime import datetime
+from datetime import datetime, timedelta
 import os
 from streamlit_autorefresh import st_autorefresh
-import pytz
 
 # --- 설정 ---
 ZONE_A = ["A1", "A2", "A3", "A4", "A5", "A6", "A7"]
 ZONE_B = ["B1", "B2", "B3", "B4", "C2", "Angio", "회복실"]
 ALL_ROOMS = ZONE_A + ZONE_B
-DATA_FILE = 'or_status_final.csv' 
+DATA_FILE = 'or_status_kst.csv' 
 OP_STATUS = ["▶ 수술", "Ⅱ 대기", "■ 종료"]
-KST = pytz.timezone('Asia/Seoul')
 
-# 2초 자동 새로고침 (가장 먼저 실행)
+# 2초 자동 새로고침
 st_autorefresh(interval=2000, key="datarefresh")
 
-def get_current_time():
-    return datetime.now(KST).strftime("%H:%M")
+# 한국 시간 구하기 (라이브러리 없이 수학적 계산)
+def get_korean_time():
+    utc_now = datetime.utcnow()
+    kst_now = utc_now + timedelta(hours=9)
+    return kst_now.strftime("%H:%M")
 
 def get_room_index(df, room_name):
     return df[df['Room'] == room_name].index[0]
@@ -25,7 +26,7 @@ def get_room_index(df, room_name):
 def load_data():
     try:
         if not os.path.exists(DATA_FILE):
-            now_time = get_current_time()
+            now_time = get_korean_time()
             data = {
                 'Room': ALL_ROOMS,
                 'Status': ['▶ 수술'] * len(ALL_ROOMS),
@@ -37,83 +38,75 @@ def load_data():
             df = pd.DataFrame(data)
             df.to_csv(DATA_FILE, index=False, encoding='utf-8')
             return df
-        
         df = pd.read_csv(DATA_FILE, encoding='utf-8')
-        
     except Exception:
         if os.path.exists(DATA_FILE):
             os.remove(DATA_FILE)
             return load_data()
-        return pd.DataFrame() # Fallback
+        return pd.DataFrame()
 
     if len(df) != len(ALL_ROOMS) or df.loc[0, 'Status'] not in OP_STATUS:
         os.remove(DATA_FILE)
         return load_data()
-        
     return df.fillna('')
 
 def save_data(df):
     df.to_csv(DATA_FILE, index=False, encoding='utf-8')
 
-# ★★★ 핵심 추가: 서버 데이터로 내 화면(Session State) 강제 동기화 ★★★
+# ★ 서버 데이터 -> 내 화면 강제 동기화
 def sync_session_state(df):
     for index, row in df.iterrows():
         room = row['Room']
         
-        # 1. 상태 동기화
+        # 상태 동기화
         key_status = f"st_{room}"
         if key_status not in st.session_state or st.session_state[key_status] != row['Status']:
             st.session_state[key_status] = row['Status']
             
-        # 2. 입력값 동기화 (오전/점심/오후)
+        # 입력값 동기화
         key_m = f"m_{room}"
         if key_m not in st.session_state or st.session_state[key_m] != row['Morning']:
             st.session_state[key_m] = row['Morning']
-            
         key_l = f"l_{room}"
         if key_l not in st.session_state or st.session_state[key_l] != row['Lunch']:
             st.session_state[key_l] = row['Lunch']
-            
         key_a = f"a_{room}"
         if key_a not in st.session_state or st.session_state[key_a] != row['Afternoon']:
             st.session_state[key_a] = row['Afternoon']
 
-# --- 액션 함수 ---
+# --- 액션 함수 (콜백 방식) ---
 
 def reset_all_data():
     df = load_data()
-    now_time = get_current_time()
-    
+    now_time = get_korean_time()
     df['Status'] = '▶ 수술'
     df['Morning'] = ''
     df['Lunch'] = ''
     df['Afternoon'] = ''
     df['Last_Update'] = now_time
     save_data(df)
-    # 저장 후 즉시 동기화 호출
     sync_session_state(df)
     st.rerun()
 
-def update_status(room_name, new_status):
-    df = load_data()
-    idx = get_room_index(df, room_name)
-    
-    if df.loc[idx, 'Status'] != new_status:
-        df.loc[idx, 'Status'] = new_status
-        df.loc[idx, 'Last_Update'] = get_current_time()
-        save_data(df)
-        st.rerun()
-
-def update_shift_callback(room_name, col_name, session_key):
+# ★ 통합 업데이트 콜백 함수 (상태 & 이름 모두 처리)
+def update_data_callback(room_name, col_name, session_key):
+    # 현재 내 화면의 값을 가져옴
     new_value = st.session_state.get(session_key)
+    
     if new_value is not None:
         df = load_data()
         idx = get_room_index(df, room_name)
+        
+        # 값이 실제로 다를 때만 저장 및 시간 업데이트
         if df.loc[idx, col_name] != new_value:
             df.loc[idx, col_name] = new_value
+            # 상태(Status)가 바뀔 때만 시간 업데이트, 이름 변경은 시간 유지
+            if col_name == 'Status':
+                df.loc[idx, 'Last_Update'] = get_korean_time()
+            
             save_data(df)
 
-# --- UI 렌더링 함수 ---
+# --- UI 렌더링 ---
 
 def render_final_card(room_name, df):
     row = df[df['Room'] == room_name].iloc[0]
@@ -154,14 +147,16 @@ def render_final_card(room_name, df):
                 </div>
                 """, unsafe_allow_html=True)
         with c2:
-            # key가 있으면 session_state 값을 우선시하므로, 위에서 sync_session_state로 동기화된 값을 씁니다.
-            new_status = st.selectbox(
+            # ★ 상태 변경도 on_change 콜백으로 처리 (즉시 저장)
+            key_status = f"st_{room_name}"
+            st.selectbox(
                 "상태", OP_STATUS,
-                key=f"st_{room_name}",
+                key=key_status,
                 index=OP_STATUS.index(status) if status in OP_STATUS else 0,
-                label_visibility="collapsed"
+                label_visibility="collapsed",
+                on_change=update_data_callback, 
+                args=(room_name, 'Status', key_status)
             )
-            if new_status != status: update_status(room_name, new_status)
 
         s1, s2, s3 = st.columns(3)
         
@@ -169,13 +164,13 @@ def render_final_card(room_name, df):
         key_l = f"l_{room_name}"
         key_a = f"a_{room_name}"
         
-        # 입력창 값은 session_state를 통해 관리되므로 value arg는 초기 로딩용입니다.
+        # ★ 이름 입력도 on_change 콜백으로 처리 (즉시 저장)
         s1.text_input("오전", key=key_m, placeholder="", label_visibility="collapsed",
-                      on_change=update_shift_callback, args=(room_name, 'Morning', key_m))
+                      on_change=update_data_callback, args=(room_name, 'Morning', key_m))
         s2.text_input("점심", key=key_l, placeholder="", label_visibility="collapsed",
-                      on_change=update_shift_callback, args=(room_name, 'Lunch', key_l))
+                      on_change=update_data_callback, args=(room_name, 'Lunch', key_l))
         s3.text_input("오후", key=key_a, placeholder="", label_visibility="collapsed",
-                      on_change=update_shift_callback, args=(room_name, 'Afternoon', key_a))
+                      on_change=update_data_callback, args=(room_name, 'Afternoon', key_a))
 
         st.markdown(f"<p style='text-align: right; font-size: 10px; color: #888; margin-top: 5px; margin-bottom: 0;'>최종 업데이트: **{row['Last_Update']}**</p>", unsafe_allow_html=True)
 
@@ -245,13 +240,10 @@ with c_head2:
 
 st.markdown("---")
 
-# 1. 데이터 로드
 df = load_data()
-
-# 2. ★ 중요: 로드된 데이터로 Session State 강제 동기화 (화면 갱신)
+# ★ 렌더링 전 강제 동기화 (가장 중요)
 sync_session_state(df)
 
-# 3. 화면 그리기
 left_col, right_col = st.columns(2, gap="small")
 render_zone(left_col, "A 구역", ZONE_A, df)
 render_zone(right_col, "B / C / 기타", ZONE_B, df)
