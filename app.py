@@ -126,6 +126,11 @@ def update_data_callback(room_name, col_name, session_key):
                 df.loc[idx, 'Last_Update'] = get_korean_time()
             save_data(df)
 
+# ★ 저장 버튼 클릭 시 호출되는 함수 (알림 표시용)
+def manual_save(room_name):
+    # 이미 on_change에서 저장은 되지만, 사용자를 안심시키기 위해 메시지 출력
+    st.toast(f"✅ {room_name} 저장되었습니다!", icon="💾")
+
 # --- UI 렌더링 ---
 def render_final_card(room_name, df):
     row = df[df['Room'] == room_name].iloc[0]
@@ -140,10 +145,9 @@ def render_final_card(room_name, df):
         icon_color = "#EF6C00"   
         text_color = "#EF6C00"   
     else: 
-        # ★ 수정: 종료 상태를 더 진하고 선명하게 변경
-        bg_color = "#D6D6D6"     # 진한 회색 배경 (눈에 띔)
-        icon_color = "#000000"   # 완전 검정 아이콘
-        text_color = "#000000"   # 완전 검정 텍스트
+        bg_color = "#D6D6D6"     
+        icon_color = "#000000"   
+        text_color = "#000000"   
 
     current_icon = status.split(" ")[0] 
 
@@ -183,7 +187,14 @@ def render_final_card(room_name, df):
         s2.text_input("점심", key=key_l, placeholder="", label_visibility="collapsed", on_change=update_data_callback, args=(room_name, 'Lunch', key_l))
         s3.text_input("오후", key=key_a, placeholder="", label_visibility="collapsed", on_change=update_data_callback, args=(room_name, 'Afternoon', key_a))
 
-        st.markdown(f"<p style='text-align: right; font-size: 10px; color: #888; margin-top: 5px; margin-bottom: 0;'>최종 업데이트: **{row['Last_Update']}**</p>", unsafe_allow_html=True)
+        # ★ 저장 버튼 & 시간 표시 영역
+        b_col, t_col = st.columns([1, 2])
+        with b_col:
+            # 저장 버튼: 클릭 시 manual_save 함수 실행
+            st.button("💾 저장", key=f"save_btn_{room_name}", on_click=manual_save, args=(room_name,), use_container_width=True)
+        with t_col:
+            # 시간 표시: 버튼과 높이를 맞추기 위해 마진 조정
+            st.markdown(f"<div style='text-align: right; font-size: 11px; color: #888; padding-top: 10px;'>최종 업데이트: <b>{row['Last_Update']}</b></div>", unsafe_allow_html=True)
 
 def render_zone(col, title, zone_list, df):
     with col:
@@ -219,53 +230,46 @@ st.markdown("""
     }
     div[data-testid="stTextInput"] div[data-baseweb="input"]:focus-within { border: 1px solid #2196F3 !important; }
     div[data-testid="stVerticalBlockBorderWrapper"] > div { padding: 10px !important; }
-    button p { font-size: 14px; font-weight: bold; }
-    div[data-testid="stVerticalBlock"] > div > [data-testid="stVerticalBlock"] { margin-top: -10px !important; }
     
+    /* 일반 버튼 스타일 */
+    button p { font-size: 14px; font-weight: bold; }
+    /* 저장 버튼(secondary) 스타일 미세 조정 */
+    div[data-testid="stButton"] button {
+        height: 30px;
+        padding-top: 0px; padding-bottom: 0px;
+    }
+
+    div[data-testid="stVerticalBlock"] > div > [data-testid="stVerticalBlock"] { margin-top: -10px !important; }
     @media (max-width: 600px) {
         div[data-testid="stVerticalBlockBorderWrapper"] { max-width: 90vw; margin: auto; }
     }
     
-    /* 공지사항 스타일 */
     div[data-testid="stTextArea"] textarea {
-        background-color: #FFF8E1; 
-        border: 1px solid #FFECB3;
-        font-size: 14px;
+        background-color: #FFF8E1; border: 1px solid #FFECB3; font-size: 14px;
     }
     </style>
 """, unsafe_allow_html=True)
 
-# 1. 상단 영역 (2분할: 제목 | 공지사항) - 버튼 제거
+# 1. 상단 영역
 c_title, c_notice = st.columns([1, 2])
-
 with c_title:
     st.markdown("### 🩺 JNUH OR Dashboard")
-
 with c_notice:
     current_notice = load_notice()
-    st.text_area(
-        "📢 공지사항", 
-        value=current_notice, 
-        height=68, 
-        key="notice_input", 
-        label_visibility="collapsed", 
-        placeholder="📢 공지사항을 입력하세요...",
-        on_change=update_notice_callback
-    )
+    st.text_area("📢 공지사항", value=current_notice, height=68, key="notice_input", label_visibility="collapsed", placeholder="📢 공지사항...", on_change=update_notice_callback)
 
 st.markdown("---")
 
 df = load_data()
 sync_session_state(df)
 
-# 2. 메인 현황판 영역
+# 2. 메인 현황판
 left_col, right_col = st.columns(2, gap="small")
 render_zone(left_col, "A 구역", ZONE_A, df)
 render_zone(right_col, "B / C / 기타", ZONE_B, df)
 
-# 3. ★ 하단 리셋 영역 (안전하게 분리) ★
+# 3. 하단 리셋
 st.markdown("---")
 st.caption("⚠️ 아래 버튼을 누르면 모든 상태와 이름이 초기화됩니다.")
-# 빨간색 primary 버튼 사용
 if st.button("⟳ 하루 시작 (전체 초기화)", type="primary", use_container_width=True):
     reset_all_data()
