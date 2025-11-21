@@ -126,42 +126,20 @@ def update_data_callback(room_name, col_name, session_key):
 def render_final_card(room_name, df):
     row = df[df['Room'] == room_name].iloc[0]
     status = row['Status']
-
-    if "수술" in status:
-        bg_color = "#E0F2FE"      
-        icon_color = "#0EA5E9"    
-        text_color = "#0EA5E9"    
-    elif "대기" in status:
-        bg_color = "#FFF3E0"      
-        icon_color = "#EF6C00"    
-        text_color = "#EF6C00"    
-    else: 
-        bg_color = "#E0E0E0"      
-        icon_color = "#000000"    
-        text_color = "#000000"    
-
     current_icon = status.split(" ")[0] 
 
     with st.container(border=True):
-        c1, c2 = st.columns([2, 1])
+        # 1열: [방 번호 버튼] | [상태 선택]
+        c1, c2 = st.columns([1, 1.2])
+        
         with c1:
-            # ★ 수정: margin-bottom을 추가하여 방 이름과 드롭다운 사이 간격 확보
-            st.markdown(f"""
-                <div style='
-                    width: 45%; 
-                    font-size: 1.2rem;
-                    font-weight:bold;
-                    color:{text_color};
-                    background-color:{bg_color};
-                    padding: 2px 0px; 
-                    border-radius: 6px;
-                    text-align: center;
-                    display: block;
-                    margin-bottom: 8px; /* 간격 추가 */
-                '>
-                    <span style='color:{icon_color}; margin-right: 5px;'>{current_icon}</span>{room_name}
-                </div>
-                """, unsafe_allow_html=True)
+            # ★ 핵심 변경: 방 번호를 버튼으로 만들었습니다.
+            # 클릭하면 저장 로직 수행
+            btn_label = f"{current_icon} {room_name}"
+            if st.button(btn_label, key=f"btn_{room_name}", help="누르면 저장됩니다", use_container_width=True):
+                save_data(df)
+                st.toast(f"{room_name} 저장 완료!", icon="✅")
+
         with c2:
             key_status = f"st_{room_name}"
             st.selectbox(
@@ -173,6 +151,7 @@ def render_final_card(room_name, df):
                 args=(room_name, 'Status', key_status)
             )
 
+        # 2열: 입력창 (오전/점심/오후)
         s1, s2, s3 = st.columns(3)
         key_m = f"m_{room_name}"
         key_l = f"l_{room_name}"
@@ -185,26 +164,18 @@ def render_final_card(room_name, df):
         s3.text_input("오후", key=key_a, placeholder="", label_visibility="collapsed",
                       on_change=update_data_callback, args=(room_name, 'Afternoon', key_a))
 
-        # 하단: 저장 버튼 (여백 최소화)
-        f1, f2, f3 = st.columns([5, 0.8, 2]) 
-        
-        with f2:
-            if st.button("💾", key=f"save_btn_{room_name}", help=f"{room_name} 저장"):
-                save_data(df)
-                st.toast(f"저장됨 ({room_name})", icon="✅")
-        
-        with f3:
-            st.markdown(f"""
-                <div style='
-                    text-align: right; 
-                    font-size: 10px; 
-                    color: #999; 
-                    margin-top: 8px;
-                    line-height: 1.2;
-                '>
-                    Update<br>{row['Last_Update']}
-                </div>
-                """, unsafe_allow_html=True)
+        # 3열: 하단 시간 정보 (오른쪽 정렬)
+        st.markdown(f"""
+            <div style='
+                text-align: right; 
+                font-size: 10px; 
+                color: #aaa; 
+                margin-top: 2px;
+                margin-bottom: 0px;
+            '>
+                Update: {row['Last_Update']}
+            </div>
+            """, unsafe_allow_html=True)
 
 def render_zone(col, title, zone_list, df):
     with col:
@@ -247,9 +218,6 @@ st.markdown("""
         color: #000000 !important; 
         font-size: 14px;
     }
-    div[data-testid="stTextInput"] div[data-baseweb="input"]:focus-within {
-        border: 1px solid #2196F3 !important;
-    }
     
     div[data-testid="stTextArea"] textarea {
         background-color: #FFF9C4 !important;
@@ -259,26 +227,21 @@ st.markdown("""
         line-height: 1.5;
     }
 
-    /* ★★★ [수정됨] 카드 내부 저장 버튼 스타일 (아주 작고 타이트하게) ★★★ */
-    /* 'stVerticalBlockBorderWrapper' 안에 있는 버튼만 타겟팅 (공지사항 버튼 제외) */
+    /* ★★★ [방 번호 버튼 스타일링] ★★★ */
+    /* 방 번호 버튼을 좀 더 굵고 뱃지처럼 보이게 */
     div[data-testid="stVerticalBlockBorderWrapper"] button {
-        padding: 0px 0px !important;
-        margin: 0px !important;
-        min-height: 0px !important;
-        height: auto !important;  /* 높이 자동 (아이콘에 맞춤) */
-        width: auto !important;   /* 너비 자동 */
+        font-weight: bold !important;
+        font-size: 15px !important;
         border: 1px solid #ddd !important;
-        background-color: transparent !important;
-        line-height: 1 !important;
-        font-size: 12px !important; /* 아이콘 크기 축소 */
-        display: inline-flex !important;
-        justify-content: center !important;
-        align-items: center !important;
-        padding: 4px 8px !important; /* 아이콘 주변 여백 최소화 */
+        background-color: #f9f9f9 !important;
+    }
+    div[data-testid="stVerticalBlockBorderWrapper"] button p {
+        font-size: 16px !important;
     }
     div[data-testid="stVerticalBlockBorderWrapper"] button:hover {
-        border: 1px solid #aaa !important;
-        background-color: #f0f0f0 !important;
+        border-color: #aaa !important;
+        background-color: #e0e0e0 !important;
+        color: #000 !important;
     }
     
     /* 모바일 레이아웃 */
