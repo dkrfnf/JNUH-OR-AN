@@ -3,7 +3,6 @@ import pandas as pd
 from datetime import datetime, timedelta
 import os
 from streamlit_autorefresh import st_autorefresh
-import time
 
 # --- 설정 ---
 ZONE_A = ["A1", "A2", "A3", "A4", "A5", "A6", "A7"]
@@ -67,7 +66,6 @@ def load_notice():
         return ""
 
 def save_notice_callback():
-    # 텍스트 영역의 값을 파일에 저장
     new_notice = st.session_state["notice_area"]
     with open(NOTICE_FILE, "w", encoding="utf-8") as f:
         f.write(new_notice)
@@ -97,11 +95,7 @@ def sync_session_state(df):
     if "notice_area" not in st.session_state:
         st.session_state["notice_area"] = server_notice
     else:
-        # 내가 입력하고 있는 중이 아닐 때(값의 차이가 있을 때) 서버 값으로 갱신
-        # (버튼을 눌렀을 때는 입력값이 우선이므로 덮어쓰지 않도록 주의)
         if st.session_state["notice_area"] != server_notice:
-             # 약간의 딜레이 허용 (타이핑 중 덮어쓰기 방지용 로직은 복잡하므로, 여기선 단순 동기화)
-             # 버튼 저장 시에는 로컬 값이 파일로 가므로 문제 없음
              pass
 
 # --- 액션 함수 ---
@@ -142,7 +136,6 @@ def render_final_card(room_name, df):
         icon_color = "#EF6C00"    
         text_color = "#EF6C00"    
     else: 
-        # 종료 상태: 진한 회색 배경, 검정 글씨
         bg_color = "#E0E0E0"      
         icon_color = "#000000"    
         text_color = "#000000"    
@@ -232,30 +225,28 @@ st.markdown("""
         border: 1px solid #2196F3 !important;
     }
     
+    /* 공지사항 스타일 수정 (글씨 크기 14px로 축소) */
     div[data-testid="stTextArea"] textarea {
         background-color: #FFF9C4 !important;
         color: #333 !important;
-        font-size: 1.1rem !important;
-        font-weight: 500;
+        font-size: 14px !important; /* 1.1rem -> 14px 변경 */
+        font-weight: normal;        /* 굵기 일반으로 변경 */
         line-height: 1.5;
     }
     
-    /* ★★★ [모바일 전용] 컬럼 순서 변경: 공지사항 -> A구역 -> B구역 ★★★ */
+    /* 모바일 전용: 공지사항 -> A구역 -> B구역 순서 */
     @media (max-width: 640px) {
         div[data-testid="stHorizontalBlock"] {
             display: flex !important;
             flex-direction: column !important;
         }
-        /* 1. 공지사항 (원래 3번째) -> 1번으로 */
         div[data-testid="stHorizontalBlock"] > div:nth-child(3) {
             order: 1;
             margin-bottom: 20px; 
         }
-        /* 2. A구역 (원래 1번째) -> 2번으로 */
         div[data-testid="stHorizontalBlock"] > div:nth-child(1) {
             order: 2;
         }
-        /* 3. B구역 (원래 2번째) -> 3번으로 */
         div[data-testid="stHorizontalBlock"] > div:nth-child(2) {
             order: 3;
         }
@@ -273,7 +264,6 @@ st.markdown("---")
 df = load_data()
 sync_session_state(df)
 
-# [데스크탑 배열] A구역 | B구역 | 공지사항
 col_a, col_b, col_notice = st.columns([1, 1, 0.5], gap="small")
 
 render_zone(col_a, "A 구역", ZONE_A, df)
@@ -281,19 +271,20 @@ render_zone(col_b, "B / C / 기타", ZONE_B, df)
 
 with col_notice:
     st.markdown("#### 📢 공지사항")
-    # 공지사항 높이 200px로 축소
     st.text_area(
         "공지사항 내용",
         key="notice_area",
         height=200, 
         label_visibility="collapsed",
         placeholder="전달사항을 입력하세요...",
-        on_change=save_notice_callback # 엔터/포커스아웃 시 저장 유지
+        on_change=save_notice_callback 
     )
-    # [추가] 명시적인 저장 버튼
-    if st.button("💾 저장", use_container_width=True):
+    
+    # [수정] 정사각형 아이콘 형태의 저장 버튼
+    # use_container_width=True를 제거하여 버튼 길이를 줄임
+    if st.button("💾", help="저장하기"):
         save_notice_callback()
-        st.toast("공지사항이 저장되었습니다!", icon="✅")
+        st.toast("저장 완료!", icon="✅")
 
 st.markdown("---")
 
