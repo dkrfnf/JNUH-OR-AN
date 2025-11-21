@@ -12,7 +12,7 @@ DATA_FILE = 'or_status_kst.csv'
 NOTICE_FILE = 'notice.txt'
 OP_STATUS = ["▶ 수술", "Ⅱ 대기", "■ 종료"]
 
-# 2초 자동 새로고침 (새로고침 되어야 남이 쓴 글이 보입니다)
+# 2초 자동 새로고침 (다른 사람이 쓴 글을 보기 위해 필수)
 st_autorefresh(interval=2000, key="datarefresh")
 
 # 한국 시간 구하기
@@ -55,7 +55,6 @@ def load_data():
 def save_data(df):
     df.to_csv(DATA_FILE, index=False, encoding='utf-8')
 
-# 공지사항 읽기
 def load_notice():
     if not os.path.exists(NOTICE_FILE):
         return ""
@@ -65,18 +64,17 @@ def load_notice():
     except:
         return ""
 
-# 공지사항 저장 (즉시 저장되도록 flush 추가)
 def save_notice_callback():
     new_notice = st.session_state["notice_area"]
     try:
         with open(NOTICE_FILE, "w", encoding="utf-8") as f:
             f.write(new_notice)
             f.flush() 
-            os.fsync(f.fileno()) # 강제 저장
+            os.fsync(f.fileno()) 
     except:
         pass
 
-# --- 동기화 로직 (핵심 수정) ---
+# --- 동기화 로직 ---
 def sync_session_state(df):
     # 1. 수술실 현황 동기화
     for index, row in df.iterrows():
@@ -94,14 +92,12 @@ def sync_session_state(df):
         if key_a not in st.session_state or st.session_state[key_a] != row['Afternoon']:
             st.session_state[key_a] = row['Afternoon']
 
-    # 2. 공지사항 동기화 [수정됨]
-    # 서버에 있는 내용(server_notice)이 내 화면(session_state)과 다르면
-    # 내 화면을 서버 내용으로 덮어씌웁니다. (그래야 남이 쓴게 보임)
+    # 2. 공지사항 동기화 (남이 쓴 글 불러오기)
     server_notice = load_notice()
     if "notice_area" not in st.session_state:
         st.session_state["notice_area"] = server_notice
     else:
-        # ★ 여기가 중요: 서버 내용이 다르면 내 화면 업데이트
+        # 내 화면의 글과 서버의 글이 다르면 업데이트
         if st.session_state["notice_area"] != server_notice:
              st.session_state["notice_area"] = server_notice
 
@@ -150,6 +146,7 @@ def render_final_card(room_name, df):
     current_icon = status.split(" ")[0] 
 
     with st.container(border=True):
+        # [1열] 방 이름 | 상태 선택
         c1, c2 = st.columns([2, 1])
         with c1:
             st.markdown(f"""
@@ -179,6 +176,7 @@ def render_final_card(room_name, df):
                 args=(room_name, 'Status', key_status)
             )
 
+        # [2열] 입력창 (오전, 점심, 오후)
         s1, s2, s3 = st.columns(3)
         key_m = f"m_{room_name}"
         key_l = f"l_{room_name}"
@@ -191,7 +189,30 @@ def render_final_card(room_name, df):
         s3.text_input("오후", key=key_a, placeholder="", label_visibility="collapsed",
                       on_change=update_data_callback, args=(room_name, 'Afternoon', key_a))
 
-        st.markdown(f"<p style='text-align: right; font-size: 10px; color: #888; margin-top: 5px; margin-bottom: 0;'>Update: {row['Last_Update']}</p>", unsafe_allow_html=True)
+        # [3열] 하단 정보 (빈칸 | 저장버튼 | 시간)
+        # 비율 조절: 왼쪽 여백(4) | 버튼(1) | 시간(2)
+        f1, f2, f3 = st.columns([4, 0.8, 1.5])
+        
+        # 가운데: 저장 버튼
+        with f2:
+            # 각 방마다 고유한 key 필요
+            if st.button("💾", key=f"save_btn_{room_name}", help=f"{room_name} 저장하기"):
+                # 버튼 누르면 강제 저장
+                save_data(df)
+                st.toast(f"{room_name} 저장 완료!", icon="✅")
+        
+        # 오른쪽: 업데이트 시간
+        with f3:
+            st.markdown(f"""
+                <div style='
+                    text-align: right; 
+                    font-size: 11px; 
+                    color: #888; 
+                    margin-top: 8px;
+                '>
+                    Update: {row['Last_Update']}
+                </div>
+                """, unsafe_allow_html=True)
 
 def render_zone(col, title, zone_list, df):
     with col:
@@ -232,47 +253,26 @@ st.markdown("""
         border: 1px solid #2196F3 !important;
     }
     
-    /* 공지사항 텍스트 박스 스타일 */
+    /* 공지사항 스타일 복구 (노란 배경) */
     div[data-testid="stTextArea"] textarea {
         background-color: #FFF9C4 !important;
         color: #333 !important;
         font-size: 14px !important; 
         font-weight: normal;        
         line-height: 1.5;
-        /* 버튼이 들어갈 하단 여백 확보 */
-        padding-bottom: 40px !important; 
-    }
-    
-    /* ★★★ [저장 버튼: 노란 박스 안으로 넣기] ★★★ */
-    /* 3번째 컬럼(공지사항) 안에 있는 버튼 컨테이너 타겟팅 */
-    div[data-testid="column"]:nth-of-type(3) .stButton {
-        width: 100% !important;       
-        display: flex !important;     
-        justify-content: flex-end !important; /* 오른쪽 정렬 */
-        
-        /* ★핵심: 마진을 음수로 주어 위로 끌어올림 */
-        margin-top: -50px !important; 
-        
-        padding-right: 10px !important; 
-        position: relative !important;
-        z-index: 5 !important;        
     }
 
-    /* 버튼 디자인: 투명하게 만들어서 자연스럽게 */
-    div[data-testid="column"]:nth-of-type(3) .stButton > button {
-        background-color: transparent !important; /* 투명 배경 */
-        border: none !important;                  /* 테두리 없음 */
-        color: #555 !important;                   /* 아이콘 색상 */
-        
-        width: auto !important;
-        height: auto !important;
-        padding: 5px !important;
-        font-size: 1.5rem !important; /* 아이콘 크기 */
+    /* 각 방의 저장 버튼 스타일 (작고 깔끔하게) */
+    div[data-testid="column"] button {
+        padding: 0px 5px !important;
+        min-height: 0px !important;
+        height: 26px !important;
+        border: 1px solid #eee !important;
+        background-color: transparent !important;
     }
-    /* 마우스 올렸을 때 살짝 표시 */
-    div[data-testid="column"]:nth-of-type(3) .stButton > button:hover {
-        color: #000 !important;
-        background-color: rgba(255,255,255,0.3) !important;
+    div[data-testid="column"] button:hover {
+        border: 1px solid #bbb !important;
+        background-color: #f0f0f0 !important;
     }
 
 
@@ -311,7 +311,7 @@ st.markdown("### 🩺 JNUH OR Dashboard")
 st.markdown("---")
 
 df = load_data()
-# 데이터 로드 시 동기화 실행 (서버 내용 -> 내 화면)
+# 데이터 로드 시 동기화
 sync_session_state(df)
 
 col_a, col_b, col_notice = st.columns([1, 1, 0.5], gap="small")
@@ -321,6 +321,7 @@ render_zone(col_b, "B / C / 기타", ZONE_B, df)
 
 with col_notice:
     st.markdown("#### 📢 공지사항")
+    # 공지사항: 기본 스타일로 복귀 (동기화 안정성 확보)
     st.text_area(
         "공지사항 내용",
         key="notice_area",
@@ -330,10 +331,10 @@ with col_notice:
         on_change=save_notice_callback 
     )
     
-    # 버튼: 노란색 창 안쪽 하단에 위치 (CSS로 제어)
-    if st.button("💾", help="저장하기"):
+    # 공지사항 저장 버튼 (아래에 배치)
+    if st.button("공지사항 저장", use_container_width=True):
         save_notice_callback()
-        st.toast("저장 완료!", icon="✅")
+        st.toast("공지사항 저장됨", icon="✅")
 
 st.markdown("---")
 
