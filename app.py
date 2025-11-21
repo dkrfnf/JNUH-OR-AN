@@ -93,6 +93,7 @@ def sync_session_state(df):
         if st.session_state["notice_area"] != server_notice:
              pass
 
+# --- 액션 함수 ---
 def reset_all_data():
     df = load_data()
     now_time = get_korean_time()
@@ -225,37 +226,43 @@ st.markdown("""
         font-size: 14px !important; 
         font-weight: normal;        
         line-height: 1.5;
-        padding-bottom: 10px !important; 
+        /* 1. 텍스트가 버튼 밑으로 들어가지 않게 하단 패딩 확보 */
+        padding-bottom: 40px !important; 
     }
     
-    /* ★★★ [저장 버튼 위치 강력 수정] ★★★ */
-    /* 3번째 컬럼(Notice) 안에 있는 버튼 래퍼(div)를 타겟팅합니다 */
-    /* nth-child(3)는 DOM 순서상 공지사항 컬럼을 가리킵니다 */
-    div[data-testid="column"]:nth-of-type(3) div[data-testid="stButton"] {
-        display: flex !important;
-        justify-content: flex-end !important; /* 오른쪽 정렬 */
-        margin-top: -50px !important;         /* 위로 50px 끌어올림 (노란박스 안으로) */
-        margin-right: 10px !important;        /* 오른쪽 여백 */
-        position: relative !important;        /* 위치 기준점 */
-        z-index: 2 !important;                /* 텍스트박스 위로 올라오게 */
+    /* ★★★ [저장 버튼 위치 강력 수정 - 최종판] ★★★ */
+    /* 3번째 컬럼(공지사항) 안에 있는 버튼 컨테이너를 타겟팅 */
+    div[data-testid="column"]:nth-of-type(3) .stButton {
+        width: 100% !important;       /* 컨테이너 너비를 꽉 채움 */
+        display: flex !important;     /* 플렉스박스 사용 */
+        justify-content: flex-end !important; /* 내용물(버튼)을 오른쪽 끝으로 보냄 */
+        margin-top: -60px !important; /* 노란박스 안으로 강제로 끌어올림 */
+        padding-right: 15px !important; /* 오른쪽 벽에서 약간 띄움 */
+        position: relative !important;
+        z-index: 5 !important;        /* 텍스트박스보다 위에 오도록 */
+        pointer-events: none;         /* 컨테이너가 클릭을 방해하지 않게 */
     }
 
     /* 버튼 자체 디자인 */
-    div[data-testid="column"]:nth-of-type(3) button {
-        background-color: rgba(255, 255, 255, 0.6) !important; /* 반투명 */
+    div[data-testid="column"]:nth-of-type(3) .stButton > button {
+        pointer-events: auto; /* 버튼은 클릭 가능해야 함 */
+        background-color: rgba(255, 255, 255, 0.5) !important; /* 반투명 흰색 */
         border: 1px solid #CCC !important;
-        width: 2rem !important;
-        height: 2rem !important;
+        border-radius: 8px !important;
+        width: 2.5rem !important;
+        height: 2.5rem !important;
         padding: 0px !important;
+        font-size: 1.5rem !important; /* 아이콘 크기 키움 */
     }
-    div[data-testid="column"]:nth-of-type(3) button:hover {
+    /* 버튼 마우스 오버 효과 */
+    div[data-testid="column"]:nth-of-type(3) .stButton > button:hover {
         background-color: white !important;
-        border-color: black !important;
+        border-color: #999 !important;
     }
+
 
     /* ★★★ [모바일 레이아웃] ★★★ */
     @media (max-width: 640px) {
-        /* 메인 화면 컬럼 순서 변경 (공지사항 위로) */
         .block-container > div > div > div[data-testid="stHorizontalBlock"] {
             flex-direction: column !important;
         }
@@ -269,7 +276,7 @@ st.markdown("""
             order: 3; 
         }
 
-        /* 카드 내부 (오전/점심/오후) 순서 고정 (중요) */
+        /* 카드 내부 (오전/점심/오후) 순서 고정 */
         div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] {
             flex-direction: row !important;
         }
@@ -307,6 +314,7 @@ with col_notice:
         on_change=save_notice_callback 
     )
     
+    # CSS로 위치가 강제 조정되는 버튼
     if st.button("💾", help="저장하기"):
         save_notice_callback()
         st.toast("저장 완료!", icon="✅")
