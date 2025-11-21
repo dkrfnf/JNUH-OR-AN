@@ -140,9 +140,10 @@ def render_final_card(room_name, df):
         icon_color = "#EF6C00"   
         text_color = "#EF6C00"   
     else: 
-        bg_color = "#F5F5F5"     
-        icon_color = "#616161"   
-        text_color = "#424242"
+        # ★ 수정: 종료 상태를 더 진하고 선명하게 변경
+        bg_color = "#D6D6D6"     # 진한 회색 배경 (눈에 띔)
+        icon_color = "#000000"   # 완전 검정 아이콘
+        text_color = "#000000"   # 완전 검정 텍스트
 
     current_icon = status.split(" ")[0] 
 
