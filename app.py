@@ -126,20 +126,42 @@ def update_data_callback(room_name, col_name, session_key):
 def render_final_card(room_name, df):
     row = df[df['Room'] == room_name].iloc[0]
     status = row['Status']
+
+    if "수술" in status:
+        bg_color = "#E0F2FE"      
+        icon_color = "#0EA5E9"    
+        text_color = "#0EA5E9"    
+    elif "대기" in status:
+        bg_color = "#FFF3E0"      
+        icon_color = "#EF6C00"    
+        text_color = "#EF6C00"    
+    else: 
+        bg_color = "#E0E0E0"      
+        icon_color = "#000000"    
+        text_color = "#000000"    
+
     current_icon = status.split(" ")[0] 
 
     with st.container(border=True):
-        # 1열: [방 번호 버튼] | [상태 선택]
-        c1, c2 = st.columns([1, 1.2])
-        
+        c1, c2 = st.columns([2, 1])
         with c1:
-            # ★ 핵심 변경: 방 번호를 버튼으로 만들었습니다.
-            # 클릭하면 저장 로직 수행
-            btn_label = f"{current_icon} {room_name}"
-            if st.button(btn_label, key=f"btn_{room_name}", help="누르면 저장됩니다", use_container_width=True):
-                save_data(df)
-                st.toast(f"{room_name} 저장 완료!", icon="✅")
-
+            # ★ 수정: margin-bottom을 10px로 늘려 간격 확보
+            st.markdown(f"""
+                <div style='
+                    width: 45%; 
+                    font-size: 1.2rem;
+                    font-weight:bold;
+                    color:{text_color};
+                    background-color:{bg_color};
+                    padding: 2px 0px; 
+                    border-radius: 6px;
+                    text-align: center;
+                    display: block;
+                    margin-bottom: 10px; 
+                '>
+                    <span style='color:{icon_color}; margin-right: 5px;'>{current_icon}</span>{room_name}
+                </div>
+                """, unsafe_allow_html=True)
         with c2:
             key_status = f"st_{room_name}"
             st.selectbox(
@@ -151,7 +173,6 @@ def render_final_card(room_name, df):
                 args=(room_name, 'Status', key_status)
             )
 
-        # 2열: 입력창 (오전/점심/오후)
         s1, s2, s3 = st.columns(3)
         key_m = f"m_{room_name}"
         key_l = f"l_{room_name}"
@@ -164,18 +185,30 @@ def render_final_card(room_name, df):
         s3.text_input("오후", key=key_a, placeholder="", label_visibility="collapsed",
                       on_change=update_data_callback, args=(room_name, 'Afternoon', key_a))
 
-        # 3열: 하단 시간 정보 (오른쪽 정렬)
-        st.markdown(f"""
-            <div style='
-                text-align: right; 
-                font-size: 10px; 
-                color: #aaa; 
-                margin-top: 2px;
-                margin-bottom: 0px;
-            '>
-                Update: {row['Last_Update']}
-            </div>
-            """, unsafe_allow_html=True)
+        # ★ 하단 수정: [빈공간] [버튼] [시간]을 아주 가깝게 배치
+        # gap="small" 적용 및 비율 조정
+        f1, f2, f3 = st.columns([6.5, 0.5, 2], gap="small")
+        
+        with f2:
+            # 버튼 스타일을 CSS로 테두리 없앰
+            if st.button("💾", key=f"save_btn_{room_name}", help=f"{room_name} 저장"):
+                save_data(df)
+                st.toast(f"저장됨 ({room_name})", icon="✅")
+        
+        with f3:
+            # 텍스트를 왼쪽 정렬하여 버튼 바로 옆에 붙임
+            st.markdown(f"""
+                <div style='
+                    text-align: left; 
+                    font-size: 10px; 
+                    color: #aaa; 
+                    margin-top: 6px; 
+                    margin-left: -5px; /* 버튼 쪽으로 더 당김 */
+                    line-height: 1.2;
+                '>
+                    Update<br>{row['Last_Update']}
+                </div>
+                """, unsafe_allow_html=True)
 
 def render_zone(col, title, zone_list, df):
     with col:
@@ -191,7 +224,7 @@ st.markdown("""
     <style>
     .block-container { padding: 1rem; }
     
-    /* 카드 내부 간격 최소화 */
+    /* 카드 내부 간격 */
     div[data-testid="stVerticalBlockBorderWrapper"] > div > div > div {
         gap: 0.3rem !important; 
     }
@@ -199,7 +232,7 @@ st.markdown("""
     hr { margin-top: 0.2rem !important; margin-bottom: 0.5rem !important; }
     h3, h4 { margin-bottom: 0rem !important; padding-top: 0rem !important; }
     
-    /* Selectbox & Input 스타일 */
+    /* 입력창, 선택창 스타일 */
     div[data-testid="stSelectbox"] div[data-baseweb="select"] > div {
         padding-top: 0px; padding-bottom: 0px; padding-left: 5px;
         height: 32px; min-height: 32px; 
@@ -227,23 +260,34 @@ st.markdown("""
         line-height: 1.5;
     }
 
-    /* ★★★ [방 번호 버튼 스타일링] ★★★ */
-    /* 방 번호 버튼을 좀 더 굵고 뱃지처럼 보이게 */
+    /* ★★★ [카드 내부 저장 버튼 스타일 - 투명화 & 여백 제거] ★★★ */
     div[data-testid="stVerticalBlockBorderWrapper"] button {
-        font-weight: bold !important;
-        font-size: 15px !important;
-        border: 1px solid #ddd !important;
-        background-color: #f9f9f9 !important;
+        padding: 0px !important;
+        margin: 0px !important;
+        border: none !important; /* 테두리 제거 (평소) */
+        background-color: transparent !important; /* 배경 투명 */
+        box-shadow: none !important;
+        color: #555 !important;
+        
+        font-size: 14px !important; /* 아이콘 크기 적절하게 */
+        height: auto !important;
+        width: auto !important;
+        display: flex;
+        align-items: center;
     }
-    div[data-testid="stVerticalBlockBorderWrapper"] button p {
-        font-size: 16px !important;
-    }
+    /* 마우스 올렸을 때만 살짝 효과 */
     div[data-testid="stVerticalBlockBorderWrapper"] button:hover {
-        border-color: #aaa !important;
-        background-color: #e0e0e0 !important;
         color: #000 !important;
+        background-color: rgba(0,0,0,0.05) !important;
+        border-radius: 4px !important;
     }
     
+    /* 버튼이 있는 컬럼 패딩 제거하여 텍스트와 밀착 */
+    div[data-testid="column"] {
+        min-width: 0px !important;
+    }
+
+
     /* 모바일 레이아웃 */
     @media (max-width: 640px) {
         .block-container > div > div > div[data-testid="stHorizontalBlock"] {
