@@ -8,7 +8,7 @@ from streamlit_autorefresh import st_autorefresh
 ZONE_A = ["A1", "A2", "A3", "A4", "A5", "A6", "A7"]
 ZONE_B = ["B1", "B2", "B3", "B4", "C2", "Angio", "회복실"]
 ALL_ROOMS = ZONE_A + ZONE_B
-DATA_FILE = 'or_status_final.csv' 
+DATA_FILE = 'or_status_final.csv'
 OP_STATUS = ["▶ 수술", "Ⅱ 대기", "■ 종료"]
 
 # 2초 자동 새로고침
@@ -22,38 +22,52 @@ def get_room_index(df, room_name):
     """방 이름에 해당하는 DataFrame 인덱스 반환"""
     return df[df['Room'] == room_name].index[0]
 
-# ★ 수정: encoding='utf-8' 적용 (파일 읽기)
+# ★ 수정: try-except 블록을 추가하여 데이터 읽기 오류 시 자가 복구
 def load_data():
-    if not os.path.exists(DATA_FILE):
-        now_time = get_current_time()
-        data = {
-            'Room': ALL_ROOMS,
-            'Status': ['▶ 수술'] * len(ALL_ROOMS),
-            'Last_Update': [now_time] * len(ALL_ROOMS),
-            'Morning': [''] * len(ALL_ROOMS),
-            'Lunch': [''] * len(ALL_ROOMS),
-            'Afternoon': [''] * len(ALL_ROOMS)
-        }
-        df = pd.DataFrame(data)
-        # ★ 수정: encoding='utf-8' 적용 (파일 쓰기)
-        df.to_csv(DATA_FILE, index=False, encoding='utf-8')
-        return df
-    # ★ 수정: encoding='utf-8' 적용 (파일 읽기)
-    df = pd.read_csv(DATA_FILE, encoding='utf-8')
+    try:
+        # 1. 파일이 없으면 새 파일 생성
+        if not os.path.exists(DATA_FILE):
+            now_time = get_current_time()
+            data = {
+                'Room': ALL_ROOMS,
+                'Status': ['▶ 수술'] * len(ALL_ROOMS),
+                'Last_Update': [now_time] * len(ALL_ROOMS),
+                'Morning': [''] * len(ALL_ROOMS),
+                'Lunch': [''] * len(ALL_ROOMS),
+                'Afternoon': [''] * len(ALL_ROOMS)
+            }
+            df = pd.DataFrame(data)
+            df.to_csv(DATA_FILE, index=False, encoding='utf-8')
+            return df
+        
+        # 2. 파일이 있으면 UTF-8로 읽기 시도
+        df = pd.read_csv(DATA_FILE, encoding='utf-8')
+        
+    except UnicodeDecodeError:
+        # 3. 읽기 실패 시 (파일이 깨졌을 경우), 파일을 삭제하고 다시 시작
+        print("ALERT: Detected corrupt CSV file. Forcing data reset.")
+        if os.path.exists(DATA_FILE):
+            os.remove(DATA_FILE)
+            return load_data() # 재귀 호출로 처음부터 다시 시작 (새 파일 생성)
+        # 이 경로로 올 일은 없지만, 안전을 위해 예외 처리
+        raise Exception("Critical: Could not load data even after deleting corrupt file.") 
+
+    # 4. 데이터 건전성 검사 (기존 로직 유지)
     if len(df) != len(ALL_ROOMS) or df.loc[0, 'Status'] not in OP_STATUS:
         os.remove(DATA_FILE)
         return load_data()
+        
     return df.fillna('')
 
-# ★ 수정: encoding='utf-8' 적용 (파일 쓰기)
+# 데이터 저장 (기존 로직 유지)
 def save_data(df):
     df.to_csv(DATA_FILE, index=False, encoding='utf-8')
 
-# --- 액션 함수 ---
+# --- 액션 함수 (생략: 변경 없음) ---
 
 def reset_all_data():
+    now_time = get_current_time() 
     df = load_data()
-    now_time = get_current_time()
     
     df['Status'] = '▶ 수술'
     df['Morning'] = ''
@@ -88,7 +102,13 @@ def update_shift(room_name, col, value):
         df.loc[idx, col] = value
         save_data(df)
 
-# --- UI 렌더링 함수 ---
+# --- UI 렌더링 함수 (생략: 변경 없음) ---
+
+def get_room_index(df, room_name):
+    return df[df['Room'] == room_name].index[0]
+
+def get_current_time():
+    return datetime.now().strftime("%H:%M")
 
 def render_final_card(room_name, df):
     row = df[df['Room'] == room_name].iloc[0]
@@ -146,9 +166,7 @@ def render_final_card(room_name, df):
         if val_l != row['Lunch']: update_shift(room_name, 'Lunch', val_l)
         if val_a != row['Afternoon']: update_shift(room_name, 'Afternoon', val_a)
 
-        # 최종 업데이트 시간 표시
         st.markdown(f"<p style='text-align: right; font-size: 10px; color: #888; margin-top: 5px; margin-bottom: 0;'>최종 업데이트: **{row['Last_Update']}**</p>", unsafe_allow_html=True)
-
 
 def render_zone(col, title, zone_list, df):
     with col:
@@ -157,6 +175,8 @@ def render_zone(col, title, zone_list, df):
             render_final_card(room, df)
 
 # --- 메인 실행 ---
+
+st.set_page_config(page_title="JNUH OR", layout="wide")
 
 st.markdown("""
     <style>
