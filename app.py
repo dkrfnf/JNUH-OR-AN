@@ -12,7 +12,7 @@ DATA_FILE = 'or_status_kst.csv'
 NOTICE_FILE = 'notice.txt'
 OP_STATUS = ["▶ 수술", "Ⅱ 대기", "■ 종료"]
 
-# 2초 자동 새로고침
+# 2초 자동 새로고침 (새로고침 되어야 남이 쓴 글이 보입니다)
 st_autorefresh(interval=2000, key="datarefresh")
 
 # 한국 시간 구하기
@@ -55,6 +55,7 @@ def load_data():
 def save_data(df):
     df.to_csv(DATA_FILE, index=False, encoding='utf-8')
 
+# 공지사항 읽기
 def load_notice():
     if not os.path.exists(NOTICE_FILE):
         return ""
@@ -64,13 +65,20 @@ def load_notice():
     except:
         return ""
 
+# 공지사항 저장 (즉시 저장되도록 flush 추가)
 def save_notice_callback():
     new_notice = st.session_state["notice_area"]
-    with open(NOTICE_FILE, "w", encoding="utf-8") as f:
-        f.write(new_notice)
+    try:
+        with open(NOTICE_FILE, "w", encoding="utf-8") as f:
+            f.write(new_notice)
+            f.flush() 
+            os.fsync(f.fileno()) # 강제 저장
+    except:
+        pass
 
-# --- 동기화 로직 ---
+# --- 동기화 로직 (핵심 수정) ---
 def sync_session_state(df):
+    # 1. 수술실 현황 동기화
     for index, row in df.iterrows():
         room = row['Room']
         key_status = f"st_{room}"
@@ -86,12 +94,16 @@ def sync_session_state(df):
         if key_a not in st.session_state or st.session_state[key_a] != row['Afternoon']:
             st.session_state[key_a] = row['Afternoon']
 
+    # 2. 공지사항 동기화 [수정됨]
+    # 서버에 있는 내용(server_notice)이 내 화면(session_state)과 다르면
+    # 내 화면을 서버 내용으로 덮어씌웁니다. (그래야 남이 쓴게 보임)
     server_notice = load_notice()
     if "notice_area" not in st.session_state:
         st.session_state["notice_area"] = server_notice
     else:
+        # ★ 여기가 중요: 서버 내용이 다르면 내 화면 업데이트
         if st.session_state["notice_area"] != server_notice:
-             pass
+             st.session_state["notice_area"] = server_notice
 
 # --- 액션 함수 ---
 def reset_all_data():
@@ -220,44 +232,47 @@ st.markdown("""
         border: 1px solid #2196F3 !important;
     }
     
+    /* 공지사항 텍스트 박스 스타일 */
     div[data-testid="stTextArea"] textarea {
         background-color: #FFF9C4 !important;
         color: #333 !important;
         font-size: 14px !important; 
         font-weight: normal;        
         line-height: 1.5;
-        /* 1. 텍스트가 버튼 밑으로 들어가지 않게 하단 패딩 확보 */
+        /* 버튼이 들어갈 하단 여백 확보 */
         padding-bottom: 40px !important; 
     }
     
-    /* ★★★ [저장 버튼 위치 강력 수정 - 최종판] ★★★ */
-    /* 3번째 컬럼(공지사항) 안에 있는 버튼 컨테이너를 타겟팅 */
+    /* ★★★ [저장 버튼: 노란 박스 안으로 넣기] ★★★ */
+    /* 3번째 컬럼(공지사항) 안에 있는 버튼 컨테이너 타겟팅 */
     div[data-testid="column"]:nth-of-type(3) .stButton {
-        width: 100% !important;       /* 컨테이너 너비를 꽉 채움 */
-        display: flex !important;     /* 플렉스박스 사용 */
-        justify-content: flex-end !important; /* 내용물(버튼)을 오른쪽 끝으로 보냄 */
-        margin-top: -60px !important; /* 노란박스 안으로 강제로 끌어올림 */
-        padding-right: 15px !important; /* 오른쪽 벽에서 약간 띄움 */
+        width: 100% !important;       
+        display: flex !important;     
+        justify-content: flex-end !important; /* 오른쪽 정렬 */
+        
+        /* ★핵심: 마진을 음수로 주어 위로 끌어올림 */
+        margin-top: -50px !important; 
+        
+        padding-right: 10px !important; 
         position: relative !important;
-        z-index: 5 !important;        /* 텍스트박스보다 위에 오도록 */
-        pointer-events: none;         /* 컨테이너가 클릭을 방해하지 않게 */
+        z-index: 5 !important;        
     }
 
-    /* 버튼 자체 디자인 */
+    /* 버튼 디자인: 투명하게 만들어서 자연스럽게 */
     div[data-testid="column"]:nth-of-type(3) .stButton > button {
-        pointer-events: auto; /* 버튼은 클릭 가능해야 함 */
-        background-color: rgba(255, 255, 255, 0.5) !important; /* 반투명 흰색 */
-        border: 1px solid #CCC !important;
-        border-radius: 8px !important;
-        width: 2.5rem !important;
-        height: 2.5rem !important;
-        padding: 0px !important;
-        font-size: 1.5rem !important; /* 아이콘 크기 키움 */
+        background-color: transparent !important; /* 투명 배경 */
+        border: none !important;                  /* 테두리 없음 */
+        color: #555 !important;                   /* 아이콘 색상 */
+        
+        width: auto !important;
+        height: auto !important;
+        padding: 5px !important;
+        font-size: 1.5rem !important; /* 아이콘 크기 */
     }
-    /* 버튼 마우스 오버 효과 */
+    /* 마우스 올렸을 때 살짝 표시 */
     div[data-testid="column"]:nth-of-type(3) .stButton > button:hover {
-        background-color: white !important;
-        border-color: #999 !important;
+        color: #000 !important;
+        background-color: rgba(255,255,255,0.3) !important;
     }
 
 
@@ -296,6 +311,7 @@ st.markdown("### 🩺 JNUH OR Dashboard")
 st.markdown("---")
 
 df = load_data()
+# 데이터 로드 시 동기화 실행 (서버 내용 -> 내 화면)
 sync_session_state(df)
 
 col_a, col_b, col_notice = st.columns([1, 1, 0.5], gap="small")
@@ -314,7 +330,7 @@ with col_notice:
         on_change=save_notice_callback 
     )
     
-    # CSS로 위치가 강제 조정되는 버튼
+    # 버튼: 노란색 창 안쪽 하단에 위치 (CSS로 제어)
     if st.button("💾", help="저장하기"):
         save_notice_callback()
         st.toast("저장 완료!", icon="✅")
