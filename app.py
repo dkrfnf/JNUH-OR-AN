@@ -225,7 +225,6 @@ st.markdown("""
         border: 1px solid #2196F3 !important;
     }
     
-    /* 공지사항 스타일 */
     div[data-testid="stTextArea"] textarea {
         background-color: #FFF9C4 !important;
         color: #333 !important;
@@ -234,26 +233,26 @@ st.markdown("""
         line-height: 1.5;
     }
     
-    /* ★★★ [모바일 전용 CSS] ★★★ */
+    /* ★★★ [모바일 레이아웃 수정] ★★★ */
     @media (max-width: 640px) {
         
-        /* 1. 메인 화면의 큰 레이아웃(A구역, B구역, 공지사항)만 순서를 바꾼다 */
+        /* 1. 전체 화면 레이아웃: 세로로 쌓고 순서 변경 (공지사항이 위로) */
         div[data-testid="stHorizontalBlock"] {
-            display: flex !important;
             flex-direction: column !important;
         }
-        div[data-testid="stHorizontalBlock"] > div:nth-child(3) { order: 1; margin-bottom: 20px; } /* 공지사항 맨 위 */
+        div[data-testid="stHorizontalBlock"] > div:nth-child(3) { order: 1; margin-bottom: 20px; } /* 공지사항 */
         div[data-testid="stHorizontalBlock"] > div:nth-child(1) { order: 2; } /* A구역 */
         div[data-testid="stHorizontalBlock"] > div:nth-child(2) { order: 3; } /* B구역 */
 
-        /* 2. ★중요★ 카드 안에 있는 '오전/점심/오후'는 순서 바꿈의 영향을 받지 않게 '원상복구' 시킨다 */
+        /* 2. [중요] 카드 내부(수술실 입력칸)는 순서 변경 취소 및 가로 정렬 유지 */
+        /* 테두리(VerticalBlockBorderWrapper) 안에 있는 HorizontalBlock은 건드리지 마라 */
         div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] {
-            flex-direction: row !important; /* 가로 정렬 유지 */
+            flex-direction: row !important;
         }
-        /* 내부 컬럼 순서 강제 초기화 */
-        div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] > div:nth-child(1) { order: 0; }
-        div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] > div:nth-child(2) { order: 0; }
-        div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] > div:nth-child(3) { order: 0; }
+        /* 내부 항목들의 순서(order)를 0으로 초기화하여 원래 순서(오전->점심->오후)대로 보이게 함 */
+        div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] > div:nth-child(1) { order: 0 !important; }
+        div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] > div:nth-child(2) { order: 0 !important; }
+        div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] > div:nth-child(3) { order: 0 !important; margin-bottom: 0 !important; }
     }
 
     @media (max-width: 600px) {
