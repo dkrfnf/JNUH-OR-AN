@@ -9,7 +9,7 @@ ZONE_A = ["A1", "A2", "A3", "A4", "A5", "A6", "A7"]
 ZONE_B = ["B1", "B2", "B3", "B4", "C2", "Angio", "회복실"]
 ALL_ROOMS = ZONE_A + ZONE_B
 DATA_FILE = 'or_status_kst.csv'
-NOTICE_FILE = 'notice.txt'  # 공지사항 저장 파일
+NOTICE_FILE = 'notice.txt'
 OP_STATUS = ["▶ 수술", "Ⅱ 대기", "■ 종료"]
 
 # 2초 자동 새로고침
@@ -24,7 +24,7 @@ def get_korean_time():
 def get_room_index(df, room_name):
     return df[df['Room'] == room_name].index[0]
 
-# --- 데이터 로드/저장 (수술실 현황) ---
+# --- 데이터 로드/저장 ---
 def load_data():
     try:
         if not os.path.exists(DATA_FILE):
@@ -55,7 +55,6 @@ def load_data():
 def save_data(df):
     df.to_csv(DATA_FILE, index=False, encoding='utf-8')
 
-# --- 공지사항 로드/저장 ---
 def load_notice():
     if not os.path.exists(NOTICE_FILE):
         return ""
@@ -94,7 +93,6 @@ def sync_session_state(df):
         if st.session_state["notice_area"] != server_notice:
              pass
 
-# --- 액션 함수 ---
 def reset_all_data():
     df = load_data()
     now_time = get_korean_time()
@@ -168,7 +166,6 @@ def render_final_card(room_name, df):
                 args=(room_name, 'Status', key_status)
             )
 
-        # ★ 중요: 이곳의 s1, s2, s3 순서가 CSS 때문에 뒤섞이지 않도록 수정됨
         s1, s2, s3 = st.columns(3)
         key_m = f"m_{room_name}"
         key_l = f"l_{room_name}"
@@ -231,51 +228,51 @@ st.markdown("""
         padding-bottom: 10px !important; 
     }
     
-    /* ★★★ [저장 버튼 오른쪽 아래 배치] ★★★ */
-    /* 공지사항 영역(3번째 메인 컬럼) 내의 버튼 스타일 지정 */
-    div[data-testid="column"]:nth-of-type(3) button {
-        float: right !important;      /* 오른쪽 정렬 */
-        margin-top: -45px !important; /* 위로 끌어올리기 */
-        margin-right: 5px !important;
-        
-        /* 버튼 디자인 */
-        background-color: rgba(255, 255, 255, 0.8) !important;
-        border: 1px solid #ddd !important;
-        border-radius: 8px !important;
-        z-index: 99 !important; 
-        height: 2.2rem !important;
-        width: 2.2rem !important;
-        padding: 0px !important;
+    /* ★★★ [저장 버튼 위치 강력 수정] ★★★ */
+    /* 3번째 컬럼(Notice) 안에 있는 버튼 래퍼(div)를 타겟팅합니다 */
+    /* nth-child(3)는 DOM 순서상 공지사항 컬럼을 가리킵니다 */
+    div[data-testid="column"]:nth-of-type(3) div[data-testid="stButton"] {
+        display: flex !important;
+        justify-content: flex-end !important; /* 오른쪽 정렬 */
+        margin-top: -50px !important;         /* 위로 50px 끌어올림 (노란박스 안으로) */
+        margin-right: 10px !important;        /* 오른쪽 여백 */
+        position: relative !important;        /* 위치 기준점 */
+        z-index: 2 !important;                /* 텍스트박스 위로 올라오게 */
     }
 
-    /* ★★★ [모바일 레이아웃 수정 - 오전/점심/오후 순서 복구] ★★★ */
+    /* 버튼 자체 디자인 */
+    div[data-testid="column"]:nth-of-type(3) button {
+        background-color: rgba(255, 255, 255, 0.6) !important; /* 반투명 */
+        border: 1px solid #CCC !important;
+        width: 2rem !important;
+        height: 2rem !important;
+        padding: 0px !important;
+    }
+    div[data-testid="column"]:nth-of-type(3) button:hover {
+        background-color: white !important;
+        border-color: black !important;
+    }
+
+    /* ★★★ [모바일 레이아웃] ★★★ */
     @media (max-width: 640px) {
-        
-        /* 1. [메인 화면] 공지사항을 맨 위로 */
-        /* data-testid="stMainBlock" 바로 아래의 첫번째 HorizontalBlock이 메인 3단 컬럼임 */
+        /* 메인 화면 컬럼 순서 변경 (공지사항 위로) */
         .block-container > div > div > div[data-testid="stHorizontalBlock"] {
             flex-direction: column !important;
         }
-        /* 공지사항(3번째) -> 1번 */
         .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(3) { 
-            order: 1; 
-            margin-bottom: 20px; 
+            order: 1; margin-bottom: 20px; 
         }
-        /* A구역(1번째) -> 2번 */
         .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(1) { 
             order: 2; 
         }
-        /* B구역(2번째) -> 3번 */
         .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(2) { 
             order: 3; 
         }
 
-        /* 2. [카드 내부] 오전/점심/오후 순서 섞임 방지 (매우 중요) */
-        /* 테두리 박스(stVerticalBlockBorderWrapper) 안에 있는 HorizontalBlock은 순서 변경 금지 */
+        /* 카드 내부 (오전/점심/오후) 순서 고정 (중요) */
         div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] {
-            flex-direction: row !important; /* 가로 정렬 유지 */
+            flex-direction: row !important;
         }
-        /* 내부 아이템들의 order 속성을 초기화 */
         div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] > div {
             order: unset !important;
             margin-bottom: 0px !important;
@@ -310,7 +307,6 @@ with col_notice:
         on_change=save_notice_callback 
     )
     
-    # CSS로 위치 조정됨 (오른쪽 아래)
     if st.button("💾", help="저장하기"):
         save_notice_callback()
         st.toast("저장 완료!", icon="✅")
