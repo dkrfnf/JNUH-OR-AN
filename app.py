@@ -168,6 +168,7 @@ def render_final_card(room_name, df):
                 args=(room_name, 'Status', key_status)
             )
 
+        # ★ 중요: 이곳의 s1, s2, s3 순서가 CSS 때문에 뒤섞이지 않도록 수정됨
         s1, s2, s3 = st.columns(3)
         key_m = f"m_{room_name}"
         key_l = f"l_{room_name}"
@@ -227,52 +228,58 @@ st.markdown("""
         font-size: 14px !important; 
         font-weight: normal;        
         line-height: 1.5;
-        /* 버튼이 겹칠 공간 확보 */
-        padding-bottom: 35px !important; 
+        padding-bottom: 10px !important; 
     }
     
-    /* ★★★ [저장 버튼 오버레이 스타일] ★★★ */
-    /* 공지사항 컬럼(3번째)에 있는 버튼만 타겟팅하여 위치 이동 */
-    /* DOM 구조상 3번째 메인 컬럼 -> 그 안의 버튼 */
-    div[data-testid="stHorizontalBlock"] > div:nth-child(3) button {
-        float: right;
-        /* 위로 끌어올려서 textarea 안으로 넣기 */
-        transform: translateY(-45px); 
-        margin-right: 5px;
+    /* ★★★ [저장 버튼 오른쪽 아래 배치] ★★★ */
+    /* 공지사항 영역(3번째 메인 컬럼) 내의 버튼 스타일 지정 */
+    div[data-testid="column"]:nth-of-type(3) button {
+        float: right !important;      /* 오른쪽 정렬 */
+        margin-top: -45px !important; /* 위로 끌어올리기 */
+        margin-right: 5px !important;
         
-        /* 버튼 디자인: 반투명, 그림자, 둥글게 */
+        /* 버튼 디자인 */
         background-color: rgba(255, 255, 255, 0.8) !important;
         border: 1px solid #ddd !important;
         border-radius: 8px !important;
-        z-index: 99 !important; /* 텍스트박스 위에 오도록 */
-        
-        /* 크기 조절 */
+        z-index: 99 !important; 
         height: 2.2rem !important;
         width: 2.2rem !important;
         padding: 0px !important;
     }
-    /* 버튼 호버 효과 */
-    div[data-testid="stHorizontalBlock"] > div:nth-child(3) button:hover {
-        background-color: #FFFFFF !important;
-        border-color: #aaa !important;
-        color: #000 !important;
-    }
 
-    /* ★★★ [모바일 레이아웃] ★★★ */
+    /* ★★★ [모바일 레이아웃 수정 - 오전/점심/오후 순서 복구] ★★★ */
     @media (max-width: 640px) {
-        div[data-testid="stHorizontalBlock"] {
+        
+        /* 1. [메인 화면] 공지사항을 맨 위로 */
+        /* data-testid="stMainBlock" 바로 아래의 첫번째 HorizontalBlock이 메인 3단 컬럼임 */
+        .block-container > div > div > div[data-testid="stHorizontalBlock"] {
             flex-direction: column !important;
         }
-        div[data-testid="stHorizontalBlock"] > div:nth-child(3) { order: 1; margin-bottom: 20px; } 
-        div[data-testid="stHorizontalBlock"] > div:nth-child(1) { order: 2; } 
-        div[data-testid="stHorizontalBlock"] > div:nth-child(2) { order: 3; } 
-
-        div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] {
-            flex-direction: row !important;
+        /* 공지사항(3번째) -> 1번 */
+        .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(3) { 
+            order: 1; 
+            margin-bottom: 20px; 
         }
-        div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] > div:nth-child(1) { order: 0 !important; }
-        div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] > div:nth-child(2) { order: 0 !important; }
-        div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] > div:nth-child(3) { order: 0 !important; margin-bottom: 0 !important; }
+        /* A구역(1번째) -> 2번 */
+        .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(1) { 
+            order: 2; 
+        }
+        /* B구역(2번째) -> 3번 */
+        .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(2) { 
+            order: 3; 
+        }
+
+        /* 2. [카드 내부] 오전/점심/오후 순서 섞임 방지 (매우 중요) */
+        /* 테두리 박스(stVerticalBlockBorderWrapper) 안에 있는 HorizontalBlock은 순서 변경 금지 */
+        div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] {
+            flex-direction: row !important; /* 가로 정렬 유지 */
+        }
+        /* 내부 아이템들의 order 속성을 초기화 */
+        div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] > div {
+            order: unset !important;
+            margin-bottom: 0px !important;
+        }
     }
 
     @media (max-width: 600px) {
@@ -303,7 +310,7 @@ with col_notice:
         on_change=save_notice_callback 
     )
     
-    # 버튼은 CSS로 위치를 강제 이동시킴
+    # CSS로 위치 조정됨 (오른쪽 아래)
     if st.button("💾", help="저장하기"):
         save_notice_callback()
         st.toast("저장 완료!", icon="✅")
