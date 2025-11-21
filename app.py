@@ -73,12 +73,21 @@ def load_data():
 def save_data(df):
     df.to_csv(DATA_FILE, index=False, encoding='utf-8')
 
+# ★ 서버 데이터 -> 내 화면 강제 동기화 (공지사항 포함)
 def sync_session_state(df):
+    # 1. 공지사항 동기화 (이게 있어야 PC-모바일 호환됨)
+    server_notice = load_notice()
+    if "notice_input" not in st.session_state or st.session_state["notice_input"] != server_notice:
+        st.session_state["notice_input"] = server_notice
+
+    # 2. 수술방 데이터 동기화
     for index, row in df.iterrows():
         room = row['Room']
+        
         key_status = f"st_{room}"
         if key_status not in st.session_state or st.session_state[key_status] != row['Status']:
             st.session_state[key_status] = row['Status']
+            
         key_m = f"m_{room}"
         if key_m not in st.session_state or st.session_state[key_m] != row['Morning']:
             st.session_state[key_m] = row['Morning']
@@ -126,10 +135,8 @@ def update_data_callback(room_name, col_name, session_key):
                 df.loc[idx, 'Last_Update'] = get_korean_time()
             save_data(df)
 
-# ★ 저장 버튼 클릭 시 호출되는 함수 (알림 표시용)
 def manual_save(room_name):
-    # 이미 on_change에서 저장은 되지만, 사용자를 안심시키기 위해 메시지 출력
-    st.toast(f"✅ {room_name} 저장되었습니다!", icon="💾")
+    st.toast(f"✅ {room_name} 저장 완료!", icon="💾")
 
 # --- UI 렌더링 ---
 def render_final_card(room_name, df):
@@ -152,11 +159,14 @@ def render_final_card(room_name, df):
     current_icon = status.split(" ")[0] 
 
     with st.container(border=True):
-        c1, c2 = st.columns([2, 1])
+        # ★ 상단 3분할: [방번호(2)] [저장버튼(0.8)] [상태선택(1.2)]
+        c1, c2, c3 = st.columns([1.8, 0.8, 1.4])
+        
+        # 1. 방 번호
         with c1:
             st.markdown(f"""
                 <div style='
-                    width: 45%; 
+                    width: 100%; 
                     font-size: 1.2rem;
                     font-weight:bold;
                     color:{text_color};
@@ -170,7 +180,13 @@ def render_final_card(room_name, df):
                     <span style='color:{icon_color}; margin-right: 5px;'>{current_icon}</span>{room_name}
                 </div>
                 """, unsafe_allow_html=True)
+        
+        # 2. 저장 버튼 (가운데 배치)
         with c2:
+            st.button("💾", key=f"sv_{room_name}", on_click=manual_save, args=(room_name,), use_container_width=True)
+
+        # 3. 상태 선택
+        with c3:
             key_status = f"st_{room_name}"
             st.selectbox(
                 "상태", OP_STATUS,
@@ -187,14 +203,7 @@ def render_final_card(room_name, df):
         s2.text_input("점심", key=key_l, placeholder="", label_visibility="collapsed", on_change=update_data_callback, args=(room_name, 'Lunch', key_l))
         s3.text_input("오후", key=key_a, placeholder="", label_visibility="collapsed", on_change=update_data_callback, args=(room_name, 'Afternoon', key_a))
 
-        # ★ 저장 버튼 & 시간 표시 영역
-        b_col, t_col = st.columns([1, 2])
-        with b_col:
-            # 저장 버튼: 클릭 시 manual_save 함수 실행
-            st.button("💾 저장", key=f"save_btn_{room_name}", on_click=manual_save, args=(room_name,), use_container_width=True)
-        with t_col:
-            # 시간 표시: 버튼과 높이를 맞추기 위해 마진 조정
-            st.markdown(f"<div style='text-align: right; font-size: 11px; color: #888; padding-top: 10px;'>최종 업데이트: <b>{row['Last_Update']}</b></div>", unsafe_allow_html=True)
+        st.markdown(f"<p style='text-align: right; font-size: 10px; color: #888; margin-top: 2px; margin-bottom: 0;'>최종 업데이트: **{row['Last_Update']}**</p>", unsafe_allow_html=True)
 
 def render_zone(col, title, zone_list, df):
     with col:
@@ -231,12 +240,16 @@ st.markdown("""
     div[data-testid="stTextInput"] div[data-baseweb="input"]:focus-within { border: 1px solid #2196F3 !important; }
     div[data-testid="stVerticalBlockBorderWrapper"] > div { padding: 10px !important; }
     
-    /* 일반 버튼 스타일 */
+    /* 일반 버튼 */
     button p { font-size: 14px; font-weight: bold; }
-    /* 저장 버튼(secondary) 스타일 미세 조정 */
+    
+    /* 저장 버튼(중앙) 스타일 최적화 */
     div[data-testid="stButton"] button {
-        height: 30px;
-        padding-top: 0px; padding-bottom: 0px;
+        min-height: 0px !important;
+        height: 32px !important; /* 높이를 옆의 칸들과 동일하게 */
+        padding: 0px !important;
+        margin: 0px !important;
+        border: 1px solid #E0E0E0;
     }
 
     div[data-testid="stVerticalBlock"] > div > [data-testid="stVerticalBlock"] { margin-top: -10px !important; }
@@ -261,7 +274,7 @@ with c_notice:
 st.markdown("---")
 
 df = load_data()
-sync_session_state(df)
+sync_session_state(df) # ★ 공지사항 및 데이터 강제 동기화 실행
 
 # 2. 메인 현황판
 left_col, right_col = st.columns(2, gap="small")
