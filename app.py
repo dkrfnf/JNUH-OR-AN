@@ -143,9 +143,9 @@ def render_final_card(room_name, df):
     current_icon = status.split(" ")[0] 
 
     with st.container(border=True):
-        # 1열: 방 이름 + 상태
         c1, c2 = st.columns([2, 1])
         with c1:
+            # ★ 수정: margin-bottom을 추가하여 방 이름과 드롭다운 사이 간격 확보
             st.markdown(f"""
                 <div style='
                     width: 45%; 
@@ -157,6 +157,7 @@ def render_final_card(room_name, df):
                     border-radius: 6px;
                     text-align: center;
                     display: block;
+                    margin-bottom: 8px; /* 간격 추가 */
                 '>
                     <span style='color:{icon_color}; margin-right: 5px;'>{current_icon}</span>{room_name}
                 </div>
@@ -172,7 +173,6 @@ def render_final_card(room_name, df):
                 args=(room_name, 'Status', key_status)
             )
 
-        # 2열: 입력창 (오전/점심/오후)
         s1, s2, s3 = st.columns(3)
         key_m = f"m_{room_name}"
         key_l = f"l_{room_name}"
@@ -185,9 +185,8 @@ def render_final_card(room_name, df):
         s3.text_input("오후", key=key_a, placeholder="", label_visibility="collapsed",
                       on_change=update_data_callback, args=(room_name, 'Afternoon', key_a))
 
-        # 3열: 하단 (저장 버튼 + 시간) - 여백 최소화
-        # [빈공간(5) | 버튼(1) | 시간(2)]
-        f1, f2, f3 = st.columns([5, 1, 2])
+        # 하단: 저장 버튼 (여백 최소화)
+        f1, f2, f3 = st.columns([5, 0.8, 2]) 
         
         with f2:
             if st.button("💾", key=f"save_btn_{room_name}", help=f"{room_name} 저장"):
@@ -200,7 +199,7 @@ def render_final_card(room_name, df):
                     text-align: right; 
                     font-size: 10px; 
                     color: #999; 
-                    margin-top: 4px; /* 버튼과 수직 정렬 맞춤 */
+                    margin-top: 8px;
                     line-height: 1.2;
                 '>
                     Update<br>{row['Last_Update']}
@@ -221,29 +220,27 @@ st.markdown("""
     <style>
     .block-container { padding: 1rem; }
     
-    /* 1. 카드 내부 요소 간격 확 줄이기 (핵심) */
+    /* 카드 내부 간격 최소화 */
     div[data-testid="stVerticalBlockBorderWrapper"] > div > div > div {
-        gap: 0.2rem !important; /* 기본값 1rem -> 0.2rem으로 축소 */
+        gap: 0.3rem !important; 
     }
     
     hr { margin-top: 0.2rem !important; margin-bottom: 0.5rem !important; }
     h3, h4 { margin-bottom: 0rem !important; padding-top: 0rem !important; }
     
-    /* Selectbox 스타일 */
+    /* Selectbox & Input 스타일 */
     div[data-testid="stSelectbox"] div[data-baseweb="select"] > div {
         padding-top: 0px; padding-bottom: 0px; padding-left: 5px;
-        height: 30px; min-height: 30px; /* 높이 약간 축소 */
+        height: 32px; min-height: 32px; 
         font-size: 14px; display: flex; align-items: center;
         border-color: #E0E0E0;
     }
-    
-    /* TextInput 스타일 */
     div[data-testid="stTextInput"] div[data-baseweb="input"] {
         background-color: #FFFFFF !important; 
         border: 1px solid #CCCCCC !important;
         border-radius: 4px;
         padding-top: 0px; padding-bottom: 0px;
-        height: 30px; min-height: 30px; /* 높이 약간 축소 */
+        height: 32px; min-height: 32px;
     }
     div[data-testid="stTextInput"] input {
         background-color: #FFFFFF !important; 
@@ -254,7 +251,6 @@ st.markdown("""
         border: 1px solid #2196F3 !important;
     }
     
-    /* 공지사항 스타일 */
     div[data-testid="stTextArea"] textarea {
         background-color: #FFF9C4 !important;
         color: #333 !important;
@@ -263,28 +259,28 @@ st.markdown("""
         line-height: 1.5;
     }
 
-    /* 2. 저장 버튼 주변 여백 제거 및 컴팩트하게 */
-    div[data-testid="column"] button {
+    /* ★★★ [수정됨] 카드 내부 저장 버튼 스타일 (아주 작고 타이트하게) ★★★ */
+    /* 'stVerticalBlockBorderWrapper' 안에 있는 버튼만 타겟팅 (공지사항 버튼 제외) */
+    div[data-testid="stVerticalBlockBorderWrapper"] button {
         padding: 0px 0px !important;
         margin: 0px !important;
         min-height: 0px !important;
-        height: 24px !important;  /* 버튼 높이 축소 */
-        width: 100% !important;
-        border: 1px solid #eee !important;
+        height: auto !important;  /* 높이 자동 (아이콘에 맞춤) */
+        width: auto !important;   /* 너비 자동 */
+        border: 1px solid #ddd !important;
         background-color: transparent !important;
         line-height: 1 !important;
+        font-size: 12px !important; /* 아이콘 크기 축소 */
+        display: inline-flex !important;
+        justify-content: center !important;
+        align-items: center !important;
+        padding: 4px 8px !important; /* 아이콘 주변 여백 최소화 */
     }
-    div[data-testid="column"] button:hover {
-        border: 1px solid #bbb !important;
+    div[data-testid="stVerticalBlockBorderWrapper"] button:hover {
+        border: 1px solid #aaa !important;
         background-color: #f0f0f0 !important;
     }
     
-    /* 버튼이 있는 컬럼의 기본 패딩 제거 */
-    div[data-testid="column"] {
-        min-width: 0px !important;
-    }
-
-
     /* 모바일 레이아웃 */
     @media (max-width: 640px) {
         .block-container > div > div > div[data-testid="stHorizontalBlock"] {
