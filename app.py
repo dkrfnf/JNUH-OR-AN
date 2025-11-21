@@ -12,7 +12,7 @@ DATA_FILE = 'or_status_kst.csv'
 NOTICE_FILE = 'notice.txt'
 OP_STATUS = ["▶ 수술", "Ⅱ 대기", "■ 종료"]
 
-# 2초 자동 새로고침 (다른 사람이 쓴 글을 보기 위해 필수)
+# 2초 자동 새로고침
 st_autorefresh(interval=2000, key="datarefresh")
 
 # 한국 시간 구하기
@@ -76,7 +76,6 @@ def save_notice_callback():
 
 # --- 동기화 로직 ---
 def sync_session_state(df):
-    # 1. 수술실 현황 동기화
     for index, row in df.iterrows():
         room = row['Room']
         key_status = f"st_{room}"
@@ -92,12 +91,10 @@ def sync_session_state(df):
         if key_a not in st.session_state or st.session_state[key_a] != row['Afternoon']:
             st.session_state[key_a] = row['Afternoon']
 
-    # 2. 공지사항 동기화 (남이 쓴 글 불러오기)
     server_notice = load_notice()
     if "notice_area" not in st.session_state:
         st.session_state["notice_area"] = server_notice
     else:
-        # 내 화면의 글과 서버의 글이 다르면 업데이트
         if st.session_state["notice_area"] != server_notice:
              st.session_state["notice_area"] = server_notice
 
@@ -146,7 +143,7 @@ def render_final_card(room_name, df):
     current_icon = status.split(" ")[0] 
 
     with st.container(border=True):
-        # [1열] 방 이름 | 상태 선택
+        # 1열: 방 이름 + 상태
         c1, c2 = st.columns([2, 1])
         with c1:
             st.markdown(f"""
@@ -156,11 +153,10 @@ def render_final_card(room_name, df):
                     font-weight:bold;
                     color:{text_color};
                     background-color:{bg_color};
-                    padding: 4px 0px; 
+                    padding: 2px 0px; 
                     border-radius: 6px;
                     text-align: center;
                     display: block;
-                    margin-top: 1px;
                 '>
                     <span style='color:{icon_color}; margin-right: 5px;'>{current_icon}</span>{room_name}
                 </div>
@@ -176,7 +172,7 @@ def render_final_card(room_name, df):
                 args=(room_name, 'Status', key_status)
             )
 
-        # [2열] 입력창 (오전, 점심, 오후)
+        # 2열: 입력창 (오전/점심/오후)
         s1, s2, s3 = st.columns(3)
         key_m = f"m_{room_name}"
         key_l = f"l_{room_name}"
@@ -189,28 +185,25 @@ def render_final_card(room_name, df):
         s3.text_input("오후", key=key_a, placeholder="", label_visibility="collapsed",
                       on_change=update_data_callback, args=(room_name, 'Afternoon', key_a))
 
-        # [3열] 하단 정보 (빈칸 | 저장버튼 | 시간)
-        # 비율 조절: 왼쪽 여백(4) | 버튼(1) | 시간(2)
-        f1, f2, f3 = st.columns([4, 0.8, 1.5])
+        # 3열: 하단 (저장 버튼 + 시간) - 여백 최소화
+        # [빈공간(5) | 버튼(1) | 시간(2)]
+        f1, f2, f3 = st.columns([5, 1, 2])
         
-        # 가운데: 저장 버튼
         with f2:
-            # 각 방마다 고유한 key 필요
-            if st.button("💾", key=f"save_btn_{room_name}", help=f"{room_name} 저장하기"):
-                # 버튼 누르면 강제 저장
+            if st.button("💾", key=f"save_btn_{room_name}", help=f"{room_name} 저장"):
                 save_data(df)
-                st.toast(f"{room_name} 저장 완료!", icon="✅")
+                st.toast(f"저장됨 ({room_name})", icon="✅")
         
-        # 오른쪽: 업데이트 시간
         with f3:
             st.markdown(f"""
                 <div style='
                     text-align: right; 
-                    font-size: 11px; 
-                    color: #888; 
-                    margin-top: 8px;
+                    font-size: 10px; 
+                    color: #999; 
+                    margin-top: 4px; /* 버튼과 수직 정렬 맞춤 */
+                    line-height: 1.2;
                 '>
-                    Update: {row['Last_Update']}
+                    Update<br>{row['Last_Update']}
                 </div>
                 """, unsafe_allow_html=True)
 
@@ -227,22 +220,30 @@ st.set_page_config(page_title="JNUH OR", layout="wide")
 st.markdown("""
     <style>
     .block-container { padding: 1rem; }
-    div[data-testid="stVerticalBlock"] > div { gap: 0rem; }
+    
+    /* 1. 카드 내부 요소 간격 확 줄이기 (핵심) */
+    div[data-testid="stVerticalBlockBorderWrapper"] > div > div > div {
+        gap: 0.2rem !important; /* 기본값 1rem -> 0.2rem으로 축소 */
+    }
+    
     hr { margin-top: 0.2rem !important; margin-bottom: 0.5rem !important; }
     h3, h4 { margin-bottom: 0rem !important; padding-top: 0rem !important; }
     
+    /* Selectbox 스타일 */
     div[data-testid="stSelectbox"] div[data-baseweb="select"] > div {
         padding-top: 0px; padding-bottom: 0px; padding-left: 5px;
-        height: 32px; min-height: 32px;
-        font-size: 15px; display: flex; align-items: center;
+        height: 30px; min-height: 30px; /* 높이 약간 축소 */
+        font-size: 14px; display: flex; align-items: center;
         border-color: #E0E0E0;
     }
+    
+    /* TextInput 스타일 */
     div[data-testid="stTextInput"] div[data-baseweb="input"] {
         background-color: #FFFFFF !important; 
         border: 1px solid #CCCCCC !important;
         border-radius: 4px;
         padding-top: 0px; padding-bottom: 0px;
-        height: 32px; min-height: 32px;
+        height: 30px; min-height: 30px; /* 높이 약간 축소 */
     }
     div[data-testid="stTextInput"] input {
         background-color: #FFFFFF !important; 
@@ -253,7 +254,7 @@ st.markdown("""
         border: 1px solid #2196F3 !important;
     }
     
-    /* 공지사항 스타일 복구 (노란 배경) */
+    /* 공지사항 스타일 */
     div[data-testid="stTextArea"] textarea {
         background-color: #FFF9C4 !important;
         color: #333 !important;
@@ -262,21 +263,29 @@ st.markdown("""
         line-height: 1.5;
     }
 
-    /* 각 방의 저장 버튼 스타일 (작고 깔끔하게) */
+    /* 2. 저장 버튼 주변 여백 제거 및 컴팩트하게 */
     div[data-testid="column"] button {
-        padding: 0px 5px !important;
+        padding: 0px 0px !important;
+        margin: 0px !important;
         min-height: 0px !important;
-        height: 26px !important;
+        height: 24px !important;  /* 버튼 높이 축소 */
+        width: 100% !important;
         border: 1px solid #eee !important;
         background-color: transparent !important;
+        line-height: 1 !important;
     }
     div[data-testid="column"] button:hover {
         border: 1px solid #bbb !important;
         background-color: #f0f0f0 !important;
     }
+    
+    /* 버튼이 있는 컬럼의 기본 패딩 제거 */
+    div[data-testid="column"] {
+        min-width: 0px !important;
+    }
 
 
-    /* ★★★ [모바일 레이아웃] ★★★ */
+    /* 모바일 레이아웃 */
     @media (max-width: 640px) {
         .block-container > div > div > div[data-testid="stHorizontalBlock"] {
             flex-direction: column !important;
@@ -291,7 +300,6 @@ st.markdown("""
             order: 3; 
         }
 
-        /* 카드 내부 (오전/점심/오후) 순서 고정 */
         div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] {
             flex-direction: row !important;
         }
@@ -311,7 +319,6 @@ st.markdown("### 🩺 JNUH OR Dashboard")
 st.markdown("---")
 
 df = load_data()
-# 데이터 로드 시 동기화
 sync_session_state(df)
 
 col_a, col_b, col_notice = st.columns([1, 1, 0.5], gap="small")
@@ -321,7 +328,6 @@ render_zone(col_b, "B / C / 기타", ZONE_B, df)
 
 with col_notice:
     st.markdown("#### 📢 공지사항")
-    # 공지사항: 기본 스타일로 복귀 (동기화 안정성 확보)
     st.text_area(
         "공지사항 내용",
         key="notice_area",
@@ -331,7 +337,6 @@ with col_notice:
         on_change=save_notice_callback 
     )
     
-    # 공지사항 저장 버튼 (아래에 배치)
     if st.button("공지사항 저장", use_container_width=True):
         save_notice_callback()
         st.toast("공지사항 저장됨", icon="✅")
