@@ -22,10 +22,9 @@ def get_room_index(df, room_name):
     """방 이름에 해당하는 DataFrame 인덱스 반환"""
     return df[df['Room'] == room_name].index[0]
 
-# ★ 수정: try-except 블록을 추가하여 데이터 읽기 오류 시 자가 복구
+# --- 데이터 로드 및 저장 함수 (이전 버전과 동일) ---
 def load_data():
     try:
-        # 1. 파일이 없으면 새 파일 생성
         if not os.path.exists(DATA_FILE):
             now_time = get_current_time()
             data = {
@@ -40,34 +39,29 @@ def load_data():
             df.to_csv(DATA_FILE, index=False, encoding='utf-8')
             return df
         
-        # 2. 파일이 있으면 UTF-8로 읽기 시도
         df = pd.read_csv(DATA_FILE, encoding='utf-8')
         
     except UnicodeDecodeError:
-        # 3. 읽기 실패 시 (파일이 깨졌을 경우), 파일을 삭제하고 다시 시작
         print("ALERT: Detected corrupt CSV file. Forcing data reset.")
         if os.path.exists(DATA_FILE):
             os.remove(DATA_FILE)
-            return load_data() # 재귀 호출로 처음부터 다시 시작 (새 파일 생성)
-        # 이 경로로 올 일은 없지만, 안전을 위해 예외 처리
+            return load_data()
         raise Exception("Critical: Could not load data even after deleting corrupt file.") 
 
-    # 4. 데이터 건전성 검사 (기존 로직 유지)
     if len(df) != len(ALL_ROOMS) or df.loc[0, 'Status'] not in OP_STATUS:
         os.remove(DATA_FILE)
         return load_data()
         
     return df.fillna('')
 
-# 데이터 저장 (기존 로직 유지)
 def save_data(df):
     df.to_csv(DATA_FILE, index=False, encoding='utf-8')
 
-# --- 액션 함수 (생략: 변경 없음) ---
+# --- 액션 함수 ---
 
 def reset_all_data():
-    now_time = get_current_time() 
     df = load_data()
+    now_time = get_current_time()
     
     df['Status'] = '▶ 수술'
     df['Morning'] = ''
@@ -77,6 +71,7 @@ def reset_all_data():
     save_data(df)
 
     for room in ALL_ROOMS:
+        # Session state 초기화 코드 (생략)
         if f"st_{room}" in st.session_state: st.session_state[f"st_{room}"] = "▶ 수술"
         if f"m_{room}" in st.session_state: st.session_state[f"m_{room}"] = ""
         if f"l_{room}" in st.session_state: st.session_state[f"l_{room}"] = ""
@@ -94,26 +89,27 @@ def update_status(room_name, new_status):
         save_data(df)
         st.rerun()
 
-def update_shift(room_name, col, value):
-    df = load_data()
-    idx = get_room_index(df, room_name)
+# ★ 수정: 이름을 Session State에서 직접 가져와 저장하도록 콜백 구조 변경
+def update_shift_callback(room_name, col_name, session_key):
+    # Session State에서 현재 입력된 값 가져오기
+    new_value = st.session_state.get(session_key) 
     
-    if df.loc[idx, col] != value:
-        df.loc[idx, col] = value
-        save_data(df)
+    if new_value is not None:
+        df = load_data()
+        idx = get_room_index(df, room_name)
+        
+        # 값이 변경되었을 때만 저장
+        if df.loc[idx, col_name] != new_value:
+            df.loc[idx, col_name] = new_value
+            save_data(df)
+            # 상태 변경과 달리, 텍스트 입력은 별도의 st.rerun()을 하지 않습니다.
 
-# --- UI 렌더링 함수 (생략: 변경 없음) ---
-
-def get_room_index(df, room_name):
-    return df[df['Room'] == room_name].index[0]
-
-def get_current_time():
-    return datetime.now().strftime("%H:%M")
+# --- UI 렌더링 함수 ---
 
 def render_final_card(room_name, df):
     row = df[df['Room'] == room_name].iloc[0]
     status = row['Status']
-
+    # ... (색상 로직은 생략) ...
     if "수술" in status:
         bg_color = "#E0F2FE"     
         icon_color = "#0EA5E9"   
@@ -155,18 +151,26 @@ def render_final_card(room_name, df):
                 index=OP_STATUS.index(status),
                 label_visibility="collapsed"
             )
-            if new_status != status: update_status(room_name, new_status)
+            if new_status != status: update_status(room_name, new_status) # 상태 변경 시 강제 리런
 
         s1, s2, s3 = st.columns(3)
-        val_m = s1.text_input("오전", value=row['Morning'], key=f"m_{room_name}", placeholder="", label_visibility="collapsed")
-        val_l = s2.text_input("점심", value=row['Lunch'], key=f"l_{room_name}", placeholder="", label_visibility="collapsed")
-        val_a = s3.text_input("오후", value=row['Afternoon'], key=f"a_{room_name}", placeholder="", label_visibility="collapsed")
-
-        if val_m != row['Morning']: update_shift(room_name, 'Morning', val_m)
-        if val_l != row['Lunch']: update_shift(room_name, 'Lunch', val_l)
-        if val_a != row['Afternoon']: update_shift(room_name, 'Afternoon', val_a)
+        
+        # ★ 수정: on_change 콜백 추가 (이름 입력 완료 시 즉시 저장)
+        key_m = f"m_{room_name}"
+        key_l = f"l_{room_name}"
+        key_a = f"a_{room_name}"
+        
+        s1.text_input("오전", value=row['Morning'], key=key_m, placeholder="", label_visibility="collapsed",
+                      on_change=update_shift_callback, args=(room_name, 'Morning', key_m))
+        s2.text_input("점심", value=row['Lunch'], key=key_l, placeholder="", label_visibility="collapsed",
+                      on_change=update_shift_callback, args=(room_name, 'Lunch', key_l))
+        s3.text_input("오후", value=row['Afternoon'], key=key_a, placeholder="", label_visibility="collapsed",
+                      on_change=update_shift_callback, args=(room_name, 'Afternoon', key_a))
+        
+        # 기존의 if 문을 모두 제거함 (on_change 콜백이 대신 처리)
 
         st.markdown(f"<p style='text-align: right; font-size: 10px; color: #888; margin-top: 5px; margin-bottom: 0;'>최종 업데이트: **{row['Last_Update']}**</p>", unsafe_allow_html=True)
+
 
 def render_zone(col, title, zone_list, df):
     with col:
@@ -174,12 +178,13 @@ def render_zone(col, title, zone_list, df):
         for room in zone_list:
             render_final_card(room, df)
 
-# --- 메인 실행 ---
+# --- 메인 실행 (생략: CSS 및 헤더 부분 동일) ---
 
 st.set_page_config(page_title="JNUH OR", layout="wide")
 
 st.markdown("""
     <style>
+    /* ... (CSS 코드는 이전과 동일) ... */
     .block-container { padding: 1rem; }
     div[data-testid="stVerticalBlock"] > div { gap: 0rem; }
 
@@ -223,7 +228,7 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- 상단 헤더 ---
+
 c_head1, c_head2 = st.columns([5, 1])
 with c_head1:
     st.markdown("### 🩺 JNUH OR Dashboard")
@@ -233,10 +238,8 @@ with c_head2:
 
 st.markdown("---")
 
-# 데이터 로드
 df = load_data()
 
-# 구역별 렌더링 실행
 left_col, right_col = st.columns(2, gap="small")
 render_zone(left_col, "A 구역", ZONE_A, df)
 render_zone(right_col, "B / C / 기타", ZONE_B, df)
