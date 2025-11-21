@@ -9,7 +9,7 @@ ZONE_A = ["A1", "A2", "A3", "A4", "A5", "A6", "A7"]
 ZONE_B = ["B1", "B2", "B3", "B4", "C2", "Angio", "회복실"]
 ALL_ROOMS = ZONE_A + ZONE_B
 DATA_FILE = 'or_status_kst.csv'
-NOTICE_FILE = 'notice.txt'
+NOTICE_FILE = 'notice.txt'  # 공지사항 저장 파일
 OP_STATUS = ["▶ 수술", "Ⅱ 대기", "■ 종료"]
 
 # 2초 자동 새로고침
@@ -24,7 +24,7 @@ def get_korean_time():
 def get_room_index(df, room_name):
     return df[df['Room'] == room_name].index[0]
 
-# --- 데이터 로드/저장 ---
+# --- 데이터 로드/저장 (수술실 현황) ---
 def load_data():
     try:
         if not os.path.exists(DATA_FILE):
@@ -55,6 +55,7 @@ def load_data():
 def save_data(df):
     df.to_csv(DATA_FILE, index=False, encoding='utf-8')
 
+# --- 공지사항 로드/저장 ---
 def load_notice():
     if not os.path.exists(NOTICE_FILE):
         return ""
@@ -66,21 +67,19 @@ def load_notice():
 
 def save_notice_callback():
     new_notice = st.session_state["notice_area"]
-    try:
-        with open(NOTICE_FILE, "w", encoding="utf-8") as f:
-            f.write(new_notice)
-            f.flush() 
-            os.fsync(f.fileno()) 
-    except:
-        pass
+    with open(NOTICE_FILE, "w", encoding="utf-8") as f:
+        f.write(new_notice)
 
 # --- 동기화 로직 ---
 def sync_session_state(df):
+    # 1. 수술실 현황 동기화
     for index, row in df.iterrows():
         room = row['Room']
+        
         key_status = f"st_{room}"
         if key_status not in st.session_state or st.session_state[key_status] != row['Status']:
             st.session_state[key_status] = row['Status']
+            
         key_m = f"m_{room}"
         if key_m not in st.session_state or st.session_state[key_m] != row['Morning']:
             st.session_state[key_m] = row['Morning']
@@ -91,6 +90,7 @@ def sync_session_state(df):
         if key_a not in st.session_state or st.session_state[key_a] != row['Afternoon']:
             st.session_state[key_a] = row['Afternoon']
 
+    # 2. 공지사항 동기화
     server_notice = load_notice()
     if "notice_area" not in st.session_state:
         st.session_state["notice_area"] = server_notice
@@ -126,28 +126,42 @@ def update_data_callback(room_name, col_name, session_key):
 def render_final_card(room_name, df):
     row = df[df['Room'] == room_name].iloc[0]
     status = row['Status']
-    current_icon = status.split(" ")[0]
-    
-    # 상태별 스타일 클래스 지정 (CSS에서 활용)
+
     if "수술" in status:
-        style_type = "op-surgery"
+        bg_color = "#E0F2FE"      
+        icon_color = "#0EA5E9"    
+        text_color = "#0EA5E9"    
     elif "대기" in status:
-        style_type = "op-waiting"
-    else:
-        style_type = "op-end"
+        bg_color = "#FFF3E0"      
+        icon_color = "#EF6C00"    
+        text_color = "#EF6C00"    
+    else: 
+        # 종료 상태: 진한 회색 배경, 검정 글씨
+        bg_color = "#E0E0E0"      
+        icon_color = "#000000"    
+        text_color = "#000000"    
+
+    current_icon = status.split(" ")[0] 
 
     with st.container(border=True):
-        # 1열: [방 번호 버튼] | [상태 선택]
-        c1, c2 = st.columns([1, 1.2])
-        
+        c1, c2 = st.columns([2, 1])
         with c1:
-            # 방 번호를 버튼으로 사용 (저장 기능)
-            # help 인자에 'style_type'을 숨겨두고 CSS로 타겟팅하는 꼼수 사용
-            btn_label = f"{current_icon} {room_name}"
-            if st.button(btn_label, key=f"btn_{room_name}", help=style_type, use_container_width=True):
-                save_data(df)
-                st.toast(f"{room_name} 저장 완료!", icon="✅")
-
+            st.markdown(f"""
+                <div style='
+                    width: 45%; 
+                    font-size: 1.2rem;
+                    font-weight:bold;
+                    color:{text_color};
+                    background-color:{bg_color};
+                    padding: 4px 0px; 
+                    border-radius: 6px;
+                    text-align: center;
+                    display: block;
+                    margin-top: 1px;
+                '>
+                    <span style='color:{icon_color}; margin-right: 5px;'>{current_icon}</span>{room_name}
+                </div>
+                """, unsafe_allow_html=True)
         with c2:
             key_status = f"st_{room_name}"
             st.selectbox(
@@ -159,7 +173,6 @@ def render_final_card(room_name, df):
                 args=(room_name, 'Status', key_status)
             )
 
-        # 2열: 입력창
         s1, s2, s3 = st.columns(3)
         key_m = f"m_{room_name}"
         key_l = f"l_{room_name}"
@@ -172,17 +185,7 @@ def render_final_card(room_name, df):
         s3.text_input("오후", key=key_a, placeholder="", label_visibility="collapsed",
                       on_change=update_data_callback, args=(room_name, 'Afternoon', key_a))
 
-        # 3열: 업데이트 시간
-        st.markdown(f"""
-            <div style='
-                text-align: right; 
-                font-size: 10px; 
-                color: #aaa; 
-                margin-top: 2px;
-            '>
-                Update: {row['Last_Update']}
-            </div>
-            """, unsafe_allow_html=True)
+        st.markdown(f"<p style='text-align: right; font-size: 10px; color: #888; margin-top: 5px; margin-bottom: 0;'>Update: {row['Last_Update']}</p>", unsafe_allow_html=True)
 
 def render_zone(col, title, zone_list, df):
     with col:
@@ -197,16 +200,14 @@ st.set_page_config(page_title="JNUH OR", layout="wide")
 st.markdown("""
     <style>
     .block-container { padding: 1rem; }
-    div[data-testid="stVerticalBlockBorderWrapper"] > div > div > div {
-        gap: 0.3rem !important; 
-    }
+    div[data-testid="stVerticalBlock"] > div { gap: 0rem; }
     hr { margin-top: 0.2rem !important; margin-bottom: 0.5rem !important; }
     h3, h4 { margin-bottom: 0rem !important; padding-top: 0rem !important; }
     
     div[data-testid="stSelectbox"] div[data-baseweb="select"] > div {
         padding-top: 0px; padding-bottom: 0px; padding-left: 5px;
-        height: 32px; min-height: 32px; 
-        font-size: 14px; display: flex; align-items: center;
+        height: 32px; min-height: 32px;
+        font-size: 15px; display: flex; align-items: center;
         border-color: #E0E0E0;
     }
     div[data-testid="stTextInput"] div[data-baseweb="input"] {
@@ -221,76 +222,40 @@ st.markdown("""
         color: #000000 !important; 
         font-size: 14px;
     }
+    div[data-testid="stTextInput"] div[data-baseweb="input"]:focus-within {
+        border: 1px solid #2196F3 !important;
+    }
+    
     div[data-testid="stTextArea"] textarea {
         background-color: #FFF9C4 !important;
         color: #333 !important;
-        font-size: 14px !important; 
+        font-size: 1.1rem !important;
+        font-weight: 500;
         line-height: 1.5;
     }
-
-    /* ★★★ [버튼 색상 연동 매직 CSS] ★★★ */
-    /* 버튼의 title 속성(help 텍스트)을 감지하여 스타일을 바꿉니다 */
-
-    /* 1. 기본 버튼 스타일 */
-    div[data-testid="stVerticalBlockBorderWrapper"] button {
-        border-width: 2px !important;
-        font-weight: bold !important;
-        background-color: #FFFFFF !important;
-        transition: all 0.2s ease;
-    }
-
-    /* 2. 수술중 (op-surgery) - 파란색 */
-    button[title="op-surgery"] {
-        border-color: #0EA5E9 !important;
-        color: #0EA5E9 !important;
-        background-color: #E0F2FE !important; /* 연한 파랑 배경 */
-    }
-    button[title="op-surgery"]:hover {
-        background-color: #BBE1FA !important;
-    }
-
-    /* 3. 대기 (op-waiting) - 주황색 */
-    button[title="op-waiting"] {
-        border-color: #EF6C00 !important;
-        color: #EF6C00 !important;
-        background-color: #FFF3E0 !important; /* 연한 주황 배경 */
-    }
-    button[title="op-waiting"]:hover {
-        background-color: #FFE0B2 !important;
-    }
-
-    /* 4. 종료 (op-end) - 회색/검정 */
-    button[title="op-end"] {
-        border-color: #9E9E9E !important;
-        color: #424242 !important;
-        background-color: #EEEEEE !important; /* 연한 회색 배경 */
-    }
-    button[title="op-end"]:hover {
-        background-color: #E0E0E0 !important;
-    }
-
-    /* 모바일 레이아웃 */
+    
+    /* ★★★ [모바일 전용] 컬럼 순서 변경: 공지사항 -> A구역 -> B구역 ★★★ */
     @media (max-width: 640px) {
-        .block-container > div > div > div[data-testid="stHorizontalBlock"] {
+        /* 메인 컬럼 컨테이너 타겟팅 */
+        div[data-testid="stHorizontalBlock"] {
+            display: flex !important;
             flex-direction: column !important;
         }
-        .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(3) { 
-            order: 1; margin-bottom: 20px; 
+        /* 1. 공지사항 (원래 3번째) -> 1번으로 */
+        div[data-testid="stHorizontalBlock"] > div:nth-child(3) {
+            order: 1;
+            margin-bottom: 20px; /* 공지사항 아래 여백 */
         }
-        .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(1) { 
-            order: 2; 
+        /* 2. A구역 (원래 1번째) -> 2번으로 */
+        div[data-testid="stHorizontalBlock"] > div:nth-child(1) {
+            order: 2;
         }
-        .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(2) { 
-            order: 3; 
-        }
-        div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] {
-            flex-direction: row !important;
-        }
-        div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] > div {
-            order: unset !important;
-            margin-bottom: 0px !important;
+        /* 3. B구역 (원래 2번째) -> 3번으로 */
+        div[data-testid="stHorizontalBlock"] > div:nth-child(2) {
+            order: 3;
         }
     }
+
     @media (max-width: 600px) {
         div[data-testid="stVerticalBlockBorderWrapper"] { max-width: 95vw; margin: auto; }
     }
@@ -303,6 +268,7 @@ st.markdown("---")
 df = load_data()
 sync_session_state(df)
 
+# [데스크탑 배열] A구역 | B구역 | 공지사항
 col_a, col_b, col_notice = st.columns([1, 1, 0.5], gap="small")
 
 render_zone(col_a, "A 구역", ZONE_A, df)
@@ -313,14 +279,11 @@ with col_notice:
     st.text_area(
         "공지사항 내용",
         key="notice_area",
-        height=200, 
+        height=200,
         label_visibility="collapsed",
         placeholder="전달사항을 입력하세요...",
-        on_change=save_notice_callback 
+        on_change=save_notice_callback
     )
-    if st.button("공지사항 저장", use_container_width=True):
-        save_notice_callback()
-        st.toast("공지사항 저장됨", icon="✅")
 
 st.markdown("---")
 
