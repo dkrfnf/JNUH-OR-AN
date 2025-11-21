@@ -143,8 +143,8 @@ def render_final_card(room_name, df):
 
     with st.container(border=True):
         # 1열: [방 번호(뱃지)] | [상태 선택]
-        # gap="small"을 추가하여 두 요소 사이 간격을 벌림 (요청사항 반영)
-        c1, c2 = st.columns([1, 1.2], gap="small")
+        # ★ 수정: 비율을 [1, 2]로 변경하여 방 번호 칸을 좁히고, 상태창을 넓힘
+        c1, c2 = st.columns([1, 2], gap="small")
         with c1:
             st.markdown(f"""
                 <div style='
@@ -158,7 +158,7 @@ def render_final_card(room_name, df):
                     text-align: center;
                     display: block;
                 '>
-                    <span style='margin-right: 5px;'>{current_icon}</span>{room_name}
+                    <span style='margin-right: 3px;'>{current_icon}</span>{room_name}
                 </div>
                 """, unsafe_allow_html=True)
         with c2:
@@ -212,7 +212,7 @@ st.markdown("""
     .block-container { padding: 1rem; }
     div[data-testid="stVerticalBlock"] > div { gap: 0rem; }
     
-    /* 카드 내부 간격 설정 */
+    /* 카드 내부 간격 */
     div[data-testid="stVerticalBlockBorderWrapper"] > div > div > div {
         gap: 0.3rem !important; 
     }
@@ -252,18 +252,17 @@ st.markdown("""
         line-height: 1.5;
     }
     
-    /* ★★★ [파스텔톤 저장 버튼 스타일] ★★★ */
-    /* 공지사항 아래에 있는 버튼(3번째 컬럼의 버튼) 타겟팅 */
+    /* 파스텔톤 저장 버튼 */
     div[data-testid="column"]:nth-of-type(3) button {
-        background-color: #E0F2F1 !important; /* 파스텔 민트 */
-        color: #00695C !important;            /* 진한 녹색 텍스트 */
-        border: 1px solid #80CBC4 !important; /* 테두리 색상 */
+        background-color: #E0F2F1 !important; 
+        color: #00695C !important;            
+        border: 1px solid #80CBC4 !important; 
         border-radius: 8px !important;
         font-weight: bold !important;
         transition: all 0.3s ease;
     }
     div[data-testid="column"]:nth-of-type(3) button:hover {
-        background-color: #B2DFDB !important; /* 호버 시 조금 더 진한 민트 */
+        background-color: #B2DFDB !important;
         border-color: #4DB6AC !important;
     }
     div[data-testid="column"]:nth-of-type(3) button:active {
@@ -271,37 +270,29 @@ st.markdown("""
         color: white !important;
     }
     
-    /* ★★★ [모바일 레이아웃 수정 - 순서 문제 완벽 해결] ★★★ */
+    /* 모바일 레이아웃 수정 (순서 고정) */
     @media (max-width: 640px) {
-        /* 주의: 여기서는 전체 화면 레이아웃(Main Layout)만 타겟팅해야 합니다.
-           .block-container > div > div > div... Selector를 사용하여
-           카드 내부의 horizontal block은 건드리지 않도록 합니다.
-        */
-        
-        /* 메인 3단 컬럼 (A구역, B구역, 공지사항) */
+        /* 메인 레이아웃: 공지사항을 위로 */
         .block-container > div > div > div[data-testid="stHorizontalBlock"] {
             display: flex !important;
             flex-direction: column !important;
         }
-        /* 3번째 자식(공지사항)을 맨 위로 */
         .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(3) {
             order: 1; margin-bottom: 20px;
         }
-        /* 1번째 자식(A구역)을 중간으로 */
         .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(1) {
             order: 2;
         }
-        /* 2번째 자식(B구역)을 마지막으로 */
         .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(2) {
             order: 3;
         }
 
-        /* ★중요★ 카드 내부의 가로 정렬은 'row'로 강제하고 order 속성 초기화 */
+        /* 카드 내부: 가로 정렬 강제 (오전/점심/오후 순서 유지) */
         div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] {
             flex-direction: row !important;
         }
         div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] > div {
-            order: unset !important; /* 순서 섞임 방지 */
+            order: unset !important;
             margin-bottom: 0px !important;
         }
     }
@@ -333,7 +324,7 @@ with col_notice:
         placeholder="전달사항을 입력하세요...",
         on_change=save_notice_callback
     )
-    # [디자인 수정됨] 파스텔 톤 변경사항 저장 버튼
+    # 변경사항 저장 버튼
     if st.button("변경사항 저장", use_container_width=True):
         save_notice_callback()
         save_data(df)
