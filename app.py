@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from datetime import datetime # pytz import 제거
+from datetime import datetime
 import os
 from streamlit_autorefresh import st_autorefresh
 
@@ -14,38 +14,52 @@ OP_STATUS = ["▶ 수술", "Ⅱ 대기", "■ 종료"]
 # 2초 자동 새로고침
 st_autorefresh(interval=2000, key="datarefresh")
 
+def get_current_time():
+    """서버의 현재 시간을 HH:MM 형식으로 반환"""
+    return datetime.now().strftime("%H:%M")
+
+def get_room_index(df, room_name):
+    """방 이름에 해당하는 DataFrame 인덱스 반환"""
+    return df[df['Room'] == room_name].index[0]
+
+# ★ 수정: encoding='utf-8' 적용 (파일 읽기)
 def load_data():
     if not os.path.exists(DATA_FILE):
-        # 시간 표시가 없으므로 서버 시간으로 설정
-        now_time = datetime.now().strftime("%H:%M") 
+        now_time = get_current_time()
         data = {
             'Room': ALL_ROOMS,
             'Status': ['▶ 수술'] * len(ALL_ROOMS),
-            'Last_Update': [now_time] * len(ALL_ROOMS), # 서버 시간 기록
+            'Last_Update': [now_time] * len(ALL_ROOMS),
             'Morning': [''] * len(ALL_ROOMS),
             'Lunch': [''] * len(ALL_ROOMS),
             'Afternoon': [''] * len(ALL_ROOMS)
         }
         df = pd.DataFrame(data)
-        df.to_csv(DATA_FILE, index=False)
+        # ★ 수정: encoding='utf-8' 적용 (파일 쓰기)
+        df.to_csv(DATA_FILE, index=False, encoding='utf-8')
         return df
-    df = pd.read_csv(DATA_FILE)
+    # ★ 수정: encoding='utf-8' 적용 (파일 읽기)
+    df = pd.read_csv(DATA_FILE, encoding='utf-8')
     if len(df) != len(ALL_ROOMS) or df.loc[0, 'Status'] not in OP_STATUS:
         os.remove(DATA_FILE)
         return load_data()
     return df.fillna('')
 
+# ★ 수정: encoding='utf-8' 적용 (파일 쓰기)
 def save_data(df):
-    df.to_csv(DATA_FILE, index=False)
+    df.to_csv(DATA_FILE, index=False, encoding='utf-8')
+
+# --- 액션 함수 ---
 
 def reset_all_data():
-    now_time = datetime.now().strftime("%H:%M") # 서버 시간 기록
     df = load_data()
+    now_time = get_current_time()
+    
     df['Status'] = '▶ 수술'
     df['Morning'] = ''
     df['Lunch'] = ''
     df['Afternoon'] = ''
-    df['Last_Update'] = now_time 
+    df['Last_Update'] = now_time
     save_data(df)
 
     for room in ALL_ROOMS:
@@ -57,81 +71,24 @@ def reset_all_data():
     st.rerun()
 
 def update_status(room_name, new_status):
-    now_time = datetime.now().strftime("%H:%M") # 서버 시간 기록
     df = load_data()
-    idx = df[df['Room'] == room_name].index[0]
+    idx = get_room_index(df, room_name)
+    
     if df.loc[idx, 'Status'] != new_status:
         df.loc[idx, 'Status'] = new_status
-        df.loc[idx, 'Last_Update'] = now_time 
+        df.loc[idx, 'Last_Update'] = get_current_time()
         save_data(df)
         st.rerun()
 
 def update_shift(room_name, col, value):
     df = load_data()
-    idx = df[df['Room'] == room_name].index[0]
+    idx = get_room_index(df, room_name)
+    
     if df.loc[idx, col] != value:
         df.loc[idx, col] = value
         save_data(df)
 
-# --- UI 디자인 ---
-st.set_page_config(page_title="JNUH OR", layout="wide")
-
-st.markdown("""
-    <style>
-    .block-container { padding: 1rem; }
-    div[data-testid="stVerticalBlock"] > div { gap: 0rem; }
-
-    hr { margin-top: 0.2rem !important; margin-bottom: 0.5rem !important; }
-    h3, h4 { margin-bottom: 0rem !important; padding-top: 0rem !important; }
-
-    div[data-testid="stSelectbox"] div[data-baseweb="select"] > div {
-        padding-top: 0px; padding-bottom: 0px; padding-left: 5px;
-        height: 32px; min-height: 32px;
-        font-size: 15px; display: flex; align-items: center;
-        border-color: #E0E0E0;
-    }
-    
-    div[data-testid="stTextInput"] div[data-baseweb="input"] {
-        background-color: #FFFFFF !important; 
-        border: 1px solid #CCCCCC !important;
-        border-radius: 4px;
-        padding-top: 0px; padding-bottom: 0px;
-        height: 32px; min-height: 32px;
-    }
-    
-    div[data-testid="stTextInput"] input {
-        background-color: #FFFFFF !important; 
-        color: #000000 !important; 
-        font-size: 14px;
-    }
-    
-    div[data-testid="stTextInput"] div[data-baseweb="input"]:focus-within {
-        border: 1px solid #2196F3 !important;
-    }
-    
-    div[data-testid="stVerticalBlockBorderWrapper"] > div { padding: 10px !important; }
-    button p { font-size: 14px; font-weight: bold; }
-
-    div[data-testid="stVerticalBlock"] > div > [data-testid="stVerticalBlock"] {
-        margin-top: -10px !important;
-    }
-    @media (max-width: 600px) {
-        div[data-testid="stVerticalBlockBorderWrapper"] { max-width: 90vw; margin: auto; }
-    }
-    </style>
-""", unsafe_allow_html=True)
-
-# --- 상단 헤더 ---
-c_head1, c_head2 = st.columns([5, 1])
-with c_head1:
-    st.markdown("### 🩺 JNUH OR Dashboard")
-with c_head2:
-    if st.button("⟳ 하루 시작", use_container_width=True):
-        reset_all_data()
-
-st.markdown("---")
-
-df = load_data()
+# --- UI 렌더링 함수 ---
 
 def render_final_card(room_name, df):
     row = df[df['Room'] == room_name].iloc[0]
@@ -189,14 +146,77 @@ def render_final_card(room_name, df):
         if val_l != row['Lunch']: update_shift(room_name, 'Lunch', val_l)
         if val_a != row['Afternoon']: update_shift(room_name, 'Afternoon', val_a)
 
+        # 최종 업데이트 시간 표시
+        st.markdown(f"<p style='text-align: right; font-size: 10px; color: #888; margin-top: 5px; margin-bottom: 0;'>최종 업데이트: **{row['Last_Update']}**</p>", unsafe_allow_html=True)
+
+
+def render_zone(col, title, zone_list, df):
+    with col:
+        st.markdown(f"#### {title}")
+        for room in zone_list:
+            render_final_card(room, df)
+
+# --- 메인 실행 ---
+
+st.markdown("""
+    <style>
+    .block-container { padding: 1rem; }
+    div[data-testid="stVerticalBlock"] > div { gap: 0rem; }
+
+    hr { margin-top: 0.2rem !important; margin-bottom: 0.5rem !important; }
+    h3, h4 { margin-bottom: 0rem !important; padding-top: 0rem !important; }
+
+    div[data-testid="stSelectbox"] div[data-baseweb="select"] > div {
+        padding-top: 0px; padding-bottom: 0px; padding-left: 5px;
+        height: 32px; min-height: 32px;
+        font-size: 15px; display: flex; align-items: center;
+        border-color: #E0E0E0;
+    }
+    
+    div[data-testid="stTextInput"] div[data-baseweb="input"] {
+        background-color: #FFFFFF !important; 
+        border: 1px solid #CCCCCC !important;
+        border-radius: 4px;
+        padding-top: 0px; padding-bottom: 0px;
+        height: 35px; min-height: 35px;
+    }
+    
+    div[data-testid="stTextInput"] input {
+        background-color: #FFFFFF !important; 
+        color: #000000 !important; 
+        font-size: 14px;
+    }
+    
+    div[data-testid="stTextInput"] div[data-baseweb="input"]:focus-within {
+        border: 1px solid #2196F3 !important;
+    }
+    
+    div[data-testid="stVerticalBlockBorderWrapper"] > div { padding: 10px !important; }
+    button p { font-size: 14px; font-weight: bold; }
+
+    div[data-testid="stVerticalBlock"] > div > [data-testid="stVerticalBlock"] {
+        margin-top: -10px !important;
+    }
+    @media (max-width: 600px) {
+        div[data-testid="stVerticalBlockBorderWrapper"] { max-width: 90vw; margin: auto; }
+    }
+    </style>
+""", unsafe_allow_html=True)
+
+# --- 상단 헤더 ---
+c_head1, c_head2 = st.columns([5, 1])
+with c_head1:
+    st.markdown("### 🩺 JNUH OR Dashboard")
+with c_head2:
+    if st.button("⟳ 하루 시작", use_container_width=True):
+        reset_all_data()
+
+st.markdown("---")
+
+# 데이터 로드
+df = load_data()
+
+# 구역별 렌더링 실행
 left_col, right_col = st.columns(2, gap="small")
-
-with left_col:
-    st.markdown("#### A 구역")
-    for room in ZONE_A:
-        render_final_card(room, df)
-
-with right_col:
-    st.markdown("#### B / C / 기타")
-    for room in ZONE_B:
-        render_final_card(room, df)
+render_zone(left_col, "A 구역", ZONE_A, df)
+render_zone(right_col, "B / C / 기타", ZONE_B, df)
