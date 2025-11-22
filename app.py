@@ -76,7 +76,6 @@ def save_notice_callback():
 
 # --- 동기화 로직 ---
 def sync_session_state(df):
-    # 1. 수술실 현황
     for index, row in df.iterrows():
         room = row['Room']
         key_status = f"st_{room}"
@@ -92,7 +91,6 @@ def sync_session_state(df):
         if key_a not in st.session_state or st.session_state[key_a] != row['Afternoon']:
             st.session_state[key_a] = row['Afternoon']
 
-    # 2. 공지사항
     server_notice = load_notice()
     if "notice_area" not in st.session_state:
         st.session_state["notice_area"] = server_notice
@@ -142,8 +140,7 @@ def render_final_card(room_name, df):
     current_icon = status.split(" ")[0] 
 
     with st.container(border=True):
-        # 1열: [방 번호(뱃지)] | [상태 선택]
-        # ★ 수정: 비율을 [1, 2]로 변경하여 방 번호 칸을 좁히고, 상태창을 넓힘
+        # 1열: [방 번호] | [상태 선택] (비율 1:2)
         c1, c2 = st.columns([1, 2], gap="small")
         with c1:
             st.markdown(f"""
@@ -157,6 +154,9 @@ def render_final_card(room_name, df):
                     border-radius: 6px;
                     text-align: center;
                     display: block;
+                    white-space: nowrap; /* 줄바꿈 방지 */
+                    overflow: hidden;
+                    text-overflow: ellipsis;
                 '>
                     <span style='margin-right: 3px;'>{current_icon}</span>{room_name}
                 </div>
@@ -211,16 +211,11 @@ st.markdown("""
     <style>
     .block-container { padding: 1rem; }
     div[data-testid="stVerticalBlock"] > div { gap: 0rem; }
-    
-    /* 카드 내부 간격 */
-    div[data-testid="stVerticalBlockBorderWrapper"] > div > div > div {
-        gap: 0.3rem !important; 
-    }
+    div[data-testid="stVerticalBlockBorderWrapper"] > div > div > div { gap: 0.3rem !important; }
 
     hr { margin-top: 0.2rem !important; margin-bottom: 0.5rem !important; }
     h3, h4 { margin-bottom: 0rem !important; padding-top: 0rem !important; }
     
-    /* Selectbox & Input */
     div[data-testid="stSelectbox"] div[data-baseweb="select"] > div {
         padding-top: 0px; padding-bottom: 0px; padding-left: 5px;
         height: 32px; min-height: 32px;
@@ -239,20 +234,14 @@ st.markdown("""
         color: #000000 !important; 
         font-size: 14px;
     }
-    div[data-testid="stTextInput"] div[data-baseweb="input"]:focus-within {
-        border: 1px solid #2196F3 !important;
-    }
-    
-    /* 공지사항 텍스트 영역 */
     div[data-testid="stTextArea"] textarea {
         background-color: #FFF9C4 !important;
         color: #333 !important;
         font-size: 14px !important; 
-        font-weight: normal;        
         line-height: 1.5;
     }
     
-    /* 파스텔톤 저장 버튼 */
+    /* [PC] 저장 버튼 스타일 (파스텔톤) */
     div[data-testid="column"]:nth-of-type(3) button {
         background-color: #E0F2F1 !important; 
         color: #00695C !important;            
@@ -265,35 +254,51 @@ st.markdown("""
         background-color: #B2DFDB !important;
         border-color: #4DB6AC !important;
     }
-    div[data-testid="column"]:nth-of-type(3) button:active {
-        background-color: #80CBC4 !important;
-        color: white !important;
-    }
-    
-    /* 모바일 레이아웃 수정 (순서 고정) */
+
+    /* ★★★ [모바일 전용 스타일: 플로팅 저장 버튼] ★★★ */
     @media (max-width: 640px) {
-        /* 메인 레이아웃: 공지사항을 위로 */
+        /* 1. 메인 레이아웃 정렬 */
         .block-container > div > div > div[data-testid="stHorizontalBlock"] {
             display: flex !important;
             flex-direction: column !important;
         }
-        .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(3) {
-            order: 1; margin-bottom: 20px;
-        }
-        .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(1) {
-            order: 2;
-        }
-        .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(2) {
-            order: 3;
-        }
+        .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(3) { order: 1; margin-bottom: 20px; }
+        .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(1) { order: 2; }
+        .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(2) { order: 3; }
 
-        /* 카드 내부: 가로 정렬 강제 (오전/점심/오후 순서 유지) */
         div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] {
             flex-direction: row !important;
         }
         div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] > div {
             order: unset !important;
             margin-bottom: 0px !important;
+        }
+
+        /* 2. 저장 버튼 하단 고정 (Sticky Bottom) */
+        /* 공지사항 컬럼(3번째) 안에 있는 버튼 컨테이너를 화면 하단에 고정 */
+        div[data-testid="column"]:nth-of-type(3) .stButton {
+            position: fixed !important;
+            bottom: 15px !important;
+            left: 15px !important;
+            right: 15px !important;
+            z-index: 9999 !important;
+            width: auto !important;
+        }
+        
+        /* 버튼 디자인 강화 (모바일에서 더 잘 보이게) */
+        div[data-testid="column"]:nth-of-type(3) button {
+            width: 100% !important;
+            height: 50px !important; /* 터치하기 편한 높이 */
+            font-size: 18px !important;
+            border-radius: 12px !important;
+            box-shadow: 0px 4px 15px rgba(0,0,0,0.2) !important; /* 그림자 추가 */
+            border: 2px solid #00695C !important; /* 테두리 진하게 */
+            background-color: #E0F2F1 !important;
+        }
+        
+        /* 버튼 뒤에 내용이 가려지지 않도록 페이지 하단 여백 추가 */
+        .block-container {
+            padding-bottom: 80px !important;
         }
     }
 
