@@ -76,6 +76,7 @@ def save_notice_callback():
 
 # --- 동기화 로직 ---
 def sync_session_state(df):
+    # 1. 수술실 현황
     for index, row in df.iterrows():
         room = row['Room']
         key_status = f"st_{room}"
@@ -91,6 +92,7 @@ def sync_session_state(df):
         if key_a not in st.session_state or st.session_state[key_a] != row['Afternoon']:
             st.session_state[key_a] = row['Afternoon']
 
+    # 2. 공지사항
     server_notice = load_notice()
     if "notice_area" not in st.session_state:
         st.session_state["notice_area"] = server_notice
@@ -154,7 +156,7 @@ def render_final_card(room_name, df):
                     border-radius: 6px;
                     text-align: center;
                     display: block;
-                    white-space: nowrap; /* 줄바꿈 방지 */
+                    white-space: nowrap;
                     overflow: hidden;
                     text-overflow: ellipsis;
                 '>
@@ -242,7 +244,8 @@ st.markdown("""
     }
     
     /* [PC] 저장 버튼 스타일 (파스텔톤) */
-    div[data-testid="column"]:nth-of-type(3) button {
+    /* 마지막 컬럼(공지사항)의 버튼 */
+    div[data-testid="column"]:last-child button {
         background-color: #E0F2F1 !important; 
         color: #00695C !important;            
         border: 1px solid #80CBC4 !important; 
@@ -250,22 +253,33 @@ st.markdown("""
         font-weight: bold !important;
         transition: all 0.3s ease;
     }
-    div[data-testid="column"]:nth-of-type(3) button:hover {
+    div[data-testid="column"]:last-child button:hover {
         background-color: #B2DFDB !important;
         border-color: #4DB6AC !important;
     }
 
     /* ★★★ [모바일 전용 스타일: 플로팅 저장 버튼] ★★★ */
-    @media (max-width: 640px) {
+    /* 기준 너비를 900px로 확 늘림 (태블릿, 큰 폰 커버) */
+    @media (max-width: 900px) {
         /* 1. 메인 레이아웃 정렬 */
         .block-container > div > div > div[data-testid="stHorizontalBlock"] {
             display: flex !important;
             flex-direction: column !important;
         }
-        .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(3) { order: 1; margin-bottom: 20px; }
-        .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(1) { order: 2; }
-        .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(2) { order: 3; }
+        /* 공지사항(마지막 컬럼)을 위로 */
+        .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:last-child { 
+            order: 1; margin-bottom: 20px; 
+        }
+        /* A구역 */
+        .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:first-child { 
+            order: 2; 
+        }
+        /* B구역 */
+        .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(2) { 
+            order: 3; 
+        }
 
+        /* 카드 내부는 가로 정렬 유지 */
         div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] {
             flex-direction: row !important;
         }
@@ -274,31 +288,33 @@ st.markdown("""
             margin-bottom: 0px !important;
         }
 
-        /* 2. 저장 버튼 하단 고정 (Sticky Bottom) */
-        /* 공지사항 컬럼(3번째) 안에 있는 버튼 컨테이너를 화면 하단에 고정 */
-        div[data-testid="column"]:nth-of-type(3) .stButton {
+        /* 2. 저장 버튼 하단 고정 (Sticky Bottom) - 더 강력한 선택자 사용 */
+        /* 마지막 컬럼(공지사항) 안의 stButton 컨테이너 */
+        div[data-testid="column"]:last-child .stButton {
             position: fixed !important;
-            bottom: 15px !important;
-            left: 15px !important;
-            right: 15px !important;
-            z-index: 9999 !important;
-            width: auto !important;
+            bottom: 20px !important;
+            left: 50% !important;
+            transform: translateX(-50%) !important; /* 가운데 정렬 */
+            width: 90% !important; /* 화면 꽉 차지 않게 */
+            z-index: 999999 !important; /* 무조건 최상단 */
+            background-color: transparent !important;
         }
         
-        /* 버튼 디자인 강화 (모바일에서 더 잘 보이게) */
-        div[data-testid="column"]:nth-of-type(3) button {
+        /* 버튼 디자인 강화 (모바일 터치 최적화) */
+        div[data-testid="column"]:last-child button {
             width: 100% !important;
-            height: 50px !important; /* 터치하기 편한 높이 */
+            height: 55px !important;
             font-size: 18px !important;
-            border-radius: 12px !important;
-            box-shadow: 0px 4px 15px rgba(0,0,0,0.2) !important; /* 그림자 추가 */
-            border: 2px solid #00695C !important; /* 테두리 진하게 */
+            border-radius: 30px !important; /* 둥근 알약 모양 */
+            box-shadow: 0px 6px 20px rgba(0,105,92, 0.3) !important;
+            border: 2px solid #00695C !important;
             background-color: #E0F2F1 !important;
+            color: #00695C !important;
         }
         
-        /* 버튼 뒤에 내용이 가려지지 않도록 페이지 하단 여백 추가 */
+        /* 버튼 뒤 내용 가림 방지 여백 */
         .block-container {
-            padding-bottom: 80px !important;
+            padding-bottom: 100px !important;
         }
     }
 
