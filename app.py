@@ -10,7 +10,7 @@ ZONE_B = ["B1", "B2", "B3", "B4", "C2", "Angio", "회복실"]
 ALL_ROOMS = ZONE_A + ZONE_B
 DATA_FILE = 'or_status_kst.csv'
 NOTICE_FILE = 'notice.txt'
-NOTICE_TIME_FILE = 'notice_time.txt' # 공지사항 시간 저장 파일
+NOTICE_TIME_FILE = 'notice_time.txt'
 OP_STATUS = ["▶ 수술", "Ⅱ 대기", "■ 종료"]
 
 # 2초 자동 새로고침
@@ -66,7 +66,7 @@ def load_notice():
     except:
         return ""
 
-# [추가됨] 공지사항 시간 로드
+# 공지사항 시간 로드
 def load_notice_time():
     if not os.path.exists(NOTICE_TIME_FILE):
         return ""
@@ -76,23 +76,28 @@ def load_notice_time():
     except:
         return ""
 
+# ★★★ [핵심 수정] 내용이 바뀔 때만 시간 업데이트 ★★★
 def save_notice_callback():
     new_notice = st.session_state["notice_area"]
-    now_time = get_korean_time() # 현재 시간
-    try:
-        # 내용 저장
-        with open(NOTICE_FILE, "w", encoding="utf-8") as f:
-            f.write(new_notice)
-            f.flush()
-            os.fsync(f.fileno())
-        
-        # [추가됨] 시간 저장
-        with open(NOTICE_TIME_FILE, "w", encoding="utf-8") as f:
-            f.write(now_time)
-            f.flush()
-            os.fsync(f.fileno())
-    except:
-        pass
+    old_notice = load_notice() # 파일에 있는 기존 내용 불러오기
+
+    # 기존 내용과 다를 때만 저장 및 시간 갱신
+    if new_notice != old_notice:
+        now_time = get_korean_time()
+        try:
+            # 내용 저장
+            with open(NOTICE_FILE, "w", encoding="utf-8") as f:
+                f.write(new_notice)
+                f.flush()
+                os.fsync(f.fileno())
+            
+            # 시간 저장 (내용이 바뀌었으므로 시간도 갱신)
+            with open(NOTICE_TIME_FILE, "w", encoding="utf-8") as f:
+                f.write(now_time)
+                f.flush()
+                os.fsync(f.fileno())
+        except:
+            pass
 
 # --- 동기화 로직 ---
 def sync_session_state(df):
@@ -131,8 +136,9 @@ def reset_all_data():
     df['Last_Update'] = now_time
     save_data(df)
     
-    # 공지사항 시간도 초기화 원하면 아래 주석 해제
-    # with open(NOTICE_TIME_FILE, "w", encoding="utf-8") as f: f.write(now_time)
+    # 공지사항 시간은 초기화하지 않음 (내용이 그대로라면)
+    # 만약 공지사항 내용도 지우고 싶다면 아래 코드 추가
+    # with open(NOTICE_FILE, "w", encoding="utf-8") as f: f.write("")
     
     sync_session_state(df)
     st.rerun()
@@ -300,7 +306,6 @@ st.markdown("""
             margin-bottom: 0px !important;
         }
 
-        /* 강제 고정 */
         div[data-testid="stButton"]:first-of-type {
             position: fixed !important;
             bottom: 20px !important;
@@ -344,11 +349,9 @@ render_zone(col_a, "A 구역", ZONE_A, df)
 render_zone(col_b, "B / C / 기타", ZONE_B, df)
 
 with col_notice:
-    # [수정] 공지사항 헤더에 시간 표시
     notice_time = load_notice_time()
     if notice_time == "": notice_time = "-"
     
-    # 제목과 시간을 나란히 배치하거나, 바로 아래에 표시
     st.markdown(f"""
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
             <h4 style="margin:0;">📢 공지사항</h4>
@@ -365,6 +368,7 @@ with col_notice:
         on_change=save_notice_callback
     )
     
+    # 변경사항 저장 버튼
     if st.button("변경사항 저장", use_container_width=False):
         save_notice_callback()
         save_data(df)
