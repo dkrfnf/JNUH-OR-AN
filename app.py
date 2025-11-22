@@ -409,7 +409,7 @@ st.markdown("""
             border: 2px solid #ddd;
             border-radius: 15px;
             text-align: center;
-            line-height: 51px; 
+            line-height: 50px; 
             font-size: 20px;
             font-weight: bold;
             text-decoration: none;
