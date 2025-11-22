@@ -166,7 +166,7 @@ def render_final_card(room_name, df):
     current_icon = status.split(" ")[0] 
 
     with st.container(border=True):
-        # PC 비율 [0.6, 1.2]
+        # PC 비율 0.6 : 1.2
         c1, c2 = st.columns([0.6, 1.2], gap="medium")
         with c1:
             st.markdown(f"""
@@ -237,22 +237,16 @@ st.markdown("""
     <style>
     .block-container { padding: 1rem; }
     
-    /* ★★★ [핵심 수정] PC에서 카드 간 수직 간격 강력하게 줄이기 ★★★ */
-    /* 카드들을 감싸는 부모 컨테이너의 gap을 강제로 0.2rem(약 3px)로 설정 */
+    /* PC: 방 사이 세로 간격 최소화 */
     div[data-testid="column"] > div > div > div[data-testid="stVerticalBlock"] {
         gap: 0.2rem !important; 
     }
-    /* 혹은 더 깊은 구조 타겟팅 */
     div[data-testid="column"] [data-testid="stVerticalBlock"] {
         gap: 0.2rem !important;
     }
-
-    /* 카드 내부 요소 간격도 최소화 */
     div[data-testid="stVerticalBlockBorderWrapper"] > div > div > div { 
         gap: 0.2rem !important; 
     }
-    
-    /* 카드 자체의 패딩(안쪽 여백) 줄이기 */
     div[data-testid="stVerticalBlockBorderWrapper"] {
         padding: 0.5rem !important;
     }
@@ -285,7 +279,6 @@ st.markdown("""
         line-height: 1.5;
     }
     
-    /* 빠른 이동 */
     .link-container {
         display: flex;
         width: 100%;
@@ -314,25 +307,23 @@ st.markdown("""
         border-color: #bbb;
     }
 
-    /* [PC] 저장 버튼 (인디고) */
-    div[data-testid="stButton"]:first-of-type button {
+    /* ★★★ [색상 분리: 변경사항 저장 (인디고)] ★★★ */
+    /* 3번째 컬럼(공지사항) 안의 버튼만 타겟팅 */
+    div[data-testid="column"]:nth-of-type(3) button {
         background-color: #E8EAF6 !important; 
         color: #1A237E !important;            
         border: 1px solid #9FA8DA !important; 
         border-radius: 8px !important;
         font-weight: bold !important;
         transition: all 0.3s ease;
-        width: auto !important; 
-        padding-left: 20px !important;
-        padding-right: 20px !important;
-        min-width: 120px !important;
     }
-    div[data-testid="stButton"]:first-of-type button:hover {
+    div[data-testid="column"]:nth-of-type(3) button:hover {
         background-color: #C5CAE9 !important;
         border-color: #5C6BC0 !important;
     }
 
-    /* [PC/Mobile] 하루 시작 버튼 (붉은 계열) */
+    /* ★★★ [색상 분리: 하루 시작 (붉은색)] ★★★ */
+    /* Expander 안의 버튼 */
     div[data-testid="stExpander"] button {
         background-color: #FFEBEE !important; 
         color: #B71C1C !important;            
@@ -345,7 +336,7 @@ st.markdown("""
         color: #D32F2F !important;
     }
 
-    /* [모바일 전용 스타일] */
+    /* [모바일 전용] */
     @media (max-width: 900px) {
         .block-container > div > div > div[data-testid="stHorizontalBlock"] {
             display: flex !important;
@@ -355,7 +346,6 @@ st.markdown("""
         .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(1) { order: 2; }
         .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(2) { order: 3; }
 
-        /* 모바일 카드 내부 간격 20px */
         div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] {
             flex-direction: row !important;
             gap: 20px !important; 
@@ -365,7 +355,7 @@ st.markdown("""
             margin-bottom: 0px !important;
         }
 
-        /* 저장 버튼 (인디고) */
+        /* 플로팅 저장 버튼 (스타일 재정의) */
         div[data-testid="stButton"]:first-of-type {
             position: fixed !important;
             bottom: 20px !important;
@@ -452,6 +442,7 @@ with col_notice:
         on_change=save_notice_callback
     )
     
+    # [수정됨] type="primary" 제거하여 CSS 색상 적용 (인디고)
     if st.button("변경사항 저장", use_container_width=False):
         save_notice_callback()
         save_data(df)
@@ -459,6 +450,7 @@ with col_notice:
 
     st.markdown("<a href='#top' class='floating-top-btn'>🔝</a>", unsafe_allow_html=True)
 
+    # [수정됨] 음수 마진으로 공지사항 바로 밑에 붙임
     st.markdown("<div style='margin-top: -15px; margin-bottom: 5px; font-weight: bold; font-size: 14px;'>🚀 빠른 이동</div>", unsafe_allow_html=True)
     
     # A구역
@@ -479,6 +471,8 @@ with col_notice:
 st.markdown("---")
 
 with st.expander("⚙️ 관리자 메뉴 (하루 시작 / 초기화)"):
-    st.warning("⚠️ 주의: 모든 수술실의 상태와 입력된 이름이 초기화됩니다.")
+    # [수정됨] 경고 문구 축소
+    st.warning("⚠️ 주의: 모든 데이터가 초기화됩니다.")
+    # 하루 시작 버튼 (type="primary" 유지 + CSS로 빨간색 강화)
     if st.button("🔄 하루 시작 (전체 초기화)", use_container_width=True, type="primary"):
         reset_all_data()
