@@ -166,7 +166,6 @@ def render_final_card(room_name, df):
     current_icon = status.split(" ")[0] 
 
     with st.container(border=True):
-        # PC 비율 0.6 : 1.2
         c1, c2 = st.columns([0.6, 1.2], gap="medium")
         with c1:
             st.markdown(f"""
@@ -237,12 +236,12 @@ st.markdown("""
     <style>
     .block-container { padding: 1rem; }
     
-    /* ★★★ [간격 미세 조정] 딱 중간 (0.35rem) ★★★ */
+    /* ★★★ [간격 조정] 0.25rem으로 더 타이트하게 ★★★ */
     div[data-testid="column"] > div > div > div[data-testid="stVerticalBlock"] {
-        gap: 0.35rem !important; 
+        gap: 0.25rem !important; 
     }
     div[data-testid="stVerticalBlockBorderWrapper"] > div > div > div { 
-        gap: 0.35rem !important; 
+        gap: 0.25rem !important; 
     }
     
     h4 { margin-bottom: 0.2rem !important; }
@@ -268,11 +267,11 @@ st.markdown("""
         font-size: 14px;
     }
     
-    /* ★★★ [글씨 크기 수정] 공지사항 13px ★★★ */
+    /* ★★★ [글씨 복구] 공지사항 원래 크기 (1.1rem) ★★★ */
     div[data-testid="stTextArea"] textarea {
         background-color: #FFF9C4 !important;
         color: #333 !important;
-        font-size: 13px !important; 
+        font-size: 1.1rem !important; /* 원래대로 복구 */
         line-height: 1.5;
     }
     
@@ -304,10 +303,10 @@ st.markdown("""
         border-color: #bbb;
     }
 
-    /* [색상 통일] 변경사항 저장 버튼 (PC/Mobile 공통) */
+    /* [색상 통일] 변경사항 저장 버튼 (#0057A4) */
     div[data-testid="column"]:nth-of-type(3) button {
-        background-color: #E6F2FF !important; /* 연한 파랑 */
-        color: #0057A4 !important;            /* 진한 파랑 */
+        background-color: #E6F2FF !important; 
+        color: #0057A4 !important;            
         border: 1px solid #0057A4 !important; 
         border-radius: 8px !important;
         font-weight: bold !important;
@@ -354,7 +353,7 @@ st.markdown("""
             margin-bottom: 0px !important;
         }
 
-        /* 플로팅 저장 버튼 (색상 공통 적용됨) */
+        /* 플로팅 저장 버튼 */
         div[data-testid="stButton"]:first-of-type {
             position: fixed !important;
             bottom: 20px !important;
@@ -422,9 +421,10 @@ with col_notice:
     notice_time = load_notice_time()
     if notice_time == "": notice_time = "-"
     
+    # [수정됨] 제목 크기 축소 (h4 -> h5)
     st.markdown(f"""
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-            <h4 style="margin:0;">📢 공지사항</h4>
+            <h5 style="margin:0; font-weight: bold; font-size: 1.1rem;">📢 공지사항</h5>
             <span style="font-size: 12px; color: #D32F2F; font-weight: bold;">Update: {notice_time}</span>
         </div>
     """, unsafe_allow_html=True)
@@ -438,7 +438,6 @@ with col_notice:
         on_change=save_notice_callback
     )
     
-    # [색상 통일됨] #0057A4 적용
     if st.button("변경사항 저장", use_container_width=False):
         save_notice_callback()
         save_data(df)
