@@ -312,7 +312,7 @@ st.markdown("""
 
     /* ★★★ [PC 색상 적용 Fix] 변경사항 저장 버튼 ★★★ */
     /* 선택자를 더 명확하게 지정하고 !important로 강제 적용 */
-    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(3) button {
+    div[data-testid="stHorizontalBlock"] div[data-testid="column"]:nth-of-type(3) button {
         background-color: #E6F2FF !important; /* 연한 파랑 */
         color: #0057A4 !important;            /* 진한 파랑 */
         border: 1px solid #0057A4 !important; 
@@ -326,16 +326,16 @@ st.markdown("""
         font-size: 13px !important; /* 14px -> 13px 축소 */
     }
     
-    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(3) button p {
+    div[data-testid="stHorizontalBlock"] div[data-testid="column"]:nth-of-type(3) button p {
         color: #0057A4 !important; /* 텍스트 색상 강제 */
     }
 
-    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(3) button:hover {
+    div[data-testid="stHorizontalBlock"] div[data-testid="column"]:nth-of-type(3) button:hover {
         background-color: #CCE4FF !important;
         border-color: #004080 !important;
     }
     
-    div[data-testid="stHorizontalBlock"] > div[data-testid="column"]:nth-child(3) button:hover p {
+    div[data-testid="stHorizontalBlock"] div[data-testid="column"]:nth-of-type(3) button:hover p {
         color: #004080 !important;
     }
 
