@@ -237,12 +237,12 @@ st.markdown("""
     <style>
     .block-container { padding: 1rem; }
     
-    /* ★★★ [간격 조정] 너무 좁지 않게 0.5rem으로 완화 ★★★ */
+    /* ★★★ [간격 미세 조정] 딱 중간 (0.35rem) ★★★ */
     div[data-testid="column"] > div > div > div[data-testid="stVerticalBlock"] {
-        gap: 0.5rem !important; /* 적당한 간격 */
+        gap: 0.35rem !important; 
     }
     div[data-testid="stVerticalBlockBorderWrapper"] > div > div > div { 
-        gap: 0.4rem !important; 
+        gap: 0.35rem !important; 
     }
     
     h4 { margin-bottom: 0.2rem !important; }
@@ -267,10 +267,12 @@ st.markdown("""
         color: #000000 !important; 
         font-size: 14px;
     }
+    
+    /* ★★★ [글씨 크기 수정] 공지사항 13px ★★★ */
     div[data-testid="stTextArea"] textarea {
         background-color: #FFF9C4 !important;
         color: #333 !important;
-        font-size: 14px !important; 
+        font-size: 13px !important; 
         line-height: 1.5;
     }
     
@@ -302,16 +304,20 @@ st.markdown("""
         border-color: #bbb;
     }
 
-    /* ★★★ [색상 통일] 변경사항 저장 버튼 (PC/Mobile 공통) ★★★ */
-    div[data-testid="stButton"]:first-of-type button {
+    /* [색상 통일] 변경사항 저장 버튼 (PC/Mobile 공통) */
+    div[data-testid="column"]:nth-of-type(3) button {
         background-color: #E6F2FF !important; /* 연한 파랑 */
         color: #0057A4 !important;            /* 진한 파랑 */
         border: 1px solid #0057A4 !important; 
         border-radius: 8px !important;
         font-weight: bold !important;
         transition: all 0.3s ease;
+        width: auto !important; 
+        padding-left: 20px !important;
+        padding-right: 20px !important;
+        min-width: 120px !important;
     }
-    div[data-testid="stButton"]:first-of-type button:hover {
+    div[data-testid="column"]:nth-of-type(3) button:hover {
         background-color: #CCE4FF !important;
         border-color: #004080 !important;
     }
@@ -348,7 +354,7 @@ st.markdown("""
             margin-bottom: 0px !important;
         }
 
-        /* 플로팅 저장 버튼 (PC와 색상 동일, 위치만 변경) */
+        /* 플로팅 저장 버튼 (색상 공통 적용됨) */
         div[data-testid="stButton"]:first-of-type {
             position: fixed !important;
             bottom: 20px !important;
@@ -365,7 +371,6 @@ st.markdown("""
             border-radius: 25px !important;
             box-shadow: 0px 4px 15px rgba(0, 87, 164, 0.3) !important; 
             padding: 0 !important;
-            /* 색상은 위의 공통 스타일 상속받음 */
         }
         
         /* TOP 버튼 */
@@ -433,7 +438,7 @@ with col_notice:
         on_change=save_notice_callback
     )
     
-    # [수정됨] 색상 CSS 적용을 위해 type="primary" 제거
+    # [색상 통일됨] #0057A4 적용
     if st.button("변경사항 저장", use_container_width=False):
         save_notice_callback()
         save_data(df)
