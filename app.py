@@ -238,15 +238,15 @@ st.markdown("""
     <style>
     .block-container { padding: 1rem; }
     
-    /* ★★★ [간격 조정] 0.18rem 적용 ★★★ */
+    /* ★★★ [간격 조정] 0.14rem 적용 ★★★ */
     div[data-testid="column"] > div > div > div[data-testid="stVerticalBlock"] {
-        gap: 0.18rem !important; 
+        gap: 0.14rem !important; 
     }
     div[data-testid="stVerticalBlockBorderWrapper"] {
-        margin-bottom: 0.18rem !important; 
+        margin-bottom: 0.14rem !important; 
     }
     div[data-testid="stVerticalBlockBorderWrapper"] > div > div > div { 
-        gap: 0.18rem !important; 
+        gap: 0.14rem !important; 
     }
     
     h4 { 
