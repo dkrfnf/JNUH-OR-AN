@@ -166,9 +166,9 @@ def render_final_card(room_name, df):
     current_icon = status.split(" ")[0] 
 
     with st.container(border=True):
-        # [비율 조정] 1:2로 하여 방 번호 칸을 줄임
-        # gap="small"로 기본 간격을 둠
-        c1, c2 = st.columns([1, 2], gap="small")
+        # ★ [수정됨] PC 비율 조정: 방번호(0.6) vs 상태창(1.2)
+        # gap="medium"으로 PC에서도 약간의 간격 확보
+        c1, c2 = st.columns([0.6, 1.2], gap="medium")
         with c1:
             st.markdown(f"""
                 <div style='
@@ -297,6 +297,7 @@ st.markdown("""
         border-color: #bbb;
     }
 
+    /* [PC] 저장 버튼 (파스텔 민트) */
     div[data-testid="stButton"]:first-of-type button {
         background-color: #E0F2F1 !important; 
         color: #00695C !important;            
@@ -314,7 +315,18 @@ st.markdown("""
         border-color: #4DB6AC !important;
     }
 
-    /* [모바일 전용 설정] */
+    /* ★★★ [추가됨] 하루 시작 (Reset) 버튼 - 붉은 계열 ★★★ */
+    div[data-testid="stExpander"] button {
+        background-color: #FFEBEE !important; /* 연한 빨강 배경 */
+        color: #C62828 !important;            /* 진한 빨강 글씨 */
+        border: 1px solid #EF9A9A !important; /* 빨강 테두리 */
+    }
+    div[data-testid="stExpander"] button:hover {
+        background-color: #FFCDD2 !important;
+        border-color: #E57373 !important;
+    }
+
+    /* [모바일 전용 스타일] */
     @media (max-width: 900px) {
         .block-container > div > div > div[data-testid="stHorizontalBlock"] {
             display: flex !important;
@@ -324,11 +336,10 @@ st.markdown("""
         .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(1) { order: 2; }
         .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(2) { order: 3; }
 
-        /* ★★★ [카드 내부 수정] ★★★ */
+        /* ★★★ [수정됨] 모바일 카드 내부 간격 확대 ★★★ */
         div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] {
             flex-direction: row !important;
-            /* ★ 핵심: 방 번호와 상태창 사이 간격 강제 확보 */
-            gap: 10px !important; 
+            gap: 20px !important; /* 간격 넓힘 (숨통 트이기) */
         }
         div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] > div {
             order: unset !important;
@@ -422,6 +433,7 @@ with col_notice:
         on_change=save_notice_callback
     )
     
+    # 변경사항 저장 버튼 (파스텔 민트)
     if st.button("변경사항 저장", use_container_width=False):
         save_notice_callback()
         save_data(df)
@@ -431,13 +443,13 @@ with col_notice:
 
     st.markdown("<div style='margin-top: 5px; margin-bottom: 5px; font-weight: bold; font-size: 14px;'>🚀 빠른 이동</div>", unsafe_allow_html=True)
     
-    # A구역 (균등 분할)
+    # A구역
     links_a = "<div class='link-container'>"
     for room in ZONE_A:
         links_a += f"<a href='#target_{room}' class='quick-link' target='_self'>{room}</a>"
     links_a += "</div>"
     
-    # B구역 (균등 분할)
+    # B구역
     links_b = "<div class='link-container'>"
     for room in ZONE_B:
         short_name = room.replace("회복실", "회복")
@@ -450,5 +462,6 @@ st.markdown("---")
 
 with st.expander("⚙️ 관리자 메뉴 (하루 시작 / 초기화)"):
     st.warning("⚠️ 주의: 모든 수술실의 상태와 입력된 이름이 초기화됩니다.")
+    # 하루 시작 버튼 (붉은색 - CSS로 처리됨)
     if st.button("🔄 하루 시작 (전체 초기화)", use_container_width=True, type="primary"):
         reset_all_data()
