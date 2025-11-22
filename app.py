@@ -314,31 +314,25 @@ st.markdown("""
         border-color: #bbb;
     }
 
-    /* [PC] 공지사항 영역 변경사항 저장 버튼 (#0057A4, 11px) */
-    .notice-panel div[data-testid="stButton"] > button {
-        background-color: #E6F2FF !important; 
-        color: #0057A4 !important;
-        font-size: 10px !important;            
-        border: 1px solid #0057A4 !important; 
-        border-radius: 8px !important;
-        font-weight: bold !important;
-        transition: all 0.3s ease;
-        width: auto !important; 
-        padding-left: 20px !important;
-        padding-right: 20px !important;
-        min-width: 120px !important;
-        font-size: 11px !important;
-    }
-    .notice-panel div[data-testid="stButton"] > button p {
-        color: #0057A4 !important;
-    }
-    .notice-panel div[data-testid="stButton"] > button:hover {
-        background-color: #CCE4FF !important;
-        border-color: #004080 !important;
-    }
-    .notice-panel div[data-testid="stButton"] > button:hover p {
-        color: #004080 !important;
-    }
+   /* 공지사항 아래에 오는 "변경사항 저장" 버튼 (PC + 모바일 공통) */
+div[data-testid="stTextArea"] + div[data-testid="stButton"] > button {
+    background-color: #E6F2FF !important; 
+    color: #0057A4 !important;            
+    border: 1px solid #0057A4 !important; 
+    border-radius: 8px !important;
+    font-weight: bold !important;
+    transition: all 0.3s ease;
+    width: auto !important; 
+    padding-left: 20px !important;
+    padding-right: 20px !important;
+    min-width: 120px !important;
+    font-size: 11px !important;   /* ← 여기 숫자를 줄이면 글씨도 같이 작아짐 */
+}
+
+/* 텍스트 노드가 내부 span/p에 들어가는 경우(버전 차이 대비) */
+div[data-testid="stTextArea"] + div[data-testid="stButton"] > button * {
+    font-size: 11px !important;  /* ← 더 확실하게 글씨 크기 강제 */
+}
 
     /* 하루 시작 버튼 */
     div[data-testid="stExpander"] button {
