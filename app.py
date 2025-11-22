@@ -237,12 +237,24 @@ st.markdown("""
     <style>
     .block-container { padding: 1rem; }
     
-    /* PC: 방 사이 간격 좁힘 */
-    div[data-testid="column"] > div > div > div {
-        gap: 0.4rem !important; 
+    /* ★★★ [핵심 수정] PC에서 카드 간 수직 간격 강력하게 줄이기 ★★★ */
+    /* 카드들을 감싸는 부모 컨테이너의 gap을 강제로 0.2rem(약 3px)로 설정 */
+    div[data-testid="column"] > div > div > div[data-testid="stVerticalBlock"] {
+        gap: 0.2rem !important; 
     }
+    /* 혹은 더 깊은 구조 타겟팅 */
+    div[data-testid="column"] [data-testid="stVerticalBlock"] {
+        gap: 0.2rem !important;
+    }
+
+    /* 카드 내부 요소 간격도 최소화 */
     div[data-testid="stVerticalBlockBorderWrapper"] > div > div > div { 
-        gap: 0.3rem !important; 
+        gap: 0.2rem !important; 
+    }
+    
+    /* 카드 자체의 패딩(안쪽 여백) 줄이기 */
+    div[data-testid="stVerticalBlockBorderWrapper"] {
+        padding: 0.5rem !important;
     }
 
     hr { margin-top: 0.2rem !important; margin-bottom: 0.5rem !important; }
@@ -302,11 +314,10 @@ st.markdown("""
         border-color: #bbb;
     }
 
-    /* ★★★ [색상 수정] 저장 버튼 - 차분한 인디고(파란) 계열 ★★★ */
-    /* PC */
+    /* [PC] 저장 버튼 (인디고) */
     div[data-testid="stButton"]:first-of-type button {
-        background-color: #E8EAF6 !important; /* 연한 인디고 */
-        color: #1A237E !important;            /* 진한 남색 */
+        background-color: #E8EAF6 !important; 
+        color: #1A237E !important;            
         border: 1px solid #9FA8DA !important; 
         border-radius: 8px !important;
         font-weight: bold !important;
@@ -321,10 +332,10 @@ st.markdown("""
         border-color: #5C6BC0 !important;
     }
 
-    /* ★★★ [색상 수정] 하루 시작 버튼 - 확실한 붉은 계열 ★★★ */
+    /* [PC/Mobile] 하루 시작 버튼 (붉은 계열) */
     div[data-testid="stExpander"] button {
-        background-color: #FFEBEE !important; /* 연한 빨강 */
-        color: #B71C1C !important;            /* 아주 진한 빨강 */
+        background-color: #FFEBEE !important; 
+        color: #B71C1C !important;            
         border: 1px solid #EF9A9A !important; 
         font-weight: bold !important;
     }
@@ -334,7 +345,7 @@ st.markdown("""
         color: #D32F2F !important;
     }
 
-    /* [모바일 전용] */
+    /* [모바일 전용 스타일] */
     @media (max-width: 900px) {
         .block-container > div > div > div[data-testid="stHorizontalBlock"] {
             display: flex !important;
@@ -344,7 +355,7 @@ st.markdown("""
         .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(1) { order: 2; }
         .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(2) { order: 3; }
 
-        /* 모바일 카드 내부 간격 넉넉히 */
+        /* 모바일 카드 내부 간격 20px */
         div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] {
             flex-direction: row !important;
             gap: 20px !important; 
@@ -354,7 +365,7 @@ st.markdown("""
             margin-bottom: 0px !important;
         }
 
-        /* 저장 버튼: 중간 길이 */
+        /* 저장 버튼 (인디고) */
         div[data-testid="stButton"]:first-of-type {
             position: fixed !important;
             bottom: 20px !important;
@@ -369,7 +380,7 @@ st.markdown("""
             height: 55px !important;
             font-size: 16px !important;
             border-radius: 25px !important;
-            box-shadow: 0px 4px 15px rgba(26, 35, 126, 0.3) !important; /* 그림자도 인디고색 */
+            box-shadow: 0px 4px 15px rgba(26, 35, 126, 0.3) !important; 
             border: 2px solid #1A237E !important;
             background-color: #E8EAF6 !important;
             color: #1A237E !important;
@@ -441,7 +452,6 @@ with col_notice:
         on_change=save_notice_callback
     )
     
-    # 변경사항 저장 버튼 (인디고 계열)
     if st.button("변경사항 저장", use_container_width=False):
         save_notice_callback()
         save_data(df)
@@ -449,7 +459,6 @@ with col_notice:
 
     st.markdown("<a href='#top' class='floating-top-btn'>🔝</a>", unsafe_allow_html=True)
 
-    # 빠른 이동 (음수 마진으로 간격 최소화)
     st.markdown("<div style='margin-top: -15px; margin-bottom: 5px; font-weight: bold; font-size: 14px;'>🚀 빠른 이동</div>", unsafe_allow_html=True)
     
     # A구역
@@ -471,6 +480,5 @@ st.markdown("---")
 
 with st.expander("⚙️ 관리자 메뉴 (하루 시작 / 초기화)"):
     st.warning("⚠️ 주의: 모든 수술실의 상태와 입력된 이름이 초기화됩니다.")
-    # 하루 시작 버튼 (붉은색 - CSS 강제 적용됨)
     if st.button("🔄 하루 시작 (전체 초기화)", use_container_width=True, type="primary"):
         reset_all_data()
