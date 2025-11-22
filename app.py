@@ -76,7 +76,6 @@ def save_notice_callback():
 
 # --- 동기화 로직 ---
 def sync_session_state(df):
-    # 1. 수술실 현황
     for index, row in df.iterrows():
         room = row['Room']
         key_status = f"st_{room}"
@@ -92,7 +91,6 @@ def sync_session_state(df):
         if key_a not in st.session_state or st.session_state[key_a] != row['Afternoon']:
             st.session_state[key_a] = row['Afternoon']
 
-    # 2. 공지사항
     server_notice = load_notice()
     if "notice_area" not in st.session_state:
         st.session_state["notice_area"] = server_notice
@@ -118,10 +116,14 @@ def update_data_callback(room_name, col_name, session_key):
     if new_value is not None:
         df = load_data()
         idx = get_room_index(df, room_name)
+        
+        # 값이 실제로 변경되었을 때만 실행
         if df.loc[idx, col_name] != new_value:
             df.loc[idx, col_name] = new_value
-            if col_name == 'Status':
-                df.loc[idx, 'Last_Update'] = get_korean_time()
+            
+            # [수정됨] 상태뿐만 아니라, 이름(오전/점심/오후)이 바뀌어도 시간 업데이트
+            df.loc[idx, 'Last_Update'] = get_korean_time()
+            
             save_data(df)
 
 # --- UI 렌더링 ---
@@ -142,7 +144,6 @@ def render_final_card(room_name, df):
     current_icon = status.split(" ")[0] 
 
     with st.container(border=True):
-        # 1열: [방 번호(뱃지)] | [상태 선택]
         c1, c2 = st.columns([1, 2], gap="small")
         with c1:
             st.markdown(f"""
@@ -174,7 +175,6 @@ def render_final_card(room_name, df):
                 args=(room_name, 'Status', key_status)
             )
 
-        # 2열: 입력창
         s1, s2, s3 = st.columns(3)
         key_m = f"m_{room_name}"
         key_l = f"l_{room_name}"
@@ -187,7 +187,6 @@ def render_final_card(room_name, df):
         s3.text_input("오후", key=key_a, placeholder="", label_visibility="collapsed",
                       on_change=update_data_callback, args=(room_name, 'Afternoon', key_a))
 
-        # 3열: 업데이트 시간
         st.markdown(f"""
             <div style='
                 text-align: right; 
@@ -243,8 +242,7 @@ st.markdown("""
         line-height: 1.5;
     }
     
-    /* [PC] 기본 저장 버튼 스타일 (파스텔톤) */
-    /* 페이지에 있는 '첫 번째 버튼' (변경사항 저장) 타겟팅 */
+    /* [PC] 기본 저장 버튼 스타일 (파스텔톤, 크기 줄임) */
     div[data-testid="stButton"]:first-of-type button {
         background-color: #E0F2F1 !important; 
         color: #00695C !important;            
@@ -252,16 +250,20 @@ st.markdown("""
         border-radius: 8px !important;
         font-weight: bold !important;
         transition: all 0.3s ease;
+        
+        /* 버튼 크기 줄이기 */
+        width: auto !important; 
+        padding-left: 20px !important;
+        padding-right: 20px !important;
+        min-width: 120px !important;
     }
     div[data-testid="stButton"]:first-of-type button:hover {
         background-color: #B2DFDB !important;
         border-color: #4DB6AC !important;
     }
 
-    /* ★★★ [모바일 전용: 무조건 고정(Sticky) 플로팅 버튼] ★★★ */
+    /* ★★★ [모바일 전용: 알약형 플로팅 버튼] ★★★ */
     @media (max-width: 900px) {
-        
-        /* 1. 메인 레이아웃 순서 정리 */
         .block-container > div > div > div[data-testid="stHorizontalBlock"] {
             display: flex !important;
             flex-direction: column !important;
@@ -278,32 +280,32 @@ st.markdown("""
             margin-bottom: 0px !important;
         }
 
-        /* 2. 저장 버튼 강제 고정 (Nuclear Option) */
-        /* 화면에 존재하는 '첫 번째 버튼' 컨테이너를 무조건 화면 하단으로 납치 */
+        /* 저장 버튼 하단 고정 */
         div[data-testid="stButton"]:first-of-type {
             position: fixed !important;
             bottom: 20px !important;
             left: 50% !important;
             transform: translateX(-50%) !important; /* 가운데 정렬 */
-            width: 90% !important;
-            z-index: 999999 !important; /* 최상단 노출 */
+            width: auto !important; /* 너비 자동 (글자 크기만큼) */
+            z-index: 999999 !important;
             background-color: transparent !important;
             margin: 0 !important;
         }
         
-        /* 버튼 디자인 (모바일 최적화) */
+        /* 버튼 디자인 (모바일에서 너무 길지 않게) */
         div[data-testid="stButton"]:first-of-type button {
-            width: 100% !important;
-            height: 55px !important;
-            font-size: 19px !important;
-            border-radius: 15px !important;
-            box-shadow: 0px 4px 15px rgba(0,0,0,0.2) !important;
+            width: auto !important; /* 자동 너비 */
+            min-width: 160px !important; /* 최소 너비 확보 */
+            height: 50px !important;
+            font-size: 16px !important;
+            border-radius: 25px !important; /* 알약 모양 */
+            box-shadow: 0px 4px 15px rgba(0,105,92, 0.3) !important;
             border: 2px solid #00695C !important;
             background-color: #E0F2F1 !important;
             color: #00695C !important;
+            padding: 0 30px !important; /* 좌우 여백 */
         }
         
-        /* 내용이 버튼에 가려지지 않도록 하단 여백 추가 */
         .block-container {
             padding-bottom: 100px !important;
         }
@@ -336,8 +338,8 @@ with col_notice:
         placeholder="전달사항을 입력하세요...",
         on_change=save_notice_callback
     )
-    # ★ 이 버튼이 모바일에서 하단에 고정됩니다 (첫 번째 버튼이므로)
-    if st.button("변경사항 저장", use_container_width=True):
+    # [수정됨] use_container_width=False로 설정하여 버튼 크기를 줄임
+    if st.button("변경사항 저장", use_container_width=False):
         save_notice_callback()
         save_data(df)
         st.toast("모든 변경사항이 저장되었습니다!", icon="✅")
