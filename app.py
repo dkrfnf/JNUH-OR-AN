@@ -7,7 +7,6 @@ from streamlit_autorefresh import st_autorefresh
 
 # --- 설정 ---
 ZONE_A = ["A1", "A2", "A3", "A4", "A5", "A6", "A7"]
-# [수정됨] Angio -> 외부
 ZONE_B = ["B1", "B2", "B3", "B4", "C2", "외부", "회복실"]
 ALL_ROOMS = ZONE_A + ZONE_B
 DATA_FILE = 'or_status_kst.csv'
@@ -47,7 +46,6 @@ def load_data():
             
             df = pd.read_csv(DATA_FILE, encoding='utf-8')
             
-            # 방 목록 변경 감지 시 초기화
             current_rooms = df['Room'].tolist()
             if len(df) != len(ALL_ROOMS) or current_rooms != ALL_ROOMS:
                 os.remove(DATA_FILE)
@@ -152,7 +150,7 @@ def update_data_callback(room_name, col_name, session_key):
 
 # --- UI 렌더링 ---
 def render_final_card(room_name, df):
-    # 앵커 생성
+    # 앵커
     st.markdown(f"<div id='target_{room_name}' style='scroll-margin-top: 100px;'></div>", unsafe_allow_html=True)
 
     row = df[df['Room'] == room_name].iloc[0]
@@ -235,7 +233,6 @@ def render_zone(col, title, zone_list, df):
 
 st.set_page_config(page_title="JNUH OR", layout="wide")
 
-# 맨 위 앵커
 st.markdown("<div id='top'></div>", unsafe_allow_html=True)
 
 st.markdown("""
@@ -272,35 +269,31 @@ st.markdown("""
         line-height: 1.5;
     }
     
-    /* [가로 스크롤 컨테이너 스타일] */
-    .scroll-container {
+    /* [수정됨] 줄바꿈 컨테이너 (스크롤 X) */
+    .link-container {
         display: flex;
-        overflow-x: auto;
-        white-space: nowrap;
+        flex-wrap: wrap; /* 줄바꿈 허용 */
         gap: 5px;
-        padding-bottom: 5px;
-        margin-bottom: 5px;
-        /* 스크롤바 숨기기 (선택사항) */
-        -ms-overflow-style: none;  /* IE and Edge */
-        scrollbar-width: none;  /* Firefox */
-    }
-    .scroll-container::-webkit-scrollbar {
-        display: none; /* Chrome, Safari, Opera */
+        margin-bottom: 8px;
     }
 
-    /* [바로가기 링크 스타일] */
+    /* [수정됨] 알약 버튼 스타일 (작고 균일하게) */
     .quick-link {
         display: inline-block;
         text-decoration: none;
         background-color: #f1f3f4;
         color: #333;
-        padding: 6px 12px; 
-        border-radius: 15px;
-        font-size: 13px;
+        
+        /* 크기 고정 */
+        width: 48px; 
+        padding: 6px 0;
+        text-align: center;
+        
+        border-radius: 12px;
+        font-size: 12px; 
         font-weight: bold;
         border: 1px solid #ddd;
         transition: background-color 0.2s;
-        flex-shrink: 0; /* 크기 줄어들지 않게 고정 */
     }
     .quick-link:hover {
         background-color: #e0e0e0;
@@ -308,7 +301,7 @@ st.markdown("""
         border-color: #bbb;
     }
 
-    /* [PC] 저장 버튼 스타일 */
+    /* [PC] 저장 버튼 */
     div[data-testid="stButton"]:first-of-type button {
         background-color: #E0F2F1 !important; 
         color: #00695C !important;            
@@ -326,7 +319,7 @@ st.markdown("""
         border-color: #4DB6AC !important;
     }
 
-    /* [모바일 전용 스타일] */
+    /* [모바일 전용: 플로팅 버튼] */
     @media (max-width: 900px) {
         .block-container > div > div > div[data-testid="stHorizontalBlock"] {
             display: flex !important;
@@ -344,25 +337,21 @@ st.markdown("""
             margin-bottom: 0px !important;
         }
 
-        /* [수정됨] 버튼 위치: TOP(왼쪽) / 저장(오른쪽) */
-        
-        /* 1. 저장 버튼 (오른쪽) */
+        /* 저장 버튼: 중간 길이 */
         div[data-testid="stButton"]:first-of-type {
             position: fixed !important;
             bottom: 20px !important;
-            left: 80px !important; /* TOP 버튼 공간(65px) + 여백(15px) */
-            right: 15px !important;
-            width: auto !important;
+            left: 80px !important; 
+            width: auto !important; 
             z-index: 999999 !important;
             background-color: transparent !important;
             margin: 0 !important;
         }
         div[data-testid="stButton"]:first-of-type button {
-            width: 100% !important;
-            min-width: 0 !important;
+            width: 220px !important; 
             height: 55px !important;
-            font-size: 18px !important;
-            border-radius: 15px !important;
+            font-size: 16px !important;
+            border-radius: 25px !important;
             box-shadow: 0px 4px 15px rgba(0,105,92, 0.3) !important;
             border: 2px solid #00695C !important;
             background-color: #E0F2F1 !important;
@@ -370,11 +359,11 @@ st.markdown("""
             padding: 0 !important;
         }
         
-        /* 2. TOP 버튼 (왼쪽) */
+        /* TOP 버튼 (왼쪽) */
         .floating-top-btn {
             position: fixed;
             bottom: 20px;
-            left: 15px; /* 왼쪽 배치 */
+            left: 15px; 
             width: 55px;
             height: 55px;
             background-color: #FFFFFF;
@@ -440,20 +429,20 @@ with col_notice:
         save_data(df)
         st.toast("모든 변경사항이 저장되었습니다!", icon="✅")
 
-    # [수정됨] 모바일 TOP 버튼 (왼쪽에 위치)
     st.markdown("<a href='#top' class='floating-top-btn'>🔝</a>", unsafe_allow_html=True)
 
-    # [수정됨] 빠른 이동 (가로 스크롤 적용)
     st.markdown("<div style='margin-top: 5px; margin-bottom: 5px; font-weight: bold; font-size: 14px;'>🚀 빠른 이동</div>", unsafe_allow_html=True)
     
-    # A구역 (한 줄 스크롤)
-    links_a = "<div class='scroll-container'>"
+    # [수정됨] 줄바꿈 컨테이너 사용
+    
+    # A구역
+    links_a = "<div class='link-container'>"
     for room in ZONE_A:
         links_a += f"<a href='#target_{room}' class='quick-link' target='_self'>{room}</a>"
     links_a += "</div>"
     
-    # B구역 (한 줄 스크롤)
-    links_b = "<div class='scroll-container'>"
+    # B구역
+    links_b = "<div class='link-container'>"
     for room in ZONE_B:
         short_name = room.replace("회복실", "회복")
         links_b += f"<a href='#target_{room}' class='quick-link' target='_self'>{short_name}</a>"
