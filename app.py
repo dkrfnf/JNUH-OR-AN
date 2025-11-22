@@ -311,8 +311,15 @@ st.markdown("""
     }
 
     /* ★★★ [PC 색상 적용 Fix] 변경사항 저장 버튼 ★★★ */
-    /* 선택자를 더 명확하게 지정하고 !important로 강제 적용 */
-    div[data-testid="stHorizontalBlock"] div[data-testid="column"]:nth-of-type(3) button {
+    /* ID Anchor를 이용한 강력한 선택자 사용 */
+    
+    /* Anchor 컨테이너 숨김 처리 */
+    div[data-testid="stVerticalBlock"] > div:has(span#save-btn-anchor) {
+        display: none;
+    }
+
+    /* Anchor 바로 다음 div(버튼 컨테이너)의 버튼 스타일링 */
+    div[data-testid="stVerticalBlock"] > div:has(span#save-btn-anchor) + div button {
         background-color: #E6F2FF !important; /* 연한 파랑 */
         color: #0057A4 !important;            /* 진한 파랑 */
         border: 1px solid #0057A4 !important; 
@@ -323,19 +330,19 @@ st.markdown("""
         padding-left: 20px !important;
         padding-right: 20px !important;
         min-width: 120px !important;
-        font-size: 13px !important; /* 14px -> 13px 축소 */
+        font-size: 13px !important;
     }
     
-    div[data-testid="stHorizontalBlock"] div[data-testid="column"]:nth-of-type(3) button p {
-        color: #0057A4 !important; /* 텍스트 색상 강제 */
+    div[data-testid="stVerticalBlock"] > div:has(span#save-btn-anchor) + div button p {
+        color: #0057A4 !important;
     }
 
-    div[data-testid="stHorizontalBlock"] div[data-testid="column"]:nth-of-type(3) button:hover {
+    div[data-testid="stVerticalBlock"] > div:has(span#save-btn-anchor) + div button:hover {
         background-color: #CCE4FF !important;
         border-color: #004080 !important;
     }
     
-    div[data-testid="stHorizontalBlock"] div[data-testid="column"]:nth-of-type(3) button:hover p {
+    div[data-testid="stVerticalBlock"] > div:has(span#save-btn-anchor) + div button:hover p {
         color: #004080 !important;
     }
 
@@ -466,6 +473,7 @@ with col_notice:
     )
     
     # [PC 색상 적용] type="primary" 제거, CSS로 제어
+    st.markdown('<span id="save-btn-anchor"></span>', unsafe_allow_html=True)
     if st.button("변경사항 저장", use_container_width=False):
         save_notice_callback()
         save_data(df)
