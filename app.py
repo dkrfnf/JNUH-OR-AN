@@ -166,6 +166,7 @@ def render_final_card(room_name, df):
     current_icon = status.split(" ")[0] 
 
     with st.container(border=True):
+        # PC 비율 0.6 : 1.2
         c1, c2 = st.columns([0.6, 1.2], gap="medium")
         with c1:
             st.markdown(f"""
@@ -222,6 +223,7 @@ def render_final_card(room_name, df):
 
 def render_zone(col, title, zone_list, df):
     with col:
+        # 제목 마진 조정
         st.markdown(f"<h4 style='margin-bottom: -15px;'>{title}</h4>", unsafe_allow_html=True)
         for room in zone_list:
             render_final_card(room, df)
@@ -236,15 +238,25 @@ st.markdown("""
     <style>
     .block-container { padding: 1rem; }
     
-    /* 간격 0.2rem */
+    /* ★★★ [간격 조정] 0.18rem 적용 ★★★ */
     div[data-testid="column"] > div > div > div[data-testid="stVerticalBlock"] {
-        gap: 0.25rem !important; 
+        gap: 0.18rem !important; 
+    }
+    div[data-testid="stVerticalBlockBorderWrapper"] {
+        margin-bottom: 0.18rem !important; 
     }
     div[data-testid="stVerticalBlockBorderWrapper"] > div > div > div { 
-        gap: 0.25rem !important; 
+        gap: 0.18rem !important; 
     }
     
-    h4 { margin-top: 0px !important; margin-bottom: -15px !important; padding-bottom: 0px !important; z-index: 1; position: relative; }
+    h4 { 
+        margin-top: 0px !important;
+        margin-bottom: -15px !important; 
+        padding-bottom: 0px !important;
+        z-index: 1; 
+        position: relative;
+    }
+
     hr { margin-top: 0.2rem !important; margin-bottom: 0.5rem !important; }
     
     div[data-testid="stSelectbox"] div[data-baseweb="select"] > div {
@@ -265,10 +277,11 @@ st.markdown("""
         color: #000000 !important; 
         font-size: 14px;
     }
+    /* 공지사항 글씨 크기 13px */
     div[data-testid="stTextArea"] textarea {
         background-color: #FFF9C4 !important;
         color: #333 !important;
-        font-size: 15px !important; 
+        font-size: 13px !important; 
         line-height: 1.5;
     }
     
@@ -300,10 +313,10 @@ st.markdown("""
         border-color: #bbb;
     }
 
-    /* ★★★ [색상 통일] 변경사항 저장 버튼 (PC/Mobile 공통) ★★★ */
+    /* [PC] 변경사항 저장 버튼 (#0057A4, 13px) */
     div[data-testid="column"]:nth-of-type(3) button {
-        background-color: #E6F2FF !important; /* 연한 파랑 */
-        color: #0057A4 !important;            /* 진한 파랑 */
+        background-color: #E6F2FF !important; 
+        color: #0057A4 !important;            
         border: 1px solid #0057A4 !important; 
         border-radius: 8px !important;
         font-weight: bold !important;
@@ -312,11 +325,17 @@ st.markdown("""
         padding-left: 20px !important;
         padding-right: 20px !important;
         min-width: 120px !important;
-        font-size: 13px !important; /* ★★★ [수정됨] 글자 크기 13px ★★★ */
+        font-size: 13px !important;
+    }
+    div[data-testid="column"]:nth-of-type(3) button p {
+        color: #0057A4 !important;
     }
     div[data-testid="column"]:nth-of-type(3) button:hover {
         background-color: #CCE4FF !important;
         border-color: #004080 !important;
+    }
+    div[data-testid="column"]:nth-of-type(3) button:hover p {
+        color: #004080 !important;
     }
 
     /* 하루 시작 버튼 */
@@ -325,6 +344,9 @@ st.markdown("""
         color: #B71C1C !important;            
         border: 1px solid #EF9A9A !important; 
         font-weight: bold !important;
+    }
+    div[data-testid="stExpander"] button p {
+        color: #B71C1C !important;
     }
     div[data-testid="stExpander"] button:hover {
         background-color: #FFCDD2 !important;
@@ -351,6 +373,7 @@ st.markdown("""
             margin-bottom: 0px !important;
         }
 
+        /* 플로팅 저장 버튼 (#0057A4, 13px) */
         div[data-testid="stButton"]:first-of-type {
             position: fixed !important;
             bottom: 20px !important;
@@ -363,10 +386,15 @@ st.markdown("""
         div[data-testid="stButton"]:first-of-type button {
             width: 220px !important; 
             height: 55px !important;
-            font-size: 13px !important; /* ★★★ [수정됨] 모바일 글자 크기 13px ★★★ */
+            font-size: 13px !important;
             border-radius: 25px !important;
             box-shadow: 0px 4px 15px rgba(0, 87, 164, 0.3) !important; 
             padding: 0 !important;
+            background-color: #E6F2FF !important;
+            border: 2px solid #0057A4 !important;
+        }
+        div[data-testid="stButton"]:first-of-type button p {
+            color: #0057A4 !important;
         }
         
         /* TOP 버튼 */
@@ -418,7 +446,7 @@ with col_notice:
     notice_time = load_notice_time()
     if notice_time == "": notice_time = "-"
     
-    # ★★★ [수정됨] 제목 크기 1.35rem으로 확대 ★★★
+    # 제목 크기 1.35rem
     st.markdown(f"""
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; margin-top: -5px;">
             <h5 style="margin:0; font-weight: bold; font-size: 1.35rem;">📢 공지사항</h5>
