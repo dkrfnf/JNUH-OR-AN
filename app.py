@@ -83,26 +83,20 @@ def save_notice_callback():
     new_notice = st.session_state["notice_area"]
     now_time = get_korean_time()
     try:
-        # 내용 저장
         with open(NOTICE_FILE, "w", encoding="utf-8") as f:
             f.write(new_notice)
             f.flush()
             os.fsync(f.fileno())
-        # 시간 저장
         with open(NOTICE_TIME_FILE, "w", encoding="utf-8") as f:
             f.write(now_time)
             f.flush()
             os.fsync(f.fileno())
-        
-        # 내 세션의 기준 시간 업데이트 (PC 수정 반영 안됨 해결)
         st.session_state["last_server_time"] = now_time
     except: pass
 
-# --- 스마트 동기화 로직 (PC 수정 문제 해결) ---
+# --- 스마트 동기화 로직 ---
 def sync_session_state(df):
     if df.empty: return
-    
-    # 1. 수술실 현황 동기화
     for index, row in df.iterrows():
         room = row['Room']
         key_status = f"st_{room}"
@@ -118,14 +112,11 @@ def sync_session_state(df):
         if key_a not in st.session_state or st.session_state[key_a] != row['Afternoon']:
             st.session_state[key_a] = row['Afternoon']
     
-    # 2. 공지사항 동기화 (시간 비교 방식)
     server_time = load_notice_time()
-    
     if "last_server_time" not in st.session_state:
         st.session_state["last_server_time"] = server_time
         st.session_state["notice_area"] = load_notice()
     elif st.session_state["last_server_time"] != server_time:
-        # 서버 시간이 바뀌었을 때만(남이 수정했을 때만) 내 화면 갱신
         st.session_state["notice_area"] = load_notice()
         st.session_state["last_server_time"] = server_time
 
@@ -175,7 +166,6 @@ def render_final_card(room_name, df):
     current_icon = status.split(" ")[0] 
 
     with st.container(border=True):
-        # PC 비율 0.6 : 1.2
         c1, c2 = st.columns([0.6, 1.2], gap="medium")
         with c1:
             st.markdown(f"""
@@ -232,7 +222,6 @@ def render_final_card(room_name, df):
 
 def render_zone(col, title, zone_list, df):
     with col:
-        # 제목 마진 조정
         st.markdown(f"<h4 style='margin-bottom: -15px;'>{title}</h4>", unsafe_allow_html=True)
         for room in zone_list:
             render_final_card(room, df)
@@ -247,9 +236,9 @@ st.markdown("""
     <style>
     .block-container { padding: 1rem; }
     
-    /* 간격 조정 (PC) */
+    /* 간격 조정 */
     div[data-testid="column"] > div > div > div[data-testid="stVerticalBlock"] {
-        gap: 0.12rem !important; 
+        gap: 0.18rem !important; 
     }
     div[data-testid="stVerticalBlockBorderWrapper"] {
         margin-bottom: 0.12rem !important; 
@@ -258,16 +247,10 @@ st.markdown("""
         gap: 0.12rem !important; 
     }
     
-    h4 { 
-        margin-top: 0px !important;
-        margin-bottom: -15px !important; 
-        padding-bottom: 0px !important;
-        z-index: 1; 
-        position: relative;
-    }
-
+    h4 { margin-top: 0px !important; margin-bottom: -15px !important; padding-bottom: 0px !important; z-index: 1; position: relative; }
     hr { margin-top: 0.2rem !important; margin-bottom: 0.5rem !important; }
     
+    /* 입력창 스타일 */
     div[data-testid="stSelectbox"] div[data-baseweb="select"] > div {
         padding-top: 0px; padding-bottom: 0px; padding-left: 5px;
         height: 32px; min-height: 32px;
@@ -289,10 +272,11 @@ st.markdown("""
     div[data-testid="stTextArea"] textarea {
         background-color: #FFF9C4 !important;
         color: #333 !important;
-        font-size: 13px !important; 
+        font-size: 14px !important; 
         line-height: 1.5;
     }
     
+    /* 빠른 이동 버튼 */
     .link-container {
         display: flex;
         width: 100%;
@@ -321,43 +305,42 @@ st.markdown("""
         border-color: #bbb;
     }
 
-    /* ★★★ [PC 색상 강제 적용 Fix] ★★★ */
-    /* 3번째 컬럼의 버튼을 정확하게 타겟팅 */
-    div[data-testid="column"]:nth-of-type(3) button {
-        background-color: #E6F2FF !important; 
-        color: #0057A4 !important;            
-        border: 1px solid #0057A4 !important; 
+    /* ★★★ [핵심] PC/Mobile 공통: 변경사항 저장 버튼 스타일 (Blue) ★★★ */
+    /* 3번째 컬럼에 있는 Primary 버튼을 찾아서 파란색으로 덮어쓰기 */
+    /* nth-of-type(3)은 레이아웃의 3번째 컬럼(Notice 구역)을 가리킴 */
+    div[data-testid="column"]:nth-of-type(3) button[kind="primary"] {
+        background-color: #E6F2FF !important; /* 연한 파랑 배경 */
+        border: 1px solid #0057A4 !important; /* 진한 파랑 테두리 */
+        color: #0057A4 !important;            /* 진한 파랑 글씨 */
+        font-size: 13px !important;           /* 글씨 크기 13px */
         border-radius: 8px !important;
         font-weight: bold !important;
         transition: all 0.3s ease;
         width: auto !important; 
-        padding-left: 20px !important;
-        padding-right: 20px !important;
         min-width: 120px !important;
-        font-size: 13px !important; 
     }
-    div[data-testid="column"]:nth-of-type(3) button p {
-        color: #0057A4 !important;
+    div[data-testid="column"]:nth-of-type(3) button[kind="primary"] p {
+        color: #0057A4 !important; /* 텍스트 강제 파랑 */
     }
-    div[data-testid="column"]:nth-of-type(3) button:hover {
+    div[data-testid="column"]:nth-of-type(3) button[kind="primary"]:hover {
         background-color: #CCE4FF !important;
         border-color: #004080 !important;
     }
-    div[data-testid="column"]:nth-of-type(3) button:hover p {
+    div[data-testid="column"]:nth-of-type(3) button[kind="primary"]:hover p {
         color: #004080 !important;
     }
 
-    /* 하루 시작 버튼 */
-    div[data-testid="stExpander"] button {
+    /* 하루 시작 버튼 (Red) */
+    div[data-testid="stExpander"] button[kind="primary"] {
         background-color: #FFEBEE !important; 
         color: #B71C1C !important;            
         border: 1px solid #EF9A9A !important; 
         font-weight: bold !important;
     }
-    div[data-testid="stExpander"] button p {
+    div[data-testid="stExpander"] button[kind="primary"] p {
         color: #B71C1C !important;
     }
-    div[data-testid="stExpander"] button:hover {
+    div[data-testid="stExpander"] button[kind="primary"]:hover {
         background-color: #FFCDD2 !important;
         border-color: #E57373 !important;
         color: #D32F2F !important;
@@ -382,28 +365,19 @@ st.markdown("""
             margin-bottom: 0px !important;
         }
 
-        /* 플로팅 저장 버튼 */
-        div[data-testid="stButton"]:first-of-type {
+        /* 플로팅 저장 버튼 (마지막 컬럼의 Primary 버튼) */
+        div[data-testid="column"]:last-child button[kind="primary"] {
             position: fixed !important;
             bottom: 20px !important;
             left: 80px !important; 
             width: auto !important; 
+            min-width: 220px !important;
             z-index: 999999 !important;
-            background-color: transparent !important;
             margin: 0 !important;
-        }
-        div[data-testid="stButton"]:first-of-type button {
-            width: 220px !important; 
-            height: 55px !important;
-            font-size: 13px !important; 
+            /* 스타일은 위의 공통 PC/Mobile 스타일을 상속받음 */
+            height: 50px !important;
             border-radius: 25px !important;
             box-shadow: 0px 4px 15px rgba(0, 87, 164, 0.3) !important; 
-            padding: 0 !important;
-            background-color: #E6F2FF !important;
-            border: 2px solid #0057A4 !important;
-        }
-        div[data-testid="stButton"]:first-of-type button p {
-            color: #0057A4 !important;
         }
         
         /* TOP 버튼 */
@@ -464,41 +438,4 @@ with col_notice:
 
     st.text_area(
         "공지사항 내용",
-        key="notice_area",
-        height=200,
-        label_visibility="collapsed",
-        placeholder="전달사항을 입력하세요...",
-        on_change=save_notice_callback
-    )
-    
-    # 변경사항 저장
-    if st.button("변경사항 저장", use_container_width=False):
-        save_notice_callback()
-        save_data(df)
-        st.toast("모든 변경사항이 저장되었습니다!", icon="✅")
-
-    st.markdown("<a href='#top' class='floating-top-btn'>🔝</a>", unsafe_allow_html=True)
-
-    st.markdown("<div style='margin-top: -15px; margin-bottom: 5px; font-weight: bold; font-size: 14px;'>🚀 빠른 이동</div>", unsafe_allow_html=True)
-    
-    # A구역
-    links_a = "<div class='link-container'>"
-    for room in ZONE_A:
-        links_a += f"<a href='#target_{room}' class='quick-link' target='_self'>{room}</a>"
-    links_a += "</div>"
-    
-    # B구역
-    links_b = "<div class='link-container'>"
-    for room in ZONE_B:
-        short_name = room.replace("회복실", "회복")
-        links_b += f"<a href='#target_{room}' class='quick-link' target='_self'>{short_name}</a>"
-    links_b += "</div>"
-    
-    st.markdown(links_a + links_b, unsafe_allow_html=True)
-
-st.markdown("---")
-
-with st.expander("⚙️ 관리자 메뉴 (하루 시작 / 초기화)"):
-    st.warning("⚠️ 주의: 모든 데이터가 초기화됩니다.")
-    if st.button("🔄 하루 시작 (전체 초기화)", use_container_width=True, type="primary"):
-        reset_all_data()
+        key="notice
