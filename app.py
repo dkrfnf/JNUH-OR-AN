@@ -313,7 +313,7 @@ st.markdown("""
         border-color: #bbb;
     }
 
-    /* [PC] 변경사항 저장 버튼 (#0057A4, 13px) */
+    /* [PC] 변경사항 저장 버튼 (#0057A4, 11px) */
     div[data-testid="column"]:nth-of-type(3) button {
         background-color: #E6F2FF !important; 
         color: #0057A4 !important;            
@@ -325,7 +325,7 @@ st.markdown("""
         padding-left: 20px !important;
         padding-right: 20px !important;
         min-width: 120px !important;
-        font-size: 13px !important;
+        font-size: 11px !important;
     }
     div[data-testid="column"]:nth-of-type(3) button p {
         color: #0057A4 !important;
