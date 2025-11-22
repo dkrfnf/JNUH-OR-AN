@@ -385,7 +385,7 @@ st.markdown("""
         }
         div[data-testid="stButton"]:first-of-type button {
             width: 220px !important; 
-            height: 55px !important;
+            height: 50px !important;
             font-size: 11px !important;
             border-radius: 23px !important;
             box-shadow: 0px 4px 15px rgba(0, 87, 164, 0.3) !important; 
