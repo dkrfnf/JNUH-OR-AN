@@ -93,7 +93,8 @@ def save_notice_callback():
                 f.write(now_time)
                 f.flush()
                 os.fsync(f.fileno())
-        except: pass
+        except: 
+            pass
 
 # --- 동기화 로직 ---
 def sync_session_state(df):
@@ -118,7 +119,7 @@ def sync_session_state(df):
         st.session_state["notice_area"] = server_notice
     else:
         if st.session_state["notice_area"] != server_notice:
-             st.session_state["notice_area"] = server_notice
+            st.session_state["notice_area"] = server_notice
 
 # --- 액션 함수 ---
 def reset_all_data():
@@ -313,8 +314,8 @@ st.markdown("""
         border-color: #bbb;
     }
 
-    /* [PC] 변경사항 저장 버튼 (#0057A4, 11px) */
-    div[data-testid="column"]:nth-of-type(3) button {
+    /* [PC] 공지사항 영역 변경사항 저장 버튼 (#0057A4, 11px) */
+    .notice-panel div[data-testid="stButton"] > button {
         background-color: #E6F2FF !important; 
         color: #0057A4 !important;            
         border: 1px solid #0057A4 !important; 
@@ -327,14 +328,14 @@ st.markdown("""
         min-width: 120px !important;
         font-size: 11px !important;
     }
-    div[data-testid="column"]:nth-of-type(3) button p {
+    .notice-panel div[data-testid="stButton"] > button p {
         color: #0057A4 !important;
     }
-    div[data-testid="column"]:nth-of-type(3) button:hover {
+    .notice-panel div[data-testid="stButton"] > button:hover {
         background-color: #CCE4FF !important;
         border-color: #004080 !important;
     }
-    div[data-testid="column"]:nth-of-type(3) button:hover p {
+    .notice-panel div[data-testid="stButton"] > button:hover p {
         color: #004080 !important;
     }
 
@@ -443,8 +444,12 @@ render_zone(col_a, "A 구역", ZONE_A, df)
 render_zone(col_b, "B / C / 기타", ZONE_B, df)
 
 with col_notice:
+    # 공지 영역 wrapper (PC 버튼 스타일용)
+    st.markdown("<div class='notice-panel'>", unsafe_allow_html=True)
+
     notice_time = load_notice_time()
-    if notice_time == "": notice_time = "-"
+    if notice_time == "": 
+        notice_time = "-"
     
     # 제목 크기 1.35rem
     st.markdown(f"""
@@ -486,6 +491,9 @@ with col_notice:
     links_b += "</div>"
     
     st.markdown(links_a + links_b, unsafe_allow_html=True)
+
+    # notice-panel wrapper 닫기
+    st.markdown("</div>", unsafe_allow_html=True)
 
 st.markdown("---")
 
