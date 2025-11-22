@@ -142,7 +142,7 @@ def render_final_card(room_name, df):
     current_icon = status.split(" ")[0] 
 
     with st.container(border=True):
-        # 1열: [방 번호] | [상태 선택] (비율 1:2)
+        # 1열: [방 번호(뱃지)] | [상태 선택]
         c1, c2 = st.columns([1, 2], gap="small")
         with c1:
             st.markdown(f"""
@@ -243,9 +243,9 @@ st.markdown("""
         line-height: 1.5;
     }
     
-    /* [PC] 저장 버튼 스타일 (파스텔톤) */
-    /* 마지막 컬럼(공지사항)의 버튼 */
-    div[data-testid="column"]:last-child button {
+    /* [PC] 기본 저장 버튼 스타일 (파스텔톤) */
+    /* 페이지에 있는 '첫 번째 버튼' (변경사항 저장) 타겟팅 */
+    div[data-testid="stButton"]:first-of-type button {
         background-color: #E0F2F1 !important; 
         color: #00695C !important;            
         border: 1px solid #80CBC4 !important; 
@@ -253,33 +253,23 @@ st.markdown("""
         font-weight: bold !important;
         transition: all 0.3s ease;
     }
-    div[data-testid="column"]:last-child button:hover {
+    div[data-testid="stButton"]:first-of-type button:hover {
         background-color: #B2DFDB !important;
         border-color: #4DB6AC !important;
     }
 
-    /* ★★★ [모바일 전용 스타일: 플로팅 저장 버튼] ★★★ */
-    /* 기준 너비를 900px로 확 늘림 (태블릿, 큰 폰 커버) */
+    /* ★★★ [모바일 전용: 무조건 고정(Sticky) 플로팅 버튼] ★★★ */
     @media (max-width: 900px) {
-        /* 1. 메인 레이아웃 정렬 */
+        
+        /* 1. 메인 레이아웃 순서 정리 */
         .block-container > div > div > div[data-testid="stHorizontalBlock"] {
             display: flex !important;
             flex-direction: column !important;
         }
-        /* 공지사항(마지막 컬럼)을 위로 */
-        .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:last-child { 
-            order: 1; margin-bottom: 20px; 
-        }
-        /* A구역 */
-        .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:first-child { 
-            order: 2; 
-        }
-        /* B구역 */
-        .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(2) { 
-            order: 3; 
-        }
+        .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(3) { order: 1; margin-bottom: 20px; }
+        .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(1) { order: 2; }
+        .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(2) { order: 3; }
 
-        /* 카드 내부는 가로 정렬 유지 */
         div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] {
             flex-direction: row !important;
         }
@@ -288,31 +278,32 @@ st.markdown("""
             margin-bottom: 0px !important;
         }
 
-        /* 2. 저장 버튼 하단 고정 (Sticky Bottom) - 더 강력한 선택자 사용 */
-        /* 마지막 컬럼(공지사항) 안의 stButton 컨테이너 */
-        div[data-testid="column"]:last-child .stButton {
+        /* 2. 저장 버튼 강제 고정 (Nuclear Option) */
+        /* 화면에 존재하는 '첫 번째 버튼' 컨테이너를 무조건 화면 하단으로 납치 */
+        div[data-testid="stButton"]:first-of-type {
             position: fixed !important;
             bottom: 20px !important;
             left: 50% !important;
             transform: translateX(-50%) !important; /* 가운데 정렬 */
-            width: 90% !important; /* 화면 꽉 차지 않게 */
-            z-index: 999999 !important; /* 무조건 최상단 */
+            width: 90% !important;
+            z-index: 999999 !important; /* 최상단 노출 */
             background-color: transparent !important;
+            margin: 0 !important;
         }
         
-        /* 버튼 디자인 강화 (모바일 터치 최적화) */
-        div[data-testid="column"]:last-child button {
+        /* 버튼 디자인 (모바일 최적화) */
+        div[data-testid="stButton"]:first-of-type button {
             width: 100% !important;
             height: 55px !important;
-            font-size: 18px !important;
-            border-radius: 30px !important; /* 둥근 알약 모양 */
-            box-shadow: 0px 6px 20px rgba(0,105,92, 0.3) !important;
+            font-size: 19px !important;
+            border-radius: 15px !important;
+            box-shadow: 0px 4px 15px rgba(0,0,0,0.2) !important;
             border: 2px solid #00695C !important;
             background-color: #E0F2F1 !important;
             color: #00695C !important;
         }
         
-        /* 버튼 뒤 내용 가림 방지 여백 */
+        /* 내용이 버튼에 가려지지 않도록 하단 여백 추가 */
         .block-container {
             padding-bottom: 100px !important;
         }
@@ -345,7 +336,7 @@ with col_notice:
         placeholder="전달사항을 입력하세요...",
         on_change=save_notice_callback
     )
-    # 변경사항 저장 버튼
+    # ★ 이 버튼이 모바일에서 하단에 고정됩니다 (첫 번째 버튼이므로)
     if st.button("변경사항 저장", use_container_width=True):
         save_notice_callback()
         save_data(df)
