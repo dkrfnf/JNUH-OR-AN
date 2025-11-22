@@ -223,7 +223,6 @@ def render_final_card(room_name, df):
 
 def render_zone(col, title, zone_list, df):
     with col:
-        # 제목 마진 삭제하여 간격 맞춤
         st.markdown(f"<h4 style='margin-bottom: -15px;'>{title}</h4>", unsafe_allow_html=True)
         for room in zone_list:
             render_final_card(room, df)
@@ -275,11 +274,11 @@ st.markdown("""
         font-size: 14px;
     }
     
-    /* 공지사항 글씨 크기 */
+    /* ★★★ [글씨 크기 축소] 공지사항 14px ★★★ */
     div[data-testid="stTextArea"] textarea {
         background-color: #FFF9C4 !important;
         color: #333 !important;
-        font-size: 1.1rem !important; 
+        font-size: 14px !important; /* 1.1rem -> 14px */
         line-height: 1.5;
     }
     
@@ -311,11 +310,12 @@ st.markdown("""
         border-color: #bbb;
     }
 
-    /* ★★★ [색상 강제 적용] 변경사항 저장 버튼 (PC) ★★★ */
+    /* ★★★ [색상 & 크기 강제 적용] 변경사항 저장 버튼 ★★★ */
+    /* PC */
     div[data-testid="column"]:nth-of-type(3) button {
         background-color: #E6F2FF !important; /* 연한 파랑 */
         color: #0057A4 !important;            /* 진한 파랑 */
-        border: 1px solid #0057A4 !important; /* 진한 파랑 테두리 */
+        border: 1px solid #0057A4 !important; /* 파란 테두리 */
         border-radius: 8px !important;
         font-weight: bold !important;
         transition: all 0.3s ease;
@@ -323,23 +323,36 @@ st.markdown("""
         padding-left: 20px !important;
         padding-right: 20px !important;
         min-width: 120px !important;
+        font-size: 14px !important; /* 글씨 크기 줄임 */
     }
+    /* 호버 시 색상 */
     div[data-testid="column"]:nth-of-type(3) button:hover {
-        background-color: #CCE4FF !important; /* 호버 시 */
+        background-color: #CCE4FF !important; 
         border-color: #004080 !important;
         color: #004080 !important;
     }
+    /* 클릭 시 색상 */
     div[data-testid="column"]:nth-of-type(3) button:active {
         background-color: #0057A4 !important;
         color: #ffffff !important;
     }
+    /* 텍스트 내부 p태그 강제 컬러 적용 (Streamlit 종특 대비) */
+    div[data-testid="column"]:nth-of-type(3) button p {
+        color: #0057A4 !important;
+    }
+    div[data-testid="column"]:nth-of-type(3) button:hover p {
+        color: #004080 !important;
+    }
 
-    /* [PC/Mobile 공통] 하루 시작 버튼 (붉은 계열) */
+    /* 하루 시작 버튼 (붉은 계열) */
     div[data-testid="stExpander"] button {
         background-color: #FFEBEE !important; 
         color: #B71C1C !important;            
         border: 1px solid #EF9A9A !important; 
         font-weight: bold !important;
+    }
+    div[data-testid="stExpander"] button p {
+        color: #B71C1C !important;
     }
     div[data-testid="stExpander"] button:hover {
         background-color: #FFCDD2 !important;
@@ -376,11 +389,10 @@ st.markdown("""
             background-color: transparent !important;
             margin: 0 !important;
         }
-        /* 모바일에서도 색상 강제 적용 */
+        /* 모바일 버튼 스타일 (색상/크기 강제) */
         div[data-testid="stButton"]:first-of-type button {
             width: 220px !important; 
             height: 55px !important;
-            font-size: 16px !important;
             border-radius: 25px !important;
             box-shadow: 0px 4px 15px rgba(0, 87, 164, 0.3) !important;
             
@@ -389,9 +401,10 @@ st.markdown("""
             border: 2px solid #0057A4 !important;
             
             padding: 0 !important;
+            font-size: 14px !important; /* 모바일에서도 14px */
         }
-        div[data-testid="stButton"]:first-of-type button:hover {
-            background-color: #CCE4FF !important;
+        div[data-testid="stButton"]:first-of-type button p {
+            color: #0057A4 !important;
         }
         
         /* TOP 버튼 */
@@ -443,7 +456,6 @@ with col_notice:
     notice_time = load_notice_time()
     if notice_time == "": notice_time = "-"
     
-    # 공지사항 제목 크기 1.2rem
     st.markdown(f"""
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; margin-top: -5px;">
             <h5 style="margin:0; font-weight: bold; font-size: 1.2rem;">📢 공지사항</h5>
@@ -460,6 +472,7 @@ with col_notice:
         on_change=save_notice_callback
     )
     
+    # [수정됨] 색상 및 크기 강제 적용
     if st.button("변경사항 저장", use_container_width=False):
         save_notice_callback()
         save_data(df)
