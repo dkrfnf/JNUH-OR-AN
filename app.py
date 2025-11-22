@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime, timedelta
 import os
+import time
 from streamlit_autorefresh import st_autorefresh
 
 # --- 설정 ---
@@ -27,81 +28,74 @@ def get_room_index(df, room_name):
 
 # --- 데이터 로드/저장 ---
 def load_data():
-    try:
-        if not os.path.exists(DATA_FILE):
-            now_time = get_korean_time()
-            data = {
-                'Room': ALL_ROOMS,
-                'Status': ['▶ 수술'] * len(ALL_ROOMS),
-                'Last_Update': [now_time] * len(ALL_ROOMS),
-                'Morning': [''] * len(ALL_ROOMS),
-                'Lunch': [''] * len(ALL_ROOMS),
-                'Afternoon': [''] * len(ALL_ROOMS)
-            }
-            df = pd.DataFrame(data)
-            df.to_csv(DATA_FILE, index=False, encoding='utf-8')
-            return df
-        df = pd.read_csv(DATA_FILE, encoding='utf-8')
-    except Exception:
-        if os.path.exists(DATA_FILE):
-            os.remove(DATA_FILE)
-            return load_data()
-        return pd.DataFrame()
-
-    if len(df) != len(ALL_ROOMS) or df.loc[0, 'Status'] not in OP_STATUS:
-        os.remove(DATA_FILE)
-        return load_data()
-    return df.fillna('')
+    for _ in range(5):
+        try:
+            if not os.path.exists(DATA_FILE):
+                now_time = get_korean_time()
+                data = {
+                    'Room': ALL_ROOMS,
+                    'Status': ['▶ 수술'] * len(ALL_ROOMS),
+                    'Last_Update': [now_time] * len(ALL_ROOMS),
+                    'Morning': [''] * len(ALL_ROOMS),
+                    'Lunch': [''] * len(ALL_ROOMS),
+                    'Afternoon': [''] * len(ALL_ROOMS)
+                }
+                df = pd.DataFrame(data)
+                df.to_csv(DATA_FILE, index=False, encoding='utf-8')
+                return df
+            df = pd.read_csv(DATA_FILE, encoding='utf-8')
+            if len(df) != len(ALL_ROOMS) or df.loc[0, 'Status'] not in OP_STATUS:
+                os.remove(DATA_FILE)
+                continue 
+            return df.fillna('')
+        except Exception:
+            time.sleep(0.1)
+    return pd.DataFrame()
 
 def save_data(df):
-    df.to_csv(DATA_FILE, index=False, encoding='utf-8')
+    for _ in range(5):
+        try:
+            df.to_csv(DATA_FILE, index=False, encoding='utf-8')
+            return True
+        except Exception:
+            time.sleep(0.1)
+    return False
 
-# 공지사항 내용 로드
 def load_notice():
-    if not os.path.exists(NOTICE_FILE):
-        return ""
-    try:
-        with open(NOTICE_FILE, "r", encoding="utf-8") as f:
-            return f.read()
-    except:
-        return ""
+    if not os.path.exists(NOTICE_FILE): return ""
+    for _ in range(5):
+        try:
+            with open(NOTICE_FILE, "r", encoding="utf-8") as f: return f.read()
+        except: time.sleep(0.1)
+    return ""
 
-# 공지사항 시간 로드
 def load_notice_time():
-    if not os.path.exists(NOTICE_TIME_FILE):
-        return ""
-    try:
-        with open(NOTICE_TIME_FILE, "r", encoding="utf-8") as f:
-            return f.read()
-    except:
-        return ""
+    if not os.path.exists(NOTICE_TIME_FILE): return ""
+    for _ in range(5):
+        try:
+            with open(NOTICE_TIME_FILE, "r", encoding="utf-8") as f: return f.read()
+        except: time.sleep(0.1)
+    return ""
 
-# ★★★ [핵심 수정] 내용이 바뀔 때만 시간 업데이트 ★★★
 def save_notice_callback():
     new_notice = st.session_state["notice_area"]
-    old_notice = load_notice() # 파일에 있는 기존 내용 불러오기
-
-    # 기존 내용과 다를 때만 저장 및 시간 갱신
+    old_notice = load_notice()
     if new_notice != old_notice:
         now_time = get_korean_time()
         try:
-            # 내용 저장
             with open(NOTICE_FILE, "w", encoding="utf-8") as f:
                 f.write(new_notice)
                 f.flush()
                 os.fsync(f.fileno())
-            
-            # 시간 저장 (내용이 바뀌었으므로 시간도 갱신)
             with open(NOTICE_TIME_FILE, "w", encoding="utf-8") as f:
                 f.write(now_time)
                 f.flush()
                 os.fsync(f.fileno())
-        except:
-            pass
+        except: pass
 
 # --- 동기화 로직 ---
 def sync_session_state(df):
-    # 1. 수술실 현황
+    if df.empty: return
     for index, row in df.iterrows():
         room = row['Room']
         key_status = f"st_{room}"
@@ -116,8 +110,7 @@ def sync_session_state(df):
         key_a = f"a_{room}"
         if key_a not in st.session_state or st.session_state[key_a] != row['Afternoon']:
             st.session_state[key_a] = row['Afternoon']
-
-    # 2. 공지사항 내용 동기화
+    
     server_notice = load_notice()
     if "notice_area" not in st.session_state:
         st.session_state["notice_area"] = server_notice
@@ -128,27 +121,24 @@ def sync_session_state(df):
 # --- 액션 함수 ---
 def reset_all_data():
     df = load_data()
+    if df.empty: return
     now_time = get_korean_time()
     df['Status'] = '▶ 수술'
     df['Morning'] = ''
     df['Lunch'] = ''
     df['Afternoon'] = ''
     df['Last_Update'] = now_time
-    save_data(df)
-    
-    # 공지사항 시간은 초기화하지 않음 (내용이 그대로라면)
-    # 만약 공지사항 내용도 지우고 싶다면 아래 코드 추가
-    # with open(NOTICE_FILE, "w", encoding="utf-8") as f: f.write("")
-    
-    sync_session_state(df)
-    st.rerun()
+    if save_data(df):
+        sync_session_state(df)
+        time.sleep(0.2) 
+        st.rerun()
 
 def update_data_callback(room_name, col_name, session_key):
     new_value = st.session_state.get(session_key)
     if new_value is not None:
         df = load_data()
+        if df.empty: return
         idx = get_room_index(df, room_name)
-        
         if df.loc[idx, col_name] != new_value:
             df.loc[idx, col_name] = new_value
             df.loc[idx, 'Last_Update'] = get_korean_time()
@@ -156,6 +146,10 @@ def update_data_callback(room_name, col_name, session_key):
 
 # --- UI 렌더링 ---
 def render_final_card(room_name, df):
+    # ★ [추가됨] 이동 좌표(Anchor) 생성
+    # 스크롤 시 헤더에 가려지지 않도록 상단 여백(scroll-margin-top)을 줌
+    st.markdown(f"<div id='target_{room_name}' style='scroll-margin-top: 100px;'></div>", unsafe_allow_html=True)
+
     row = df[df['Room'] == room_name].iloc[0]
     status = row['Status']
     
@@ -270,6 +264,26 @@ st.markdown("""
         line-height: 1.5;
     }
     
+    /* [바로가기 링크 스타일] */
+    .quick-link {
+        display: inline-block;
+        text-decoration: none;
+        background-color: #f1f3f4;
+        color: #333;
+        padding: 4px 8px;
+        margin: 2px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: bold;
+        border: 1px solid #ddd;
+        transition: background-color 0.2s;
+    }
+    .quick-link:hover {
+        background-color: #e0e0e0;
+        color: #000;
+        border-color: #bbb;
+    }
+
     /* [PC] 저장 버튼 스타일 */
     div[data-testid="stButton"]:first-of-type button {
         background-color: #E0F2F1 !important; 
@@ -288,7 +302,7 @@ st.markdown("""
         border-color: #4DB6AC !important;
     }
 
-    /* [모바일 전용: 플로팅 버튼] */
+    /* [모바일 전용] */
     @media (max-width: 900px) {
         .block-container > div > div > div[data-testid="stHorizontalBlock"] {
             display: flex !important;
@@ -306,6 +320,7 @@ st.markdown("""
             margin-bottom: 0px !important;
         }
 
+        /* 플로팅 버튼 */
         div[data-testid="stButton"]:first-of-type {
             position: fixed !important;
             bottom: 20px !important;
@@ -368,11 +383,24 @@ with col_notice:
         on_change=save_notice_callback
     )
     
-    # 변경사항 저장 버튼
     if st.button("변경사항 저장", use_container_width=False):
         save_notice_callback()
         save_data(df)
         st.toast("모든 변경사항이 저장되었습니다!", icon="✅")
+
+    # ★ [추가됨] 방 이동 바로가기 (Chips)
+    st.markdown("<div style='margin-top: 20px; margin-bottom: 5px; font-weight: bold; font-size: 14px;'>🚀 빠른 이동</div>", unsafe_allow_html=True)
+    
+    # 링크 생성 로직
+    links_html = "<div style='display: flex; flex-wrap: wrap; gap: 4px;'>"
+    for room in ALL_ROOMS:
+        # 짧은 이름 사용 (회복실 -> 회복)
+        short_name = room.replace("회복실", "회복")
+        # 앵커 링크: #target_방이름
+        links_html += f"<a href='#target_{room}' class='quick-link' target='_self'>{short_name}</a>"
+    links_html += "</div>"
+    
+    st.markdown(links_html, unsafe_allow_html=True)
 
 st.markdown("---")
 
