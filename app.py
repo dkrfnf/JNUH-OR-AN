@@ -166,6 +166,7 @@ def render_final_card(room_name, df):
     current_icon = status.split(" ")[0] 
 
     with st.container(border=True):
+        # PC 비율 0.6 : 1.2
         c1, c2 = st.columns([0.6, 1.2], gap="medium")
         with c1:
             st.markdown(f"""
@@ -236,28 +237,15 @@ st.markdown("""
     <style>
     .block-container { padding: 1rem; }
     
-    /* ★★★ [간격 수정] 제목과 카드 사이 간격 대폭 축소 ★★★ */
-    /* 제목(h4)의 마진을 없앰 */
-    h4 {
-        margin-bottom: 0.2rem !important;
-        padding-bottom: 0rem !important;
+    /* ★★★ [간격 조정] 너무 좁지 않게 0.5rem으로 완화 ★★★ */
+    div[data-testid="column"] > div > div > div[data-testid="stVerticalBlock"] {
+        gap: 0.5rem !important; /* 적당한 간격 */
     }
-    
-    /* 컬럼 내부 요소들 사이의 간격 최소화 */
-    div[data-testid="column"] > div > div > div {
-        gap: 0.1rem !important; /* 0.2rem -> 0.1rem으로 더 축소 */
-    }
-    div[data-testid="stVerticalBlock"] {
-        gap: 0rem !important; /* 블록 간 간격 0 */
-    }
-    
-    /* 카드 자체 내부 간격 */
     div[data-testid="stVerticalBlockBorderWrapper"] > div > div > div { 
-        gap: 0.2rem !important; 
+        gap: 0.4rem !important; 
     }
-    div[data-testid="stVerticalBlockBorderWrapper"] {
-        padding: 0.5rem !important;
-    }
+    
+    h4 { margin-bottom: 0.2rem !important; }
 
     hr { margin-top: 0.2rem !important; margin-bottom: 0.5rem !important; }
     
@@ -314,26 +302,21 @@ st.markdown("""
         border-color: #bbb;
     }
 
-    /* ★★★ [색상 수정] 저장 버튼 - #0057A4 (진한 파랑) ★★★ */
-    /* PC */
-    div[data-testid="column"]:nth-of-type(3) button {
-        background-color: #E6F2FF !important; /* 아주 연한 파랑 배경 */
-        color: #0057A4 !important;            /* 진한 파랑 글씨 */
-        border: 1px solid #0057A4 !important; /* 진한 파랑 테두리 */
+    /* ★★★ [색상 통일] 변경사항 저장 버튼 (PC/Mobile 공통) ★★★ */
+    div[data-testid="stButton"]:first-of-type button {
+        background-color: #E6F2FF !important; /* 연한 파랑 */
+        color: #0057A4 !important;            /* 진한 파랑 */
+        border: 1px solid #0057A4 !important; 
         border-radius: 8px !important;
         font-weight: bold !important;
         transition: all 0.3s ease;
-        width: auto !important; 
-        padding-left: 20px !important;
-        padding-right: 20px !important;
-        min-width: 120px !important;
     }
-    div[data-testid="column"]:nth-of-type(3) button:hover {
+    div[data-testid="stButton"]:first-of-type button:hover {
         background-color: #CCE4FF !important;
         border-color: #004080 !important;
     }
 
-    /* 하루 시작 버튼 (붉은 계열) */
+    /* [PC/Mobile 공통] 하루 시작 버튼 (붉은 계열) */
     div[data-testid="stExpander"] button {
         background-color: #FFEBEE !important; 
         color: #B71C1C !important;            
@@ -365,7 +348,7 @@ st.markdown("""
             margin-bottom: 0px !important;
         }
 
-        /* 저장 버튼 (#0057A4) */
+        /* 플로팅 저장 버튼 (PC와 색상 동일, 위치만 변경) */
         div[data-testid="stButton"]:first-of-type {
             position: fixed !important;
             bottom: 20px !important;
@@ -380,11 +363,9 @@ st.markdown("""
             height: 55px !important;
             font-size: 16px !important;
             border-radius: 25px !important;
-            box-shadow: 0px 4px 15px rgba(0, 87, 164, 0.3) !important; /* 파란 그림자 */
-            border: 2px solid #0057A4 !important;
-            background-color: #E6F2FF !important;
-            color: #0057A4 !important;
+            box-shadow: 0px 4px 15px rgba(0, 87, 164, 0.3) !important; 
             padding: 0 !important;
+            /* 색상은 위의 공통 스타일 상속받음 */
         }
         
         /* TOP 버튼 */
@@ -452,7 +433,7 @@ with col_notice:
         on_change=save_notice_callback
     )
     
-    # [수정됨] 색상 적용된 저장 버튼
+    # [수정됨] 색상 CSS 적용을 위해 type="primary" 제거
     if st.button("변경사항 저장", use_container_width=False):
         save_notice_callback()
         save_data(df)
