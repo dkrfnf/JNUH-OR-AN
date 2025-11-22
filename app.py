@@ -373,7 +373,7 @@ st.markdown("""
             margin-bottom: 0px !important;
         }
 
-        /* 플로팅 저장 버튼 (#0057A4, 13px) */
+        /* 플로팅 저장 버튼 (#0057A4, 12px) */
         div[data-testid="stButton"]:first-of-type {
             position: fixed !important;
             bottom: 20px !important;
@@ -386,8 +386,8 @@ st.markdown("""
         div[data-testid="stButton"]:first-of-type button {
             width: 220px !important; 
             height: 55px !important;
-            font-size: 13px !important;
-            border-radius: 25px !important;
+            font-size: 11px !important;
+            border-radius: 23px !important;
             box-shadow: 0px 4px 15px rgba(0, 87, 164, 0.3) !important; 
             padding: 0 !important;
             background-color: #E6F2FF !important;
