@@ -166,6 +166,7 @@ def render_final_card(room_name, df):
     current_icon = status.split(" ")[0] 
 
     with st.container(border=True):
+        # PC 비율 0.6 : 1.2
         c1, c2 = st.columns([0.6, 1.2], gap="medium")
         with c1:
             st.markdown(f"""
@@ -236,15 +237,28 @@ st.markdown("""
     <style>
     .block-container { padding: 1rem; }
     
-    /* ★★★ [간격 조정] 0.25rem으로 더 타이트하게 ★★★ */
-    div[data-testid="column"] > div > div > div[data-testid="stVerticalBlock"] {
-        gap: 0.25rem !important; 
-    }
-    div[data-testid="stVerticalBlockBorderWrapper"] > div > div > div { 
-        gap: 0.25rem !important; 
+    /* ★★★ [제목과 카드 사이 간격 삭제] ★★★ */
+    /* 제목(h4)의 아래쪽 마진을 음수로 줘서 카드를 위로 당김 */
+    h4 { 
+        margin-top: 0rem !important;
+        margin-bottom: -15px !important; /* 강제로 위로 끌어당김 */
+        padding-bottom: 0px !important;
+        z-index: 1; /* 겹침 방지 */
+        position: relative;
     }
     
-    h4 { margin-bottom: 0.2rem !important; }
+    /* PC 카드 간격 최소화 */
+    div[data-testid="column"] > div > div > div[data-testid="stVerticalBlock"] {
+        gap: 0.2rem !important; 
+    }
+    div[data-testid="stVerticalBlockBorderWrapper"] > div > div > div { 
+        gap: 0.2rem !important; 
+    }
+    
+    /* 카드 안쪽 패딩 줄임 */
+    div[data-testid="stVerticalBlockBorderWrapper"] {
+        padding: 0.5rem !important;
+    }
 
     hr { margin-top: 0.2rem !important; margin-bottom: 0.5rem !important; }
     
@@ -267,11 +281,11 @@ st.markdown("""
         font-size: 14px;
     }
     
-    /* ★★★ [글씨 복구] 공지사항 원래 크기 (1.1rem) ★★★ */
+    /* 공지사항 글씨 크기 */
     div[data-testid="stTextArea"] textarea {
         background-color: #FFF9C4 !important;
         color: #333 !important;
-        font-size: 1.1rem !important; /* 원래대로 복구 */
+        font-size: 1.1rem !important; 
         line-height: 1.5;
     }
     
@@ -421,7 +435,6 @@ with col_notice:
     notice_time = load_notice_time()
     if notice_time == "": notice_time = "-"
     
-    # [수정됨] 제목 크기 축소 (h4 -> h5)
     st.markdown(f"""
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
             <h5 style="margin:0; font-weight: bold; font-size: 1.1rem;">📢 공지사항</h5>
