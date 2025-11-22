@@ -402,8 +402,8 @@ st.markdown("""
             position: fixed;
             bottom: 20px;
             left: 15px; 
-            width: 55px;
-            height: 55px;
+            width: 50px;
+            height: 50px;
             background-color: #FFFFFF;
             color: #333;
             border: 2px solid #ddd;
