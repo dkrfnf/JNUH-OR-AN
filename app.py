@@ -146,8 +146,7 @@ def update_data_callback(room_name, col_name, session_key):
 
 # --- UI 렌더링 ---
 def render_final_card(room_name, df):
-    # ★ [추가됨] 이동 좌표(Anchor) 생성
-    # 스크롤 시 헤더에 가려지지 않도록 상단 여백(scroll-margin-top)을 줌
+    # 이동 좌표(Anchor)
     st.markdown(f"<div id='target_{room_name}' style='scroll-margin-top: 100px;'></div>", unsafe_allow_html=True)
 
     row = df[df['Room'] == room_name].iloc[0]
@@ -270,10 +269,10 @@ st.markdown("""
         text-decoration: none;
         background-color: #f1f3f4;
         color: #333;
-        padding: 4px 8px;
-        margin: 2px;
+        padding: 6px 10px; /* 터치 영역 약간 확대 */
+        margin: 3px;
         border-radius: 12px;
-        font-size: 12px;
+        font-size: 13px;
         font-weight: bold;
         border: 1px solid #ddd;
         transition: background-color 0.2s;
@@ -284,7 +283,7 @@ st.markdown("""
         border-color: #bbb;
     }
 
-    /* [PC] 저장 버튼 스타일 */
+    /* [PC] 저장 버튼 */
     div[data-testid="stButton"]:first-of-type button {
         background-color: #E0F2F1 !important; 
         color: #00695C !important;            
@@ -302,7 +301,7 @@ st.markdown("""
         border-color: #4DB6AC !important;
     }
 
-    /* [모바일 전용] */
+    /* [모바일 전용: 플로팅 버튼] */
     @media (max-width: 900px) {
         .block-container > div > div > div[data-testid="stHorizontalBlock"] {
             display: flex !important;
@@ -320,7 +319,6 @@ st.markdown("""
             margin-bottom: 0px !important;
         }
 
-        /* 플로팅 버튼 */
         div[data-testid="stButton"]:first-of-type {
             position: fixed !important;
             bottom: 20px !important;
@@ -388,19 +386,24 @@ with col_notice:
         save_data(df)
         st.toast("모든 변경사항이 저장되었습니다!", icon="✅")
 
-    # ★ [추가됨] 방 이동 바로가기 (Chips)
-    st.markdown("<div style='margin-top: 20px; margin-bottom: 5px; font-weight: bold; font-size: 14px;'>🚀 빠른 이동</div>", unsafe_allow_html=True)
+    # ★ [수정됨] 빠른 이동 (A구역과 B구역 분리)
+    # 상단 여백 줄임 (margin-top: 5px)
+    st.markdown("<div style='margin-top: 5px; margin-bottom: 5px; font-weight: bold; font-size: 14px;'>🚀 빠른 이동</div>", unsafe_allow_html=True)
     
-    # 링크 생성 로직
-    links_html = "<div style='display: flex; flex-wrap: wrap; gap: 4px;'>"
-    for room in ALL_ROOMS:
-        # 짧은 이름 사용 (회복실 -> 회복)
+    # A구역 링크 모음
+    links_a = "<div style='display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 4px;'>"
+    for room in ZONE_A:
+        links_a += f"<a href='#target_{room}' class='quick-link' target='_self'>{room}</a>"
+    links_a += "</div>"
+    
+    # B구역 링크 모음 (줄 바꿈 효과)
+    links_b = "<div style='display: flex; flex-wrap: wrap; gap: 4px;'>"
+    for room in ZONE_B:
         short_name = room.replace("회복실", "회복")
-        # 앵커 링크: #target_방이름
-        links_html += f"<a href='#target_{room}' class='quick-link' target='_self'>{short_name}</a>"
-    links_html += "</div>"
+        links_b += f"<a href='#target_{room}' class='quick-link' target='_self'>{short_name}</a>"
+    links_b += "</div>"
     
-    st.markdown(links_html, unsafe_allow_html=True)
+    st.markdown(links_a + links_b, unsafe_allow_html=True)
 
 st.markdown("---")
 
