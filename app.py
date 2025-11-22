@@ -166,7 +166,6 @@ def render_final_card(room_name, df):
     current_icon = status.split(" ")[0] 
 
     with st.container(border=True):
-        # PC 비율 0.6 : 1.2
         c1, c2 = st.columns([0.6, 1.2], gap="medium")
         with c1:
             st.markdown(f"""
@@ -237,7 +236,6 @@ st.markdown("""
     <style>
     .block-container { padding: 1rem; }
     
-    /* PC: 방 사이 세로 간격 최소화 */
     div[data-testid="column"] > div > div > div[data-testid="stVerticalBlock"] {
         gap: 0.2rem !important; 
     }
@@ -307,23 +305,27 @@ st.markdown("""
         border-color: #bbb;
     }
 
-    /* ★★★ [색상 분리: 변경사항 저장 (인디고)] ★★★ */
-    /* 3번째 컬럼(공지사항) 안의 버튼만 타겟팅 */
+    /* ★★★ [색상 수정] 저장 버튼 - 빠른 이동(회색/차콜)과 동일하게 ★★★ */
+    /* PC */
     div[data-testid="column"]:nth-of-type(3) button {
-        background-color: #E8EAF6 !important; 
-        color: #1A237E !important;            
-        border: 1px solid #9FA8DA !important; 
+        background-color: #f1f3f4 !important; 
+        color: #333333 !important;            
+        border: 1px solid #dddddd !important; 
         border-radius: 8px !important;
         font-weight: bold !important;
         transition: all 0.3s ease;
+        width: auto !important; 
+        padding-left: 20px !important;
+        padding-right: 20px !important;
+        min-width: 120px !important;
     }
     div[data-testid="column"]:nth-of-type(3) button:hover {
-        background-color: #C5CAE9 !important;
-        border-color: #5C6BC0 !important;
+        background-color: #e0e0e0 !important;
+        border-color: #bbbbbb !important;
+        color: #000000 !important;
     }
 
-    /* ★★★ [색상 분리: 하루 시작 (붉은색)] ★★★ */
-    /* Expander 안의 버튼 */
+    /* ★★★ [색상 수정] 하루 시작 버튼 - 붉은 계열 ★★★ */
     div[data-testid="stExpander"] button {
         background-color: #FFEBEE !important; 
         color: #B71C1C !important;            
@@ -355,7 +357,7 @@ st.markdown("""
             margin-bottom: 0px !important;
         }
 
-        /* 플로팅 저장 버튼 (스타일 재정의) */
+        /* 플로팅 저장 버튼 (회색톤) */
         div[data-testid="stButton"]:first-of-type {
             position: fixed !important;
             bottom: 20px !important;
@@ -370,10 +372,10 @@ st.markdown("""
             height: 55px !important;
             font-size: 16px !important;
             border-radius: 25px !important;
-            box-shadow: 0px 4px 15px rgba(26, 35, 126, 0.3) !important; 
-            border: 2px solid #1A237E !important;
-            background-color: #E8EAF6 !important;
-            color: #1A237E !important;
+            box-shadow: 0px 4px 15px rgba(0,0,0,0.1) !important; /* 그림자도 차분하게 */
+            border: 1px solid #aaaaaa !important; /* 테두리 약간 진하게 */
+            background-color: #f1f3f4 !important;
+            color: #333333 !important;
             padding: 0 !important;
         }
         
@@ -442,7 +444,7 @@ with col_notice:
         on_change=save_notice_callback
     )
     
-    # [수정됨] type="primary" 제거하여 CSS 색상 적용 (인디고)
+    # [수정됨] type="primary" 제거하여 CSS 적용
     if st.button("변경사항 저장", use_container_width=False):
         save_notice_callback()
         save_data(df)
@@ -450,7 +452,6 @@ with col_notice:
 
     st.markdown("<a href='#top' class='floating-top-btn'>🔝</a>", unsafe_allow_html=True)
 
-    # [수정됨] 음수 마진으로 공지사항 바로 밑에 붙임
     st.markdown("<div style='margin-top: -15px; margin-bottom: 5px; font-weight: bold; font-size: 14px;'>🚀 빠른 이동</div>", unsafe_allow_html=True)
     
     # A구역
@@ -471,8 +472,7 @@ with col_notice:
 st.markdown("---")
 
 with st.expander("⚙️ 관리자 메뉴 (하루 시작 / 초기화)"):
-    # [수정됨] 경고 문구 축소
     st.warning("⚠️ 주의: 모든 데이터가 초기화됩니다.")
-    # 하루 시작 버튼 (type="primary" 유지 + CSS로 빨간색 강화)
+    # 하루 시작 버튼 (type="primary" 유지 + CSS 빨강)
     if st.button("🔄 하루 시작 (전체 초기화)", use_container_width=True, type="primary"):
         reset_all_data()
