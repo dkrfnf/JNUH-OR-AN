@@ -274,11 +274,11 @@ st.markdown("""
         font-size: 14px;
     }
     
-    /* ★★★ [글씨 크기] 공지사항 13px로 줄임 ★★★ */
+    /* 글씨 크기 */
     div[data-testid="stTextArea"] textarea {
         background-color: #FFF9C4 !important;
         color: #333 !important;
-        font-size: 13px !important; 
+        font-size: 14px !important; 
         line-height: 1.5;
     }
     
@@ -310,43 +310,38 @@ st.markdown("""
         border-color: #bbb;
     }
 
-    /* ★★★ [PC 색상 적용 Fix] 변경사항 저장 버튼 ★★★ */
-    /* ID Anchor를 이용한 강력한 선택자 사용 */
+    /* ★★★ [PC/Mobile 공통] 변경사항 저장 버튼 색상 적용 ★★★ */
+    /* 3번째 컬럼의 버튼(PC)과 플로팅 버튼(Mobile) 모두 커버 */
     
-    /* Anchor 컨테이너 숨김 처리 */
-    div[data-testid="stVerticalBlock"] > div:has(span#save-btn-anchor) {
-        display: none;
+    /* 버튼 텍스트 색상 강제 */
+    div[data-testid="column"] button p {
+        font-size: 14px !important; /* 글씨 크기 14px */
     }
 
-    /* Anchor 바로 다음 div(버튼 컨테이너)의 버튼 스타일링 */
-    div[data-testid="stVerticalBlock"] > div:has(span#save-btn-anchor) + div button {
-        background-color: #E6F2FF !important; /* 연한 파랑 */
-        color: #0057A4 !important;            /* 진한 파랑 */
+    /* 3번째 컬럼(공지사항)에 있는 버튼 타겟팅 */
+    div[data-testid="column"]:nth-of-type(3) button {
+        background-color: #E6F2FF !important; 
         border: 1px solid #0057A4 !important; 
+        color: #0057A4 !important;
         border-radius: 8px !important;
         font-weight: bold !important;
-        transition: all 0.3s ease;
         width: auto !important; 
-        padding-left: 20px !important;
-        padding-right: 20px !important;
         min-width: 120px !important;
-        font-size: 13px !important;
     }
-    
-    div[data-testid="stVerticalBlock"] > div:has(span#save-btn-anchor) + div button p {
+    /* 텍스트 색상 확실하게 */
+    div[data-testid="column"]:nth-of-type(3) button p {
         color: #0057A4 !important;
     }
-
-    div[data-testid="stVerticalBlock"] > div:has(span#save-btn-anchor) + div button:hover {
+    
+    div[data-testid="column"]:nth-of-type(3) button:hover {
         background-color: #CCE4FF !important;
         border-color: #004080 !important;
     }
-    
-    div[data-testid="stVerticalBlock"] > div:has(span#save-btn-anchor) + div button:hover p {
+    div[data-testid="column"]:nth-of-type(3) button:hover p {
         color: #004080 !important;
     }
 
-    /* [PC/Mobile 공통] 하루 시작 버튼 (붉은 계열) */
+    /* 하루 시작 버튼 (붉은 계열) */
     div[data-testid="stExpander"] button {
         background-color: #FFEBEE !important; 
         color: #B71C1C !important;            
@@ -381,7 +376,7 @@ st.markdown("""
             margin-bottom: 0px !important;
         }
 
-        /* 플로팅 저장 버튼 (모바일) */
+        /* 플로팅 저장 버튼 */
         div[data-testid="stButton"]:first-of-type {
             position: fixed !important;
             bottom: 20px !important;
@@ -391,15 +386,15 @@ st.markdown("""
             background-color: transparent !important;
             margin: 0 !important;
         }
-        /* 모바일 버튼 스타일도 PC와 동일한 색상 적용 */
         div[data-testid="stButton"]:first-of-type button {
             width: 220px !important; 
             height: 55px !important;
-            font-size: 16px !important;
+            font-size: 14px !important; /* 14px */
             border-radius: 25px !important;
             box-shadow: 0px 4px 15px rgba(0, 87, 164, 0.3) !important; 
             padding: 0 !important;
             
+            /* 색상 강제 */
             background-color: #E6F2FF !important;
             border: 2px solid #0057A4 !important;
         }
@@ -472,8 +467,7 @@ with col_notice:
         on_change=save_notice_callback
     )
     
-    # [PC 색상 적용] type="primary" 제거, CSS로 제어
-    st.markdown('<span id="save-btn-anchor"></span>', unsafe_allow_html=True)
+    # [색상/크기 적용]
     if st.button("변경사항 저장", use_container_width=False):
         save_notice_callback()
         save_data(df)
