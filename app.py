@@ -81,23 +81,28 @@ def load_notice_time():
 
 def save_notice_callback():
     new_notice = st.session_state["notice_area"]
-    old_notice = load_notice()
-    if new_notice != old_notice:
-        now_time = get_korean_time()
-        try:
-            with open(NOTICE_FILE, "w", encoding="utf-8") as f:
-                f.write(new_notice)
-                f.flush()
-                os.fsync(f.fileno())
-            with open(NOTICE_TIME_FILE, "w", encoding="utf-8") as f:
-                f.write(now_time)
-                f.flush()
-                os.fsync(f.fileno())
-        except: pass
+    now_time = get_korean_time()
+    try:
+        # 내용 저장
+        with open(NOTICE_FILE, "w", encoding="utf-8") as f:
+            f.write(new_notice)
+            f.flush()
+            os.fsync(f.fileno())
+        # 시간 저장
+        with open(NOTICE_TIME_FILE, "w", encoding="utf-8") as f:
+            f.write(now_time)
+            f.flush()
+            os.fsync(f.fileno())
+        
+        # 내 세션의 기준 시간 업데이트 (PC 수정 반영 안됨 해결)
+        st.session_state["last_server_time"] = now_time
+    except: pass
 
-# --- 동기화 로직 ---
+# --- 스마트 동기화 로직 (PC 수정 문제 해결) ---
 def sync_session_state(df):
     if df.empty: return
+    
+    # 1. 수술실 현황 동기화
     for index, row in df.iterrows():
         room = row['Room']
         key_status = f"st_{room}"
@@ -113,12 +118,16 @@ def sync_session_state(df):
         if key_a not in st.session_state or st.session_state[key_a] != row['Afternoon']:
             st.session_state[key_a] = row['Afternoon']
     
-    server_notice = load_notice()
-    if "notice_area" not in st.session_state:
-        st.session_state["notice_area"] = server_notice
-    else:
-        if st.session_state["notice_area"] != server_notice:
-             st.session_state["notice_area"] = server_notice
+    # 2. 공지사항 동기화 (시간 비교 방식)
+    server_time = load_notice_time()
+    
+    if "last_server_time" not in st.session_state:
+        st.session_state["last_server_time"] = server_time
+        st.session_state["notice_area"] = load_notice()
+    elif st.session_state["last_server_time"] != server_time:
+        # 서버 시간이 바뀌었을 때만(남이 수정했을 때만) 내 화면 갱신
+        st.session_state["notice_area"] = load_notice()
+        st.session_state["last_server_time"] = server_time
 
 # --- 액션 함수 ---
 def reset_all_data():
@@ -238,15 +247,15 @@ st.markdown("""
     <style>
     .block-container { padding: 1rem; }
     
-    /* ★★★ [간격 조정] 0.12rem 적용 ★★★ */
+    /* 간격 조정 (PC) */
     div[data-testid="column"] > div > div > div[data-testid="stVerticalBlock"] {
-        gap: 0.12rem !important; 
+        gap: 0.1rem !important; 
     }
     div[data-testid="stVerticalBlockBorderWrapper"] {
-        margin-bottom: 0.12rem !important; 
+        margin-bottom: 0.1rem !important; 
     }
     div[data-testid="stVerticalBlockBorderWrapper"] > div > div > div { 
-        gap: 0.12rem !important; 
+        gap: 0.1rem !important; 
     }
     
     h4 { 
@@ -277,7 +286,6 @@ st.markdown("""
         color: #000000 !important; 
         font-size: 14px;
     }
-    /* 공지사항 글씨 크기 13px */
     div[data-testid="stTextArea"] textarea {
         background-color: #FFF9C4 !important;
         color: #333 !important;
@@ -313,7 +321,8 @@ st.markdown("""
         border-color: #bbb;
     }
 
-    /* [PC] 변경사항 저장 버튼 (#0057A4, 11px) */
+    /* ★★★ [PC 색상 강제 적용 Fix] ★★★ */
+    /* 3번째 컬럼의 버튼을 정확하게 타겟팅 */
     div[data-testid="column"]:nth-of-type(3) button {
         background-color: #E6F2FF !important; 
         color: #0057A4 !important;            
@@ -325,7 +334,7 @@ st.markdown("""
         padding-left: 20px !important;
         padding-right: 20px !important;
         min-width: 120px !important;
-        font-size: 11px !important;
+        font-size: 13px !important; 
     }
     div[data-testid="column"]:nth-of-type(3) button p {
         color: #0057A4 !important;
@@ -373,7 +382,7 @@ st.markdown("""
             margin-bottom: 0px !important;
         }
 
-        /* 플로팅 저장 버튼 (#0057A4, 12px) */
+        /* 플로팅 저장 버튼 */
         div[data-testid="stButton"]:first-of-type {
             position: fixed !important;
             bottom: 20px !important;
@@ -386,8 +395,8 @@ st.markdown("""
         div[data-testid="stButton"]:first-of-type button {
             width: 220px !important; 
             height: 50px !important;
-            font-size: 11px !important;
-            border-radius: 23px !important;
+            font-size: 13px !important; 
+            border-radius: 25px !important;
             box-shadow: 0px 4px 15px rgba(0, 87, 164, 0.3) !important; 
             padding: 0 !important;
             background-color: #E6F2FF !important;
@@ -446,7 +455,6 @@ with col_notice:
     notice_time = load_notice_time()
     if notice_time == "": notice_time = "-"
     
-    # 제목 크기 1.35rem
     st.markdown(f"""
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; margin-top: -5px;">
             <h5 style="margin:0; font-weight: bold; font-size: 1.35rem;">📢 공지사항</h5>
@@ -463,6 +471,7 @@ with col_notice:
         on_change=save_notice_callback
     )
     
+    # 변경사항 저장
     if st.button("변경사항 저장", use_container_width=False):
         save_notice_callback()
         save_data(df)
