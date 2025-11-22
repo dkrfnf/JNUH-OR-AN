@@ -10,6 +10,7 @@ ZONE_B = ["B1", "B2", "B3", "B4", "C2", "Angio", "회복실"]
 ALL_ROOMS = ZONE_A + ZONE_B
 DATA_FILE = 'or_status_kst.csv'
 NOTICE_FILE = 'notice.txt'
+NOTICE_TIME_FILE = 'notice_time.txt' # 공지사항 시간 저장 파일
 OP_STATUS = ["▶ 수술", "Ⅱ 대기", "■ 종료"]
 
 # 2초 자동 새로고침
@@ -55,6 +56,7 @@ def load_data():
 def save_data(df):
     df.to_csv(DATA_FILE, index=False, encoding='utf-8')
 
+# 공지사항 내용 로드
 def load_notice():
     if not os.path.exists(NOTICE_FILE):
         return ""
@@ -64,18 +66,37 @@ def load_notice():
     except:
         return ""
 
+# [추가됨] 공지사항 시간 로드
+def load_notice_time():
+    if not os.path.exists(NOTICE_TIME_FILE):
+        return ""
+    try:
+        with open(NOTICE_TIME_FILE, "r", encoding="utf-8") as f:
+            return f.read()
+    except:
+        return ""
+
 def save_notice_callback():
     new_notice = st.session_state["notice_area"]
+    now_time = get_korean_time() # 현재 시간
     try:
+        # 내용 저장
         with open(NOTICE_FILE, "w", encoding="utf-8") as f:
             f.write(new_notice)
-            f.flush() 
-            os.fsync(f.fileno()) 
+            f.flush()
+            os.fsync(f.fileno())
+        
+        # [추가됨] 시간 저장
+        with open(NOTICE_TIME_FILE, "w", encoding="utf-8") as f:
+            f.write(now_time)
+            f.flush()
+            os.fsync(f.fileno())
     except:
         pass
 
 # --- 동기화 로직 ---
 def sync_session_state(df):
+    # 1. 수술실 현황
     for index, row in df.iterrows():
         room = row['Room']
         key_status = f"st_{room}"
@@ -91,6 +112,7 @@ def sync_session_state(df):
         if key_a not in st.session_state or st.session_state[key_a] != row['Afternoon']:
             st.session_state[key_a] = row['Afternoon']
 
+    # 2. 공지사항 내용 동기화
     server_notice = load_notice()
     if "notice_area" not in st.session_state:
         st.session_state["notice_area"] = server_notice
@@ -108,6 +130,10 @@ def reset_all_data():
     df['Afternoon'] = ''
     df['Last_Update'] = now_time
     save_data(df)
+    
+    # 공지사항 시간도 초기화 원하면 아래 주석 해제
+    # with open(NOTICE_TIME_FILE, "w", encoding="utf-8") as f: f.write(now_time)
+    
     sync_session_state(df)
     st.rerun()
 
@@ -117,13 +143,9 @@ def update_data_callback(room_name, col_name, session_key):
         df = load_data()
         idx = get_room_index(df, room_name)
         
-        # 값이 실제로 변경되었을 때만 실행
         if df.loc[idx, col_name] != new_value:
             df.loc[idx, col_name] = new_value
-            
-            # [수정됨] 상태뿐만 아니라, 이름(오전/점심/오후)이 바뀌어도 시간 업데이트
             df.loc[idx, 'Last_Update'] = get_korean_time()
-            
             save_data(df)
 
 # --- UI 렌더링 ---
@@ -242,7 +264,7 @@ st.markdown("""
         line-height: 1.5;
     }
     
-    /* [PC] 기본 저장 버튼 스타일 (파스텔톤, 크기 줄임) */
+    /* [PC] 저장 버튼 스타일 */
     div[data-testid="stButton"]:first-of-type button {
         background-color: #E0F2F1 !important; 
         color: #00695C !important;            
@@ -250,8 +272,6 @@ st.markdown("""
         border-radius: 8px !important;
         font-weight: bold !important;
         transition: all 0.3s ease;
-        
-        /* 버튼 크기 줄이기 */
         width: auto !important; 
         padding-left: 20px !important;
         padding-right: 20px !important;
@@ -262,7 +282,7 @@ st.markdown("""
         border-color: #4DB6AC !important;
     }
 
-    /* ★★★ [모바일 전용: 알약형 플로팅 버튼] ★★★ */
+    /* [모바일 전용: 플로팅 버튼] */
     @media (max-width: 900px) {
         .block-container > div > div > div[data-testid="stHorizontalBlock"] {
             display: flex !important;
@@ -280,35 +300,30 @@ st.markdown("""
             margin-bottom: 0px !important;
         }
 
-        /* 저장 버튼 하단 고정 */
+        /* 강제 고정 */
         div[data-testid="stButton"]:first-of-type {
             position: fixed !important;
             bottom: 20px !important;
             left: 50% !important;
-            transform: translateX(-50%) !important; /* 가운데 정렬 */
-            width: auto !important; /* 너비 자동 (글자 크기만큼) */
+            transform: translateX(-50%) !important;
+            width: auto !important;
             z-index: 999999 !important;
             background-color: transparent !important;
             margin: 0 !important;
         }
-        
-        /* 버튼 디자인 (모바일에서 너무 길지 않게) */
         div[data-testid="stButton"]:first-of-type button {
-            width: auto !important; /* 자동 너비 */
-            min-width: 160px !important; /* 최소 너비 확보 */
+            width: auto !important;
+            min-width: 160px !important;
             height: 50px !important;
             font-size: 16px !important;
-            border-radius: 25px !important; /* 알약 모양 */
+            border-radius: 25px !important;
             box-shadow: 0px 4px 15px rgba(0,105,92, 0.3) !important;
             border: 2px solid #00695C !important;
             background-color: #E0F2F1 !important;
             color: #00695C !important;
-            padding: 0 30px !important; /* 좌우 여백 */
+            padding: 0 30px !important;
         }
-        
-        .block-container {
-            padding-bottom: 100px !important;
-        }
+        .block-container { padding-bottom: 100px !important; }
     }
 
     @media (max-width: 600px) {
@@ -329,7 +344,18 @@ render_zone(col_a, "A 구역", ZONE_A, df)
 render_zone(col_b, "B / C / 기타", ZONE_B, df)
 
 with col_notice:
-    st.markdown("#### 📢 공지사항")
+    # [수정] 공지사항 헤더에 시간 표시
+    notice_time = load_notice_time()
+    if notice_time == "": notice_time = "-"
+    
+    # 제목과 시간을 나란히 배치하거나, 바로 아래에 표시
+    st.markdown(f"""
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
+            <h4 style="margin:0;">📢 공지사항</h4>
+            <span style="font-size: 12px; color: #D32F2F; font-weight: bold;">Update: {notice_time}</span>
+        </div>
+    """, unsafe_allow_html=True)
+
     st.text_area(
         "공지사항 내용",
         key="notice_area",
@@ -338,7 +364,7 @@ with col_notice:
         placeholder="전달사항을 입력하세요...",
         on_change=save_notice_callback
     )
-    # [수정됨] use_container_width=False로 설정하여 버튼 크기를 줄임
+    
     if st.button("변경사항 저장", use_container_width=False):
         save_notice_callback()
         save_data(df)
