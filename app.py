@@ -83,20 +83,26 @@ def save_notice_callback():
     new_notice = st.session_state["notice_area"]
     now_time = get_korean_time()
     try:
+        # 내용 저장
         with open(NOTICE_FILE, "w", encoding="utf-8") as f:
             f.write(new_notice)
             f.flush()
             os.fsync(f.fileno())
+        # 시간 저장
         with open(NOTICE_TIME_FILE, "w", encoding="utf-8") as f:
             f.write(now_time)
             f.flush()
             os.fsync(f.fileno())
+        
+        # 내 세션의 기준 시간 업데이트 (PC 수정 반영 안됨 해결)
         st.session_state["last_server_time"] = now_time
     except: pass
 
-# --- 동기화 로직 ---
+# --- 스마트 동기화 로직 (PC 수정 문제 해결) ---
 def sync_session_state(df):
     if df.empty: return
+    
+    # 1. 수술실 현황 동기화
     for index, row in df.iterrows():
         room = row['Room']
         key_status = f"st_{room}"
@@ -112,11 +118,14 @@ def sync_session_state(df):
         if key_a not in st.session_state or st.session_state[key_a] != row['Afternoon']:
             st.session_state[key_a] = row['Afternoon']
     
+    # 2. 공지사항 동기화 (시간 비교 방식)
     server_time = load_notice_time()
+    
     if "last_server_time" not in st.session_state:
         st.session_state["last_server_time"] = server_time
         st.session_state["notice_area"] = load_notice()
     elif st.session_state["last_server_time"] != server_time:
+        # 서버 시간이 바뀌었을 때만(남이 수정했을 때만) 내 화면 갱신
         st.session_state["notice_area"] = load_notice()
         st.session_state["last_server_time"] = server_time
 
@@ -166,6 +175,7 @@ def render_final_card(room_name, df):
     current_icon = status.split(" ")[0] 
 
     with st.container(border=True):
+        # PC 비율 0.6 : 1.2
         c1, c2 = st.columns([0.6, 1.2], gap="medium")
         with c1:
             st.markdown(f"""
@@ -222,6 +232,7 @@ def render_final_card(room_name, df):
 
 def render_zone(col, title, zone_list, df):
     with col:
+        # 제목 마진 조정
         st.markdown(f"<h4 style='margin-bottom: -15px;'>{title}</h4>", unsafe_allow_html=True)
         for room in zone_list:
             render_final_card(room, df)
@@ -236,14 +247,15 @@ st.markdown("""
     <style>
     .block-container { padding: 1rem; }
     
+    /* 간격 조정 (PC) */
     div[data-testid="column"] > div > div > div[data-testid="stVerticalBlock"] {
-        gap: 0.2rem !important; 
+        gap: 0.12rem !important; 
     }
     div[data-testid="stVerticalBlockBorderWrapper"] {
-        margin-bottom: 0.1rem !important; 
+        margin-bottom: 0.12rem !important; 
     }
     div[data-testid="stVerticalBlockBorderWrapper"] > div > div > div { 
-        gap: 0.2rem !important; 
+        gap: 0.12rem !important; 
     }
     
     h4 { 
@@ -309,9 +321,9 @@ st.markdown("""
         border-color: #bbb;
     }
 
-    /* ★★★ [PC 색상 강제 적용 - 스마트 선택자] ★★★ */
-    /* TextArea가 있는 컬럼을 찾아서 그 안의 버튼을 타겟팅! (가장 정확함) */
-    div[data-testid="column"]:has(div[data-testid="stTextArea"]) button {
+    /* ★★★ [PC 색상 강제 적용 Fix] ★★★ */
+    /* 3번째 컬럼의 버튼을 정확하게 타겟팅 */
+    div[data-testid="column"]:nth-of-type(3) button {
         background-color: #E6F2FF !important; 
         color: #0057A4 !important;            
         border: 1px solid #0057A4 !important; 
@@ -322,16 +334,16 @@ st.markdown("""
         padding-left: 20px !important;
         padding-right: 20px !important;
         min-width: 120px !important;
-        font-size: 13px !important;
+        font-size: 13px !important; 
     }
-    div[data-testid="column"]:has(div[data-testid="stTextArea"]) button p {
+    div[data-testid="column"]:nth-of-type(3) button p {
         color: #0057A4 !important;
     }
-    div[data-testid="column"]:has(div[data-testid="stTextArea"]) button:hover {
+    div[data-testid="column"]:nth-of-type(3) button:hover {
         background-color: #CCE4FF !important;
         border-color: #004080 !important;
     }
-    div[data-testid="column"]:has(div[data-testid="stTextArea"]) button:hover p {
+    div[data-testid="column"]:nth-of-type(3) button:hover p {
         color: #004080 !important;
     }
 
@@ -370,23 +382,28 @@ st.markdown("""
             margin-bottom: 0px !important;
         }
 
-        /* 플로팅 저장 버튼 (TextArea가 있는 컬럼의 버튼 - 모바일 고정) */
-        div[data-testid="column"]:has(div[data-testid="stTextArea"]) button {
+        /* 플로팅 저장 버튼 */
+        div[data-testid="stButton"]:first-of-type {
             position: fixed !important;
             bottom: 20px !important;
             left: 80px !important; 
             width: auto !important; 
-            min-width: 220px !important;
             z-index: 999999 !important;
+            background-color: transparent !important;
+            margin: 0 !important;
+        }
+        div[data-testid="stButton"]:first-of-type button {
+            width: 220px !important; 
+            height: 55px !important;
+            font-size: 13px !important; 
+            border-radius: 25px !important;
+            box-shadow: 0px 4px 15px rgba(0, 87, 164, 0.3) !important; 
+            padding: 0 !important;
             background-color: #E6F2FF !important;
             border: 2px solid #0057A4 !important;
+        }
+        div[data-testid="stButton"]:first-of-type button p {
             color: #0057A4 !important;
-            margin: 0 !important;
-            height: 55px !important;
-            font-size: 13px !important;
-            border-radius: 25px !important;
-            box-shadow: 0px 4px 15px rgba(0, 87, 164, 0.3) !important;
-            padding: 0 !important;
         }
         
         /* TOP 버튼 */
@@ -394,14 +411,14 @@ st.markdown("""
             position: fixed;
             bottom: 20px;
             left: 15px; 
-            width: 55px;
-            height: 55px;
+            width: 50px;
+            height: 50px;
             background-color: #FFFFFF;
             color: #333;
             border: 2px solid #ddd;
             border-radius: 15px;
             text-align: center;
-            line-height: 51px; 
+            line-height: 50px; 
             font-size: 20px;
             font-weight: bold;
             text-decoration: none;
@@ -454,7 +471,7 @@ with col_notice:
         on_change=save_notice_callback
     )
     
-    # [완벽 적용] 버튼 (색상, PC 수정 가능)
+    # 변경사항 저장
     if st.button("변경사항 저장", use_container_width=False):
         save_notice_callback()
         save_data(df)
