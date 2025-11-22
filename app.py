@@ -7,7 +7,8 @@ from streamlit_autorefresh import st_autorefresh
 
 # --- 설정 ---
 ZONE_A = ["A1", "A2", "A3", "A4", "A5", "A6", "A7"]
-ZONE_B = ["B1", "B2", "B3", "B4", "C2", "Angio", "회복실"]
+# [수정됨] Angio -> 외부 변경
+ZONE_B = ["B1", "B2", "B3", "B4", "C2", "외부", "회복실"]
 ALL_ROOMS = ZONE_A + ZONE_B
 DATA_FILE = 'or_status_kst.csv'
 NOTICE_FILE = 'notice.txt'
@@ -43,10 +44,16 @@ def load_data():
                 df = pd.DataFrame(data)
                 df.to_csv(DATA_FILE, index=False, encoding='utf-8')
                 return df
+            
             df = pd.read_csv(DATA_FILE, encoding='utf-8')
-            if len(df) != len(ALL_ROOMS) or df.loc[0, 'Status'] not in OP_STATUS:
+            
+            # [수정됨] 방 이름이 바뀌었거나(Angio->외부) 개수가 다르면 초기화
+            # 데이터 무결성 체크 강화
+            current_rooms = df['Room'].tolist()
+            if len(df) != len(ALL_ROOMS) or current_rooms != ALL_ROOMS:
                 os.remove(DATA_FILE)
                 continue 
+                
             return df.fillna('')
         except Exception:
             time.sleep(0.1)
@@ -165,6 +172,7 @@ def render_final_card(room_name, df):
     current_icon = status.split(" ")[0] 
 
     with st.container(border=True):
+        # 비율 조정 [1, 2]
         c1, c2 = st.columns([1, 2], gap="small")
         with c1:
             st.markdown(f"""
@@ -229,6 +237,9 @@ def render_zone(col, title, zone_list, df):
 
 st.set_page_config(page_title="JNUH OR", layout="wide")
 
+# [추가됨] 맨 위로 이동하기 위한 앵커
+st.markdown("<div id='top'></div>", unsafe_allow_html=True)
+
 st.markdown("""
     <style>
     .block-container { padding: 1rem; }
@@ -263,13 +274,13 @@ st.markdown("""
         line-height: 1.5;
     }
     
-    /* [바로가기 링크 스타일] */
+    /* 빠른 이동 링크 */
     .quick-link {
         display: inline-block;
         text-decoration: none;
         background-color: #f1f3f4;
         color: #333;
-        padding: 6px 10px; /* 터치 영역 약간 확대 */
+        padding: 6px 10px; 
         margin: 3px;
         border-radius: 12px;
         font-size: 13px;
@@ -283,7 +294,7 @@ st.markdown("""
         border-color: #bbb;
     }
 
-    /* [PC] 저장 버튼 */
+    /* [PC] 저장 버튼 스타일 */
     div[data-testid="stButton"]:first-of-type button {
         background-color: #E0F2F1 !important; 
         color: #00695C !important;            
@@ -301,7 +312,7 @@ st.markdown("""
         border-color: #4DB6AC !important;
     }
 
-    /* [모바일 전용: 플로팅 버튼] */
+    /* [모바일 전용: 플로팅 버튼 그룹] */
     @media (max-width: 900px) {
         .block-container > div > div > div[data-testid="stHorizontalBlock"] {
             display: flex !important;
@@ -319,28 +330,54 @@ st.markdown("""
             margin-bottom: 0px !important;
         }
 
+        /* 1. 변경사항 저장 버튼 (화면 하단 고정) */
         div[data-testid="stButton"]:first-of-type {
             position: fixed !important;
             bottom: 20px !important;
-            left: 50% !important;
-            transform: translateX(-50%) !important;
-            width: auto !important;
+            left: 15px !important; /* 왼쪽 여백 */
+            width: calc(100% - 90px) !important; /* TOP 버튼 공간 확보 */
             z-index: 999999 !important;
             background-color: transparent !important;
             margin: 0 !important;
         }
         div[data-testid="stButton"]:first-of-type button {
-            width: auto !important;
-            min-width: 160px !important;
-            height: 50px !important;
-            font-size: 16px !important;
-            border-radius: 25px !important;
+            width: 100% !important;
+            min-width: 0 !important;
+            height: 55px !important;
+            font-size: 18px !important;
+            border-radius: 15px !important;
             box-shadow: 0px 4px 15px rgba(0,105,92, 0.3) !important;
             border: 2px solid #00695C !important;
             background-color: #E0F2F1 !important;
             color: #00695C !important;
-            padding: 0 30px !important;
+            padding: 0 !important;
         }
+        
+        /* 2. TOP 버튼 (HTML로 생성) 하단 우측 고정 */
+        .floating-top-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 15px;
+            width: 55px;
+            height: 55px;
+            background-color: #FFFFFF;
+            color: #333;
+            border: 2px solid #ddd;
+            border-radius: 15px;
+            text-align: center;
+            line-height: 51px; /* 수직 정렬 */
+            font-size: 20px;
+            font-weight: bold;
+            text-decoration: none;
+            box-shadow: 0px 4px 15px rgba(0,0,0,0.2);
+            z-index: 999999;
+            transition: all 0.2s;
+        }
+        .floating-top-btn:hover {
+            background-color: #f0f0f0;
+            color: #000;
+        }
+
         .block-container { padding-bottom: 100px !important; }
     }
 
@@ -381,24 +418,28 @@ with col_notice:
         on_change=save_notice_callback
     )
     
+    # 변경사항 저장 버튼
     if st.button("변경사항 저장", use_container_width=False):
         save_notice_callback()
         save_data(df)
         st.toast("모든 변경사항이 저장되었습니다!", icon="✅")
 
-    # ★ [수정됨] 빠른 이동 (A구역과 B구역 분리)
-    # 상단 여백 줄임 (margin-top: 5px)
+    # [추가됨] 모바일 전용 TOP 버튼 (화면에만 표시)
+    st.markdown("<a href='#top' class='floating-top-btn'>🔝</a>", unsafe_allow_html=True)
+
+    # 빠른 이동 (Chips)
     st.markdown("<div style='margin-top: 5px; margin-bottom: 5px; font-weight: bold; font-size: 14px;'>🚀 빠른 이동</div>", unsafe_allow_html=True)
     
-    # A구역 링크 모음
+    # A구역
     links_a = "<div style='display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 4px;'>"
     for room in ZONE_A:
         links_a += f"<a href='#target_{room}' class='quick-link' target='_self'>{room}</a>"
     links_a += "</div>"
     
-    # B구역 링크 모음 (줄 바꿈 효과)
+    # B구역
     links_b = "<div style='display: flex; flex-wrap: wrap; gap: 4px;'>"
     for room in ZONE_B:
+        # 외부, 회복실 등 글자수 체크
         short_name = room.replace("회복실", "회복")
         links_b += f"<a href='#target_{room}' class='quick-link' target='_self'>{short_name}</a>"
     links_b += "</div>"
