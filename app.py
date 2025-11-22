@@ -317,7 +317,8 @@ st.markdown("""
     /* [PC] 공지사항 영역 변경사항 저장 버튼 (#0057A4, 11px) */
     .notice-panel div[data-testid="stButton"] > button {
         background-color: #E6F2FF !important; 
-        color: #0057A4 !important;            
+        color: #0057A4 !important;
+        font-size: 10px !important;            
         border: 1px solid #0057A4 !important; 
         border-radius: 8px !important;
         font-weight: bold !important;
