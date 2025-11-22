@@ -166,6 +166,8 @@ def render_final_card(room_name, df):
     current_icon = status.split(" ")[0] 
 
     with st.container(border=True):
+        # [비율 조정] 1:2로 하여 방 번호 칸을 줄임
+        # gap="small"로 기본 간격을 둠
         c1, c2 = st.columns([1, 2], gap="small")
         with c1:
             st.markdown(f"""
@@ -266,30 +268,25 @@ st.markdown("""
         line-height: 1.5;
     }
     
-    /* ★★★ [수정됨] 빠른 이동 컨테이너 (한 줄 꽉 차게) ★★★ */
     .link-container {
         display: flex;
         width: 100%;
-        justify-content: space-between; /* 공간 균등 분배 */
-        gap: 2px; /* 사이 간격 최소화 */
+        justify-content: space-between; 
+        gap: 2px; 
         margin-bottom: 5px;
     }
 
-    /* ★★★ [수정됨] 알약 버튼 스타일 (유연한 크기) ★★★ */
     .quick-link {
-        flex: 1; /* 남은 공간을 똑같이 나눠 가짐 (핵심) */
+        flex: 1; 
         display: block;
         text-decoration: none;
         background-color: #f1f3f4;
         color: #333;
-        
-        /* 텍스트 설정 */
         text-align: center;
-        padding: 8px 0; /* 위아래 패딩만 줌 */
-        font-size: 11px; /* 글자 크기 줄임 */
+        padding: 8px 0; 
+        font-size: 11px; 
         font-weight: bold;
-        white-space: nowrap; /* 줄바꿈 방지 */
-        
+        white-space: nowrap; 
         border-radius: 8px;
         border: 1px solid #ddd;
         transition: background-color 0.2s;
@@ -300,7 +297,6 @@ st.markdown("""
         border-color: #bbb;
     }
 
-    /* [PC] 저장 버튼 */
     div[data-testid="stButton"]:first-of-type button {
         background-color: #E0F2F1 !important; 
         color: #00695C !important;            
@@ -318,7 +314,7 @@ st.markdown("""
         border-color: #4DB6AC !important;
     }
 
-    /* [모바일 전용: 플로팅 버튼] */
+    /* [모바일 전용 설정] */
     @media (max-width: 900px) {
         .block-container > div > div > div[data-testid="stHorizontalBlock"] {
             display: flex !important;
@@ -328,15 +324,18 @@ st.markdown("""
         .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(1) { order: 2; }
         .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(2) { order: 3; }
 
+        /* ★★★ [카드 내부 수정] ★★★ */
         div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] {
             flex-direction: row !important;
+            /* ★ 핵심: 방 번호와 상태창 사이 간격 강제 확보 */
+            gap: 10px !important; 
         }
         div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] > div {
             order: unset !important;
             margin-bottom: 0px !important;
         }
 
-        /* 저장 버튼 (오른쪽 배치) */
+        /* 저장 버튼: 중간 길이 (220px) */
         div[data-testid="stButton"]:first-of-type {
             position: fixed !important;
             bottom: 20px !important;
@@ -358,7 +357,7 @@ st.markdown("""
             padding: 0 !important;
         }
         
-        /* TOP 버튼 (왼쪽 배치) */
+        /* TOP 버튼 */
         .floating-top-btn {
             position: fixed;
             bottom: 20px;
@@ -430,16 +429,15 @@ with col_notice:
 
     st.markdown("<a href='#top' class='floating-top-btn'>🔝</a>", unsafe_allow_html=True)
 
-    # 빠른 이동 (간격 조정 및 flexbox 적용)
     st.markdown("<div style='margin-top: 5px; margin-bottom: 5px; font-weight: bold; font-size: 14px;'>🚀 빠른 이동</div>", unsafe_allow_html=True)
     
-    # A구역 (한 줄 꽉 차게)
+    # A구역 (균등 분할)
     links_a = "<div class='link-container'>"
     for room in ZONE_A:
         links_a += f"<a href='#target_{room}' class='quick-link' target='_self'>{room}</a>"
     links_a += "</div>"
     
-    # B구역 (한 줄 꽉 차게)
+    # B구역 (균등 분할)
     links_b = "<div class='link-container'>"
     for room in ZONE_B:
         short_name = room.replace("회복실", "회복")
