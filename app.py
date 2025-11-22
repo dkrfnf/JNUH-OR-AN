@@ -45,12 +45,10 @@ def load_data():
                 return df
             
             df = pd.read_csv(DATA_FILE, encoding='utf-8')
-            
             current_rooms = df['Room'].tolist()
             if len(df) != len(ALL_ROOMS) or current_rooms != ALL_ROOMS:
                 os.remove(DATA_FILE)
                 continue 
-                
             return df.fillna('')
         except Exception:
             time.sleep(0.1)
@@ -150,7 +148,6 @@ def update_data_callback(room_name, col_name, session_key):
 
 # --- UI 렌더링 ---
 def render_final_card(room_name, df):
-    # 앵커
     st.markdown(f"<div id='target_{room_name}' style='scroll-margin-top: 100px;'></div>", unsafe_allow_html=True)
 
     row = df[df['Room'] == room_name].iloc[0]
@@ -269,29 +266,31 @@ st.markdown("""
         line-height: 1.5;
     }
     
-    /* [수정됨] 줄바꿈 컨테이너 (스크롤 X) */
+    /* ★★★ [수정됨] 빠른 이동 컨테이너 (한 줄 꽉 차게) ★★★ */
     .link-container {
         display: flex;
-        flex-wrap: wrap; /* 줄바꿈 허용 */
-        gap: 5px;
-        margin-bottom: 8px;
+        width: 100%;
+        justify-content: space-between; /* 공간 균등 분배 */
+        gap: 2px; /* 사이 간격 최소화 */
+        margin-bottom: 5px;
     }
 
-    /* [수정됨] 알약 버튼 스타일 (작고 균일하게) */
+    /* ★★★ [수정됨] 알약 버튼 스타일 (유연한 크기) ★★★ */
     .quick-link {
-        display: inline-block;
+        flex: 1; /* 남은 공간을 똑같이 나눠 가짐 (핵심) */
+        display: block;
         text-decoration: none;
         background-color: #f1f3f4;
         color: #333;
         
-        /* 크기 고정 */
-        width: 48px; 
-        padding: 6px 0;
+        /* 텍스트 설정 */
         text-align: center;
-        
-        border-radius: 12px;
-        font-size: 12px; 
+        padding: 8px 0; /* 위아래 패딩만 줌 */
+        font-size: 11px; /* 글자 크기 줄임 */
         font-weight: bold;
+        white-space: nowrap; /* 줄바꿈 방지 */
+        
+        border-radius: 8px;
         border: 1px solid #ddd;
         transition: background-color 0.2s;
     }
@@ -337,7 +336,7 @@ st.markdown("""
             margin-bottom: 0px !important;
         }
 
-        /* 저장 버튼: 중간 길이 */
+        /* 저장 버튼 (오른쪽 배치) */
         div[data-testid="stButton"]:first-of-type {
             position: fixed !important;
             bottom: 20px !important;
@@ -359,7 +358,7 @@ st.markdown("""
             padding: 0 !important;
         }
         
-        /* TOP 버튼 (왼쪽) */
+        /* TOP 버튼 (왼쪽 배치) */
         .floating-top-btn {
             position: fixed;
             bottom: 20px;
@@ -431,17 +430,16 @@ with col_notice:
 
     st.markdown("<a href='#top' class='floating-top-btn'>🔝</a>", unsafe_allow_html=True)
 
+    # 빠른 이동 (간격 조정 및 flexbox 적용)
     st.markdown("<div style='margin-top: 5px; margin-bottom: 5px; font-weight: bold; font-size: 14px;'>🚀 빠른 이동</div>", unsafe_allow_html=True)
     
-    # [수정됨] 줄바꿈 컨테이너 사용
-    
-    # A구역
+    # A구역 (한 줄 꽉 차게)
     links_a = "<div class='link-container'>"
     for room in ZONE_A:
         links_a += f"<a href='#target_{room}' class='quick-link' target='_self'>{room}</a>"
     links_a += "</div>"
     
-    # B구역
+    # B구역 (한 줄 꽉 차게)
     links_b = "<div class='link-container'>"
     for room in ZONE_B:
         short_name = room.replace("회복실", "회복")
