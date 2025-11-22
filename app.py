@@ -166,7 +166,6 @@ def render_final_card(room_name, df):
     current_icon = status.split(" ")[0] 
 
     with st.container(border=True):
-        # PC 비율 0.6 : 1.2
         c1, c2 = st.columns([0.6, 1.2], gap="medium")
         with c1:
             st.markdown(f"""
@@ -223,7 +222,8 @@ def render_final_card(room_name, df):
 
 def render_zone(col, title, zone_list, df):
     with col:
-        st.markdown(f"#### {title}")
+        # [수정됨] 제목 마진 조정 (높이 맞춤)
+        st.markdown(f"<h4 style='margin-bottom: -15px;'>{title}</h4>", unsafe_allow_html=True)
         for room in zone_list:
             render_final_card(room, df)
 
@@ -237,27 +237,18 @@ st.markdown("""
     <style>
     .block-container { padding: 1rem; }
     
-    /* ★★★ [제목과 카드 사이 간격 삭제] ★★★ */
-    /* 제목(h4)의 아래쪽 마진을 음수로 줘서 카드를 위로 당김 */
-    h4 { 
-        margin-top: 0rem !important;
-        margin-bottom: -15px !important; /* 강제로 위로 끌어당김 */
-        padding-bottom: 0px !important;
-        z-index: 1; /* 겹침 방지 */
-        position: relative;
-    }
-    
-    /* PC 카드 간격 최소화 */
+    /* 카드 간격 0.25rem */
     div[data-testid="column"] > div > div > div[data-testid="stVerticalBlock"] {
-        gap: 0.2rem !important; 
+        gap: 0.25rem !important; 
     }
     div[data-testid="stVerticalBlockBorderWrapper"] > div > div > div { 
-        gap: 0.2rem !important; 
+        gap: 0.25rem !important; 
     }
     
-    /* 카드 안쪽 패딩 줄임 */
-    div[data-testid="stVerticalBlockBorderWrapper"] {
-        padding: 0.5rem !important;
+    /* 제목 마진 초기화 */
+    h4 { 
+        margin-top: 0px !important;
+        padding-top: 0px !important;
     }
 
     hr { margin-top: 0.2rem !important; margin-bottom: 0.5rem !important; }
@@ -281,11 +272,11 @@ st.markdown("""
         font-size: 14px;
     }
     
-    /* 공지사항 글씨 크기 */
+    /* ★★★ [글씨 크기 조정] 공지사항 15px로 약간 작게 ★★★ */
     div[data-testid="stTextArea"] textarea {
         background-color: #FFF9C4 !important;
         color: #333 !important;
-        font-size: 1.1rem !important; 
+        font-size: 15px !important; 
         line-height: 1.5;
     }
     
@@ -317,10 +308,10 @@ st.markdown("""
         border-color: #bbb;
     }
 
-    /* [색상 통일] 변경사항 저장 버튼 (#0057A4) */
+    /* ★★★ [색상 복구] 변경사항 저장 (#0057A4) ★★★ */
     div[data-testid="column"]:nth-of-type(3) button {
-        background-color: #E6F2FF !important; 
-        color: #0057A4 !important;            
+        background-color: #E6F2FF !important; /* 연한 파랑 */
+        color: #0057A4 !important;            /* 진한 파랑 */
         border: 1px solid #0057A4 !important; 
         border-radius: 8px !important;
         font-weight: bold !important;
@@ -335,7 +326,7 @@ st.markdown("""
         border-color: #004080 !important;
     }
 
-    /* [PC/Mobile 공통] 하루 시작 버튼 (붉은 계열) */
+    /* 하루 시작 버튼 (붉은 계열) */
     div[data-testid="stExpander"] button {
         background-color: #FFEBEE !important; 
         color: #B71C1C !important;            
@@ -435,9 +426,10 @@ with col_notice:
     notice_time = load_notice_time()
     if notice_time == "": notice_time = "-"
     
+    # [수정됨] 제목 크기 1.2rem (약간 키움)
     st.markdown(f"""
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-            <h5 style="margin:0; font-weight: bold; font-size: 1.1rem;">📢 공지사항</h5>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; margin-top: -5px;">
+            <h5 style="margin:0; font-weight: bold; font-size: 1.2rem;">📢 공지사항</h5>
             <span style="font-size: 12px; color: #D32F2F; font-weight: bold;">Update: {notice_time}</span>
         </div>
     """, unsafe_allow_html=True)
@@ -451,6 +443,7 @@ with col_notice:
         on_change=save_notice_callback
     )
     
+    # [색상 복구] #0057A4 적용
     if st.button("변경사항 저장", use_container_width=False):
         save_notice_callback()
         save_data(df)
