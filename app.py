@@ -94,11 +94,11 @@ def save_notice_callback():
             f.flush()
             os.fsync(f.fileno())
         
-        # 내 세션의 기준 시간 업데이트 (PC 수정 반영 안됨 해결)
+        # 내 세션의 기준 시간 업데이트
         st.session_state["last_server_time"] = now_time
     except: pass
 
-# --- 스마트 동기화 로직 (PC 수정 문제 해결) ---
+# --- 스마트 동기화 로직 ---
 def sync_session_state(df):
     if df.empty: return
     
@@ -118,14 +118,13 @@ def sync_session_state(df):
         if key_a not in st.session_state or st.session_state[key_a] != row['Afternoon']:
             st.session_state[key_a] = row['Afternoon']
     
-    # 2. 공지사항 동기화 (시간 비교 방식)
+    # 2. 공지사항 동기화
     server_time = load_notice_time()
     
     if "last_server_time" not in st.session_state:
         st.session_state["last_server_time"] = server_time
         st.session_state["notice_area"] = load_notice()
     elif st.session_state["last_server_time"] != server_time:
-        # 서버 시간이 바뀌었을 때만(남이 수정했을 때만) 내 화면 갱신
         st.session_state["notice_area"] = load_notice()
         st.session_state["last_server_time"] = server_time
 
@@ -155,6 +154,24 @@ def update_data_callback(room_name, col_name, session_key):
             df.loc[idx, 'Last_Update'] = get_korean_time()
             save_data(df)
 
+# --- 스타일 헬퍼 함수 (빠른 이동 버튼용) ---
+def get_status_style(room, df):
+    try:
+        # 데이터프레임에서 해당 방의 상태 추출
+        status = df[df['Room'] == room]['Status'].values[0]
+        
+        if "수술" in status:
+            # 수술 중: 파란색 계열 (카드와 동일)
+            return "background-color: #E0F2FE; color: #0EA5E9; border: 1px solid #0EA5E9;"
+        elif "대기" in status:
+            # 대기 중: 주황색 계열 (카드와 동일)
+            return "background-color: #FFF3E0; color: #EF6C00; border: 1px solid #EF6C00;"
+        else:
+            # 종료/기타: 기본 회색 스타일
+            return "background-color: #f1f3f4; color: #555; border: 1px solid #ddd;"
+    except:
+        return "background-color: #f1f3f4; color: #555; border: 1px solid #ddd;"
+
 # --- UI 렌더링 ---
 def render_final_card(room_name, df):
     st.markdown(f"<div id='target_{room_name}' style='scroll-margin-top: 100px;'></div>", unsafe_allow_html=True)
@@ -175,7 +192,6 @@ def render_final_card(room_name, df):
     current_icon = status.split(" ")[0] 
 
     with st.container(border=True):
-        # PC 비율 0.6 : 1.2
         c1, c2 = st.columns([0.6, 1.2], gap="medium")
         with c1:
             st.markdown(f"""
@@ -232,7 +248,6 @@ def render_final_card(room_name, df):
 
 def render_zone(col, title, zone_list, df):
     with col:
-        # 제목 마진 조정
         st.markdown(f"<h4 style='margin-bottom: -15px;'>{title}</h4>", unsafe_allow_html=True)
         for room in zone_list:
             render_final_card(room, df)
@@ -247,7 +262,6 @@ st.markdown("""
     <style>
     .block-container { padding: 1rem; }
     
-    /* 간격 조정 (PC) */
     div[data-testid="column"] > div > div > div[data-testid="stVerticalBlock"] {
         gap: 0.1rem !important; 
     }
@@ -304,25 +318,19 @@ st.markdown("""
         flex: 1; 
         display: block;
         text-decoration: none;
-        background-color: #f1f3f4;
-        color: #333;
         text-align: center;
         padding: 8px 0; 
         font-size: 11px; 
         font-weight: bold;
         white-space: nowrap; 
         border-radius: 8px;
-        border: 1px solid #ddd;
-        transition: background-color 0.2s;
+        transition: opacity 0.2s;
     }
     .quick-link:hover {
-        background-color: #e0e0e0;
-        color: #000;
-        border-color: #bbb;
+        opacity: 0.8;
     }
 
-    /* ★★★ [PC 색상 강제 적용 Fix] ★★★ */
-    /* 3번째 컬럼의 버튼을 정확하게 타겟팅 */
+    /* 저장 버튼 커스텀 */
     div[data-testid="column"]:nth-of-type(3) button {
         background-color: #E6F2FF !important; 
         color: #0057A4 !important;            
@@ -363,7 +371,7 @@ st.markdown("""
         color: #D32F2F !important;
     }
 
-    /* [모바일 전용] */
+    /* 모바일 반응형 */
     @media (max-width: 900px) {
         .block-container > div > div > div[data-testid="stHorizontalBlock"] {
             display: flex !important;
@@ -382,7 +390,6 @@ st.markdown("""
             margin-bottom: 0px !important;
         }
 
-        /* 플로팅 저장 버튼 */
         div[data-testid="stButton"]:first-of-type {
             position: fixed !important;
             bottom: 20px !important;
@@ -406,7 +413,6 @@ st.markdown("""
             color: #0057A4 !important;
         }
         
-        /* TOP 버튼 */
         .floating-top-btn {
             position: fixed;
             bottom: 20px;
@@ -481,17 +487,19 @@ with col_notice:
 
     st.markdown("<div style='margin-top: -15px; margin-bottom: 5px; font-weight: bold; font-size: 14px;'>🚀 빠른 이동</div>", unsafe_allow_html=True)
     
-    # A구역
+    # A구역 링크 생성 (스타일 적용)
     links_a = "<div class='link-container'>"
     for room in ZONE_A:
-        links_a += f"<a href='#target_{room}' class='quick-link' target='_self'>{room}</a>"
+        style = get_status_style(room, df)
+        links_a += f"<a href='#target_{room}' class='quick-link' style='{style}' target='_self'>{room}</a>"
     links_a += "</div>"
     
-    # B구역
+    # B구역 링크 생성 (스타일 적용)
     links_b = "<div class='link-container'>"
     for room in ZONE_B:
         short_name = room.replace("회복실", "회복")
-        links_b += f"<a href='#target_{room}' class='quick-link' target='_self'>{short_name}</a>"
+        style = get_status_style(room, df)
+        links_b += f"<a href='#target_{room}' class='quick-link' style='{style}' target='_self'>{short_name}</a>"
     links_b += "</div>"
     
     st.markdown(links_a + links_b, unsafe_allow_html=True)
