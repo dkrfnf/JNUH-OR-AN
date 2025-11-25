@@ -12,7 +12,10 @@ ALL_ROOMS = ZONE_A + ZONE_B
 DATA_FILE = 'or_status_kst.csv'
 NOTICE_FILE = 'notice.txt'
 NOTICE_TIME_FILE = 'notice_time.txt'
+
+# 상태 옵션 정의
 OP_STATUS = ["▶ 수술", "Ⅱ 대기", "■ 종료"]
+LUNCH_OPTIONS = ["식사-", "식사+"]  # 식사 상태 옵션
 
 # 2초 자동 새로고침
 st_autorefresh(interval=2000, key="datarefresh")
@@ -37,7 +40,7 @@ def load_data():
                     'Status': ['▶ 수술'] * len(ALL_ROOMS),
                     'Last_Update': [now_time] * len(ALL_ROOMS),
                     'Morning': [''] * len(ALL_ROOMS),
-                    'Lunch': [''] * len(ALL_ROOMS),
+                    'Lunch': ['식사-'] * len(ALL_ROOMS), # 기본값 변경
                     'Afternoon': [''] * len(ALL_ROOMS)
                 }
                 df = pd.DataFrame(data)
@@ -49,7 +52,17 @@ def load_data():
             if len(df) != len(ALL_ROOMS) or current_rooms != ALL_ROOMS:
                 os.remove(DATA_FILE)
                 continue 
-            return df.fillna('')
+            
+            # 결측치 처리 (기존 데이터 호환성 위함)
+            df['Morning'] = df['Morning'].fillna('')
+            df['Afternoon'] = df['Afternoon'].fillna('')
+            # Lunch 컬럼이 없거나 비어있으면 기본값 설정
+            if 'Lunch' not in df.columns:
+                df['Lunch'] = '식사-'
+            df['Lunch'] = df['Lunch'].fillna('식사-')
+            df['Lunch'] = df['Lunch'].apply(lambda x: x if x in LUNCH_OPTIONS else '식사-')
+
+            return df
         except Exception:
             time.sleep(0.1)
     return pd.DataFrame()
@@ -94,7 +107,6 @@ def save_notice_callback():
             f.flush()
             os.fsync(f.fileno())
         
-        # 내 세션의 기준 시간 업데이트
         st.session_state["last_server_time"] = now_time
     except: pass
 
@@ -105,15 +117,23 @@ def sync_session_state(df):
     # 1. 수술실 현황 동기화
     for index, row in df.iterrows():
         room = row['Room']
+        
+        # Status
         key_status = f"st_{room}"
         if key_status not in st.session_state or st.session_state[key_status] != row['Status']:
             st.session_state[key_status] = row['Status']
+            
+        # Morning (Text)
         key_m = f"m_{room}"
         if key_m not in st.session_state or st.session_state[key_m] != row['Morning']:
             st.session_state[key_m] = row['Morning']
+            
+        # Lunch (Selectbox)
         key_l = f"l_{room}"
         if key_l not in st.session_state or st.session_state[key_l] != row['Lunch']:
             st.session_state[key_l] = row['Lunch']
+            
+        # Afternoon (Text)
         key_a = f"a_{room}"
         if key_a not in st.session_state or st.session_state[key_a] != row['Afternoon']:
             st.session_state[key_a] = row['Afternoon']
@@ -135,7 +155,7 @@ def reset_all_data():
     now_time = get_korean_time()
     df['Status'] = '▶ 수술'
     df['Morning'] = ''
-    df['Lunch'] = ''
+    df['Lunch'] = '식사-' # 초기화 값
     df['Afternoon'] = ''
     df['Last_Update'] = now_time
     if save_data(df):
@@ -157,18 +177,35 @@ def update_data_callback(room_name, col_name, session_key):
 # --- 스타일 헬퍼 함수 (빠른 이동 버튼용) ---
 def get_status_style(room, df):
     try:
-        # 데이터프레임에서 해당 방의 상태 추출
-        status = df[df['Room'] == room]['Status'].values[0]
+        row = df[df['Room'] == room].iloc[0]
+        status = row['Status']
+        lunch = row['Lunch'] # 식사 상태 확인
+
+        # 기본 스타일 정의
+        bg_color = "#f1f3f4"
+        text_color = "#555"
+        border_color = "#ddd"
+        border_width = "1px"
         
+        # 1. 상태(수술/대기)에 따른 배경색 설정
         if "수술" in status:
-            # 수술 중: 파란색 계열 (카드와 동일)
-            return "background-color: #E0F2FE; color: #0EA5E9; border: 1px solid #0EA5E9;"
+            bg_color = "#E0F2FE"
+            text_color = "#0EA5E9"
+            border_color = "#0EA5E9"
         elif "대기" in status:
-            # 대기 중: 주황색 계열 (카드와 동일)
-            return "background-color: #FFF3E0; color: #EF6C00; border: 1px solid #EF6C00;"
-        else:
-            # 종료/기타: 기본 회색 스타일
-            return "background-color: #f1f3f4; color: #555; border: 1px solid #ddd;"
+            bg_color = "#FFF3E0"
+            text_color = "#EF6C00"
+            border_color = "#EF6C00"
+        
+        # 2. 식사+ 상태일 경우 테두리 강조 (우선순위 높음)
+        if lunch == "식사+":
+            border_color = "#FF4081" # 핫핑크
+            border_width = "3px"     # 두껍게
+            # 글자색이 회색이면 강조를 위해 검정으로 변경
+            if text_color == "#555": 
+                text_color = "#000"
+
+        return f"background-color: {bg_color}; color: {text_color}; border: {border_width} solid {border_color};"
     except:
         return "background-color: #f1f3f4; color: #555; border: 1px solid #ddd;"
 
@@ -178,6 +215,7 @@ def render_final_card(room_name, df):
 
     row = df[df['Room'] == room_name].iloc[0]
     status = row['Status']
+    lunch_status = row['Lunch']
     
     if "수술" in status:
         bg_color = "#E0F2FE"      
@@ -223,16 +261,24 @@ def render_final_card(room_name, df):
                 args=(room_name, 'Status', key_status)
             )
 
-        s1, s2, s3 = st.columns(3)
+        # 3단 컬럼: 텍스트 / 선택(식사) / 텍스트
+        s1, s2, s3 = st.columns([1, 0.8, 1], gap="small")
+        
         key_m = f"m_{room_name}"
         key_l = f"l_{room_name}"
         key_a = f"a_{room_name}"
         
-        s1.text_input("오전", key=key_m, placeholder="", label_visibility="collapsed",
+        # 오전 (Text)
+        s1.text_input("오전", key=key_m, placeholder="오전", label_visibility="collapsed",
                       on_change=update_data_callback, args=(room_name, 'Morning', key_m))
-        s2.text_input("점심", key=key_l, placeholder="", label_visibility="collapsed",
-                      on_change=update_data_callback, args=(room_name, 'Lunch', key_l))
-        s3.text_input("오후", key=key_a, placeholder="", label_visibility="collapsed",
+        
+        # 점심 (Selectbox: 식사-, 식사+)
+        s2.selectbox("점심", LUNCH_OPTIONS, key=key_l, label_visibility="collapsed",
+                     index=LUNCH_OPTIONS.index(lunch_status) if lunch_status in LUNCH_OPTIONS else 0,
+                     on_change=update_data_callback, args=(room_name, 'Lunch', key_l))
+        
+        # 오후 (Text)
+        s3.text_input("오후", key=key_a, placeholder="오후", label_visibility="collapsed",
                       on_change=update_data_callback, args=(room_name, 'Afternoon', key_a))
 
         st.markdown(f"""
@@ -282,12 +328,15 @@ st.markdown("""
 
     hr { margin-top: 0.2rem !important; margin-bottom: 0.5rem !important; }
     
+    /* Selectbox 커스텀 */
     div[data-testid="stSelectbox"] div[data-baseweb="select"] > div {
         padding-top: 0px; padding-bottom: 0px; padding-left: 5px;
         height: 32px; min-height: 32px;
-        font-size: 15px; display: flex; align-items: center;
+        font-size: 14px; display: flex; align-items: center;
         border-color: #E0E0E0;
     }
+    
+    /* TextInput 커스텀 */
     div[data-testid="stTextInput"] div[data-baseweb="input"] {
         background-color: #FFFFFF !important; 
         border: 1px solid #CCCCCC !important;
@@ -299,6 +348,7 @@ st.markdown("""
         background-color: #FFFFFF !important; 
         color: #000000 !important; 
         font-size: 14px;
+        padding: 0px 5px !important;
     }
     div[data-testid="stTextArea"] textarea {
         background-color: #FFF9C4 !important;
@@ -325,6 +375,7 @@ st.markdown("""
         white-space: nowrap; 
         border-radius: 8px;
         transition: opacity 0.2s;
+        box-sizing: border-box; /* 테두리 포함 크기 계산 */
     }
     .quick-link:hover {
         opacity: 0.8;
