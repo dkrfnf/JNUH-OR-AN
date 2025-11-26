@@ -318,7 +318,7 @@ st.markdown("""
     
     /* 화면 전체의 여백 (맨 위, 아래, 좌우) */
     .block-container {
-        padding-top: 10px !important;    /* ▲ 맨 위 여백 (이걸 줄이면 제목이 천장에 붙음) */
+        padding-top: 30px !important;    /* ▲ 맨 위 여백 (이걸 줄이면 제목이 천장에 붙음) */
         padding-bottom: 5rem !important; /* ▼ 맨 아래 여백 (모바일 버튼 가림 방지용) */
         padding-left: 1rem !important;   /* ◀ 왼쪽 여백 */
         padding-right: 1rem !important;  /* ▶ 오른쪽 여백 */
