@@ -328,7 +328,7 @@ st.markdown("""
     }
     
     /* 기존 스타일 유지 */
-    div[data-testid="column"] > div > div > div[data-testid="stVerticalBlock"] { gap: 0.05rem !important; }
+    div[data-testid="column"] > div > div > div[data-testid="stVerticalBlock"] { gap: 0rem !important; }
     div[data-testid="stVerticalBlockBorderWrapper"] { margin-bottom: 0.1rem !important; }
     div[data-testid="stVerticalBlockBorderWrapper"] > div > div > div { gap: 0.1rem !important; }
     h4 { margin-top: 0px !important; margin-bottom: -15px !important; padding-bottom: 0px !important; z-index: 1; position: relative; }
