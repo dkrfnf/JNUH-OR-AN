@@ -326,22 +326,30 @@ st.markdown("""
 
     /* ▼▼▼ [수정된 부분] 간격 줄이기 핵심 코드 ▼▼▼ */
     
-    /* (1) 수직 배열된 요소들의 간격(Gap)을 강제로 없앰 */
+    /* (1) 기본적으로 모든 수직 간격을 2px로 좁힘 (방과 방 사이) */
     [data-testid="stVerticalBlock"] {
-        gap: 5px !important; /* 방과 방 사이 간격 (0으로 하면 너무 붙으니 2px 추천) */
+        gap: 5px !important; 
     }
 
-    /* (2) 테두리 박스(수술실 카드) 자체의 외부 여백 줄이기 */
+    /* (2) ★ [추가된 부분] 방 카드 내부(A3 <-> 오전)는 간격을 다시 넓힘 ★ */
+    /* 이게 없으면 카드 내부도 2px로 딱 붙어서 답답해 보입니다. */
+    [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stVerticalBlock"] {
+        gap: 0.4rem !important; /* 👈 이 숫자를 늘리면 내부 줄 간격이 벌어집니다 */
+    }
+
+    /* (3) 테두리 박스(수술실 카드) 자체의 외부 여백 줄이기 */
     [data-testid="stVerticalBlockBorderWrapper"] {
-        margin-bottom: 8px !important; /* 카드 아래쪽 여백 최소화 */
-        padding: 8px !important;       /* 카드 안쪽 패딩 제거 필요시 */
+        margin-bottom: 3px !important; 
+        padding: 3px !important;       
     }
     
-    /* (3) 카드 내부 내용물 간격 더 줄이기 */
+    /* (4) 카드 내부 여백 (테두리와 내용물 사이) */
     [data-testid="stVerticalBlockBorderWrapper"] > div {
-        padding-top: 3px !important;    /* 카드 내부 위쪽 여백 */
-        padding-bottom: 3px !important; /* 카드 내부 아래쪽 여백 */
+        padding-top: 5px !important;    
+        padding-bottom: 5px !important; 
     }
+
+    /* ▲▲▲ 수정 끝 ▲▲▲ */
 
 
     /* 구역 제목(H4) 바짝 붙이기 */
