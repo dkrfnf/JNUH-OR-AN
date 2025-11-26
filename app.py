@@ -328,13 +328,13 @@ st.markdown("""
     
     /* (1) 수직 배열된 요소들의 간격(Gap)을 강제로 없앰 */
     [data-testid="stVerticalBlock"] {
-        gap: 3px !important; /* 방과 방 사이 간격 (0으로 하면 너무 붙으니 2px 추천) */
+        gap: 5px !important; /* 방과 방 사이 간격 (0으로 하면 너무 붙으니 2px 추천) */
     }
 
     /* (2) 테두리 박스(수술실 카드) 자체의 외부 여백 줄이기 */
     [data-testid="stVerticalBlockBorderWrapper"] {
-        margin-bottom: 2px !important; /* 카드 아래쪽 여백 최소화 */
-        padding: 3px !important;       /* 카드 안쪽 패딩 제거 필요시 */
+        margin-bottom: 5px !important; /* 카드 아래쪽 여백 최소화 */
+        padding: 5px !important;       /* 카드 안쪽 패딩 제거 필요시 */
     }
     
     /* (3) 카드 내부 내용물 간격 더 줄이기 */
