@@ -316,7 +316,7 @@ st.markdown("""
     /* 1. 상단 여백 줄이기 (여기를 조절하세요: 1rem ~ 3rem 추천) */
     .block-container {
         padding-top: 0.1rem !important; 
-        padding-bottom: 1rem !important;
+        padding-bottom: 0.1rem !important;
         padding-left: 1rem !important;
         padding-right: 1rem !important;
     }
@@ -328,11 +328,11 @@ st.markdown("""
     }
     
     /* 기존 스타일 유지 */
-    div[data-testid="column"] > div > div > div[data-testid="stVerticalBlock"] { gap: 0rem !important; }
+    div[data-testid="column"] > div > div > div[data-testid="stVerticalBlock"] { gap: 0.1rem !important; }
     div[data-testid="stVerticalBlockBorderWrapper"] { margin-bottom: 0.1rem !important; }
     div[data-testid="stVerticalBlockBorderWrapper"] > div > div > div { gap: 0.1rem !important; }
     h4 { margin-top: 0px !important; margin-bottom: -15px !important; padding-bottom: 0px !important; z-index: 1; position: relative; }
-    hr { margin-top: 0.2rem !important; margin-bottom: 0.3rem !important; }
+    hr { margin-top: 0.2rem !important; margin-bottom: 0.5rem !important; }
     
     div[data-testid="stSelectbox"] div[data-baseweb="select"] > div {
         padding-top: 0px; padding-bottom: 0px; padding-left: 5px; height: 32px; min-height: 32px;
