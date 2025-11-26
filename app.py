@@ -247,7 +247,7 @@ st.markdown("""
     }
     div[data-testid="stExpander"] button:hover { background-color: #FFCDD2 !important; border-color: #E57373 !important; }
 
-    /* [중요] 모바일 반응형 스타일 수정 */
+    /* [모바일 반응형 스타일] */
     @media (max-width: 900px) {
         .block-container > div > div > div[data-testid="stHorizontalBlock"] { display: flex !important; flex-direction: column !important; }
         .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(3) { order: 1; margin-bottom: 20px; }
@@ -256,31 +256,35 @@ st.markdown("""
 
         div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] { flex-direction: row !important; gap: 20px !important; }
         
-        /* 1. 모바일에서 관리자 메뉴(Expander)와 그 안의 리셋 버튼 완전 숨김 */
+        /* 1. 모바일에서 관리자 메뉴(Expander) 숨김 */
         div[data-testid="stExpander"] {
             display: none !important;
         }
 
-        /* 2. 남은 유일한 버튼(저장 버튼)을 화면 하단에 플로팅 */
-        /* 페이지 내의 모든 버튼을 타겟팅하되, 리셋버튼은 위에서 숨겨졌으므로 저장버튼만 뜸 */
-        div[data-testid="stButton"] button {
-            position: fixed !important; 
-            bottom: 25px !important; 
-            left: 50% !important; 
-            transform: translateX(-50%) !important; /* 중앙 정렬 */
-            width: 250px !important;
-            height: 55px !important; 
-            
-            z-index: 999999 !important; 
-            background-color: #E6F2FF !important; 
-            border: 2px solid #0057A4 !important; 
-            border-radius: 30px !important; 
-            box-shadow: 0px 6px 16px rgba(0, 87, 164, 0.3) !important;
-            font-size: 16px !important;
+        /* 2. 남은 유일한 버튼(저장 버튼)을 플로팅 - 이전 사이즈(220px/50px)로 복구 */
+        div[data-testid="column"]:nth-of-type(3) div[data-testid="stButton"] {
+             position: fixed !important; 
+             bottom: 20px !important; 
+             left: 80px !important; /* 이전 위치와 동일 */
+             width: auto !important; 
+             z-index: 999999 !important;
+             background-color: transparent !important;
+             margin: 0 !important;
+        }
+        
+        div[data-testid="column"]:nth-of-type(3) div[data-testid="stButton"] button {
+             width: 220px !important; 
+             height: 50px !important; 
+             font-size: 13px !important; 
+             border-radius: 25px !important; 
+             box-shadow: 0px 4px 15px rgba(0, 87, 164, 0.3) !important; 
+             padding: 0 !important;
+             background-color: #E6F2FF !important; 
+             border: 2px solid #0057A4 !important;
         }
 
         .floating-top-btn { position: fixed; bottom: 20px; left: 15px; width: 50px; height: 50px; background-color: #FFFFFF; color: #333; border: 2px solid #ddd; border-radius: 15px; text-align: center; line-height: 50px; font-size: 20px; font-weight: bold; text-decoration: none; box-shadow: 0px 4px 15px rgba(0,0,0,0.2); z-index: 999999; }
-        .block-container { padding-bottom: 120px !important; } /* 하단 여백 확보 */
+        .block-container { padding-bottom: 120px !important; }
     }
 
     @media (max-width: 600px) { div[data-testid="stVerticalBlockBorderWrapper"] { max-width: 95vw; margin: auto; } }
