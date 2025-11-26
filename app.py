@@ -12,7 +12,7 @@ ALL_ROOMS = ZONE_A + ZONE_B
 DATA_FILE = 'or_status_kst.csv'
 NOTICE_FILE = 'notice.txt'
 NOTICE_TIME_FILE = 'notice_time.txt'
-RESET_LOG_FILE = 'reset_log.txt'  # 자동 리셋 기록용
+RESET_LOG_FILE = 'reset_log.txt'
 
 # 상태 옵션 정의
 OP_STATUS = ["▶ 수술", "Ⅱ 대기", "■ 종료"]
@@ -110,24 +110,19 @@ def sync_session_state(df):
     if df.empty: return
     for index, row in df.iterrows():
         room = row['Room']
-        # Status
         key_status = f"st_{room}"
         if key_status not in st.session_state or st.session_state[key_status] != row['Status']:
             st.session_state[key_status] = row['Status']
-        # Morning
         key_m = f"m_{room}"
         if key_m not in st.session_state or st.session_state[key_m] != row['Morning']:
             st.session_state[key_m] = row['Morning']
-        # Lunch
         key_l = f"l_{room}"
         if key_l not in st.session_state or st.session_state[key_l] != row['Lunch']:
             st.session_state[key_l] = row['Lunch']
-        # Afternoon
         key_a = f"a_{room}"
         if key_a not in st.session_state or st.session_state[key_a] != row['Afternoon']:
             st.session_state[key_a] = row['Afternoon']
     
-    # 공지사항 동기화
     server_time = load_notice_time()
     if "last_server_time" not in st.session_state:
         st.session_state["last_server_time"] = server_time
@@ -190,10 +185,10 @@ def get_status_style(room, df):
     except:
         return "background-color: #f1f3f4; color: #555; border: 1px solid #ddd;"
 
-# --- 자동 리셋 로직 (아침 7시) ---
+# --- 자동 리셋 로직 ---
 def check_auto_reset():
-    now_time_str = get_korean_time_str() # HH:MM
-    today_str = get_today_str()          # YYYY-MM-DD
+    now_time_str = get_korean_time_str()
+    today_str = get_today_str()
     
     if now_time_str == "07:00":
         last_reset_date = ""
@@ -231,7 +226,7 @@ st.markdown("""
     .quick-link { flex: 1; display: block; text-decoration: none; text-align: center; padding: 8px 0; font-size: 11px; font-weight: bold; white-space: nowrap; border-radius: 8px; transition: opacity 0.2s; box-sizing: border-box; }
     .quick-link:hover { opacity: 0.8; }
 
-    /* PC에서 저장 버튼 기본 스타일 */
+    /* PC 전용: 저장 버튼 스타일 */
     div[data-testid="column"]:nth-of-type(3) button { 
         background-color: #E6F2FF !important; 
         color: #0057A4 !important; 
@@ -242,7 +237,7 @@ st.markdown("""
         min-width: 120px !important; 
     }
 
-    /* 관리자 메뉴 (하루 시작) 버튼 스타일 */
+    /* 관리자 메뉴(하루 시작) 버튼 스타일 (PC용) */
     div[data-testid="stExpander"] button {
         background-color: #FFEBEE !important; 
         color: #B71C1C !important;            
@@ -252,7 +247,7 @@ st.markdown("""
     }
     div[data-testid="stExpander"] button:hover { background-color: #FFCDD2 !important; border-color: #E57373 !important; }
 
-    /* 모바일 반응형 */
+    /* [중요] 모바일 반응형 스타일 수정 */
     @media (max-width: 900px) {
         .block-container > div > div > div[data-testid="stHorizontalBlock"] { display: flex !important; flex-direction: column !important; }
         .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(3) { order: 1; margin-bottom: 20px; }
@@ -261,32 +256,31 @@ st.markdown("""
 
         div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] { flex-direction: row !important; gap: 20px !important; }
         
-        /* 1. 모바일에서 관리자 메뉴(Expander) 숨김 */
+        /* 1. 모바일에서 관리자 메뉴(Expander)와 그 안의 리셋 버튼 완전 숨김 */
         div[data-testid="stExpander"] {
             display: none !important;
         }
 
-        /* 2. 변경사항 저장 버튼 플로팅 복구 */
-        /* 세 번째 컬럼 안에 있는 버튼만 정확히 타겟팅 */
-        div[data-testid="column"]:nth-of-type(3) div[data-testid="stButton"] {
+        /* 2. 남은 유일한 버튼(저장 버튼)을 화면 하단에 플로팅 */
+        /* 페이지 내의 모든 버튼을 타겟팅하되, 리셋버튼은 위에서 숨겨졌으므로 저장버튼만 뜸 */
+        div[data-testid="stButton"] button {
             position: fixed !important; 
-            bottom: 20px !important; 
-            left: 80px !important; 
-            width: auto !important;
-            z-index: 999999 !important;
-        }
-        
-        div[data-testid="column"]:nth-of-type(3) div[data-testid="stButton"] button {
-            width: 220px !important; 
-            height: 50px !important; 
+            bottom: 25px !important; 
+            left: 50% !important; 
+            transform: translateX(-50%) !important; /* 중앙 정렬 */
+            width: 250px !important;
+            height: 55px !important; 
+            
+            z-index: 999999 !important; 
             background-color: #E6F2FF !important; 
             border: 2px solid #0057A4 !important; 
-            border-radius: 25px !important; 
-            box-shadow: 0px 4px 15px rgba(0, 87, 164, 0.3) !important;
+            border-radius: 30px !important; 
+            box-shadow: 0px 6px 16px rgba(0, 87, 164, 0.3) !important;
+            font-size: 16px !important;
         }
 
         .floating-top-btn { position: fixed; bottom: 20px; left: 15px; width: 50px; height: 50px; background-color: #FFFFFF; color: #333; border: 2px solid #ddd; border-radius: 15px; text-align: center; line-height: 50px; font-size: 20px; font-weight: bold; text-decoration: none; box-shadow: 0px 4px 15px rgba(0,0,0,0.2); z-index: 999999; }
-        .block-container { padding-bottom: 100px !important; }
+        .block-container { padding-bottom: 120px !important; } /* 하단 여백 확보 */
     }
 
     @media (max-width: 600px) { div[data-testid="stVerticalBlockBorderWrapper"] { max-width: 95vw; margin: auto; } }
@@ -385,7 +379,7 @@ with col_notice:
 
 st.markdown("---")
 
-# PC에서만 보이는 관리자 메뉴 (모바일에서는 CSS로 숨김 처리됨)
+# PC에서만 보이는 관리자 메뉴 (모바일에서는 CSS로 display: none)
 with st.expander("⚙️ 관리자 메뉴 (하루 시작 / 초기화)"):
     st.warning("⚠️ 주의: 모든 데이터가 초기화됩니다.")
     if st.button("🔄 하루 시작 (전체 초기화)", use_container_width=True, type="primary"):
