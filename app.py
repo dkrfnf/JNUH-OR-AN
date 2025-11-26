@@ -371,7 +371,7 @@ st.markdown("""
 
     /* 가로 구분선 (---) 여백 */
     hr { 
-        margin-top: 0.5rem !important; 
+        margin-top: 0.2rem !important; 
         margin-bottom: 0.5rem !important; 
     }
 
@@ -436,7 +436,7 @@ st.markdown("""
         background-color: #E6F2FF !important; color: #0057A4 !important; border: 1px solid #0057A4 !important;
         border-radius: 8px !important; font-weight: bold !important; transition: all 0.3s ease;
         width: auto !important; padding-left: 20px !important; padding-right: 20px !important;
-        min-width: 120px !important; font-size: 13px !important;
+        min-width: 120px !important; font-size: 11px !important;
     }
     div[data-testid="column"]:nth-of-type(3) button p { color: #0057A4 !important; }
     div[data-testid="column"]:nth-of-type(3) button:hover {
