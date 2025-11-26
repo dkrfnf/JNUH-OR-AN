@@ -351,8 +351,8 @@ st.markdown("""
     
     /* (D) 카드 테두리 박스 내부 여백 (카드의 '뚱뚱함' 조절) */
     [data-testid="stVerticalBlockBorderWrapper"] > div {
-        padding-top: 5px !important;    /* 카드 안쪽 위 여백 */
-        padding-bottom: 5px !important; /* 카드 안쪽 아래 여백 */
+        padding-top: 10px !important;    /* 카드 안쪽 위 여백 */
+        padding-bottom: 10px !important; /* 카드 안쪽 아래 여백 */
     }
 
 
