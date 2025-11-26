@@ -322,7 +322,7 @@ st.markdown("""
     }
 
     /* 2. 제목(H3) 여백 제거 */
-    h3 { margin-top: 10px !important; padding-top: 5px !important; }
+    h3 { margin-top: 5px !important; padding-top: 10px !important; }
 
     /* ▼▼▼ [수정된 부분] 간격 줄이기 핵심 코드 ▼▼▼ */
     
