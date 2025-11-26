@@ -339,8 +339,8 @@ st.markdown("""
     
     /* (3) 카드 내부 내용물 간격 더 줄이기 */
     [data-testid="stVerticalBlockBorderWrapper"] > div {
-        padding-top: 3px !important;    /* 카드 내부 위쪽 여백 */
-        padding-bottom: 3px !important; /* 카드 내부 아래쪽 여백 */
+        padding-top: 5px !important;    /* 카드 내부 위쪽 여백 */
+        padding-bottom: 5px !important; /* 카드 내부 아래쪽 여백 */
     }
 
 
