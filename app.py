@@ -313,58 +313,12 @@ check_daily_reset()
 st.markdown("<div id='top'></div>", unsafe_allow_html=True)
 st.markdown("""
     <style>
-    /* 1. 상단 전체 여백 줄이기 */
-    .block-container {
-        padding-top: 0.5rem !important;
-        padding-bottom: 3rem !important;
-        padding-left: 1rem !important;
-        padding-right: 1rem !important;
-    }
-
-    /* 2. 제목(H3) 여백 제거 */
-    h3 { margin-top: 5px !important; padding-top: 10px !important; }
-
-    /* ▼▼▼ [수정된 부분] 간격 줄이기 핵심 코드 ▼▼▼ */
-    
-    /* (1) 기본적으로 모든 수직 간격을 2px로 좁힘 (방과 방 사이) */
-    [data-testid="stVerticalBlock"] {
-        gap: 5px !important; 
-    }
-
-    /* (2) ★ [추가된 부분] 방 카드 내부(A3 <-> 오전)는 간격을 다시 넓힘 ★ */
-    /* 이게 없으면 카드 내부도 2px로 딱 붙어서 답답해 보입니다. */
-    [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stVerticalBlock"] {
-        gap: 1rem !important; /* 👈 이 숫자를 늘리면 내부 줄 간격이 벌어집니다 */
-    }
-
-    /* (3) 테두리 박스(수술실 카드) 자체의 외부 여백 줄이기 */
-    [data-testid="stVerticalBlockBorderWrapper"] {
-        margin-bottom: 3px !important; 
-        padding: 3px !important;       
-    }
-    
-    /* (4) 카드 내부 여백 (테두리와 내용물 사이) */
-    [data-testid="stVerticalBlockBorderWrapper"] > div {
-        padding-top: 5px !important;    
-        padding-bottom: 5px !important; 
-    }
-
-    /* ▲▲▲ 수정 끝 ▲▲▲ */
-
-
-    /* 구역 제목(H4) 바짝 붙이기 */
-    h4 { 
-        margin-top: 5px !important; 
-        margin-bottom: 10px !important; 
-        padding-bottom: 5px !important; 
-        z-index: 1; 
-        position: relative; 
-    }
-    
-    /* 구분선 여백 */
-    hr { margin-top: 0.2rem !important; margin-bottom: 0.3rem !important; }
-    
-    /* 기존 입력창/버튼 스타일 (그대로 유지) */
+    .block-container { padding: 1rem; }
+    div[data-testid="column"] > div > div > div[data-testid="stVerticalBlock"] { gap: 0.1rem !important; }
+    div[data-testid="stVerticalBlockBorderWrapper"] { margin-bottom: 0.1rem !important; }
+    div[data-testid="stVerticalBlockBorderWrapper"] > div > div > div { gap: 0.1rem !important; }
+    h4 { margin-top: 0px !important; margin-bottom: -15px !important; padding-bottom: 0px !important; z-index: 1; position: relative; }
+    hr { margin-top: 0.2rem !important; margin-bottom: 0.5rem !important; }
     div[data-testid="stSelectbox"] div[data-baseweb="select"] > div {
         padding-top: 0px; padding-bottom: 0px; padding-left: 5px; height: 32px; min-height: 32px;
         font-size: 14px; display: flex; align-items: center; border-color: #E0E0E0;
