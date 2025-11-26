@@ -265,7 +265,7 @@ def render_final_card(room_name, df):
                     width: 100%; font-size: 1.2rem; font-weight: bold;
                     color: {text_color}; background-color: {bg_color};
                     padding: 4px 0px; border-radius: 6px; text-align: center;
-                    display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+                    display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;margin-bottom: 8px;
                 '>
                     <span style='margin-right: 3px;'>{current_icon}</span>{room_name}
                 </div>
@@ -300,7 +300,7 @@ def render_final_card(room_name, df):
 
 def render_zone(col, title, zone_list, df):
     with col:
-        st.markdown(f"<h4 style='margin-bottom: -15px;'>{title}</h4>", unsafe_allow_html=True)
+        st.markdown(f"<h4 style='margin-bottom: 5px;'>{title}</h4>", unsafe_allow_html=True)
         for room in zone_list:
             render_final_card(room, df)
 
