@@ -316,7 +316,7 @@ st.markdown("""
     /* 1. 상단 전체 여백 줄이기 */
     .block-container {
         padding-top: 1rem !important;
-        padding-bottom: 5rem !important;
+        padding-bottom: 3rem !important;
         padding-left: 1rem !important;
         padding-right: 1rem !important;
     }
