@@ -322,19 +322,19 @@ st.markdown("""
     }
 
     /* 2. 제목(H3) 여백 제거 */
-    h3 { margin-top: 0 !important; padding-top: 0 !important; }
+    h3 { margin-top: 5px !important; padding-top: 5px !important; }
 
     /* ▼▼▼ [수정된 부분] 간격 줄이기 핵심 코드 ▼▼▼ */
     
     /* (1) 수직 배열된 요소들의 간격(Gap)을 강제로 없앰 */
     [data-testid="stVerticalBlock"] {
-        gap: 2px !important; /* 방과 방 사이 간격 (0으로 하면 너무 붙으니 2px 추천) */
+        gap: 3px !important; /* 방과 방 사이 간격 (0으로 하면 너무 붙으니 2px 추천) */
     }
 
     /* (2) 테두리 박스(수술실 카드) 자체의 외부 여백 줄이기 */
     [data-testid="stVerticalBlockBorderWrapper"] {
         margin-bottom: 2px !important; /* 카드 아래쪽 여백 최소화 */
-        padding: 0px !important;       /* 카드 안쪽 패딩 제거 필요시 */
+        padding: 3px !important;       /* 카드 안쪽 패딩 제거 필요시 */
     }
     
     /* (3) 카드 내부 내용물 간격 더 줄이기 */
@@ -343,11 +343,10 @@ st.markdown("""
         padding-bottom: 5px !important; /* 카드 내부 아래쪽 여백 */
     }
 
-    /* ▲▲▲ 수정 끝 ▲▲▲ */
 
     /* 구역 제목(H4) 바짝 붙이기 */
     h4 { 
-        margin-top: 0px !important; 
+        margin-top: 2px !important; 
         margin-bottom: -15px !important; 
         padding-bottom: 0px !important; 
         z-index: 1; 
