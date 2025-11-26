@@ -261,26 +261,29 @@ st.markdown("""
             display: none !important;
         }
 
-        /* 2. 남은 유일한 버튼(저장 버튼)을 플로팅 - 이전 사이즈(220px/50px)로 복구 */
-        div[data-testid="column"]:nth-of-type(3) div[data-testid="stButton"] {
+        /* 2. 저장 버튼 플로팅 (가장 확실한 선택자 사용) */
+        /* 화면 하단에 고정하고 스타일 적용 */
+        div[data-testid="column"]:nth-of-type(3) button {
              position: fixed !important; 
              bottom: 20px !important; 
-             left: 80px !important; /* 이전 위치와 동일 */
-             width: auto !important; 
-             z-index: 999999 !important;
-             background-color: transparent !important;
-             margin: 0 !important;
-        }
-        
-        div[data-testid="column"]:nth-of-type(3) div[data-testid="stButton"] button {
+             left: 80px !important; 
              width: 220px !important; 
              height: 50px !important; 
-             font-size: 13px !important; 
-             border-radius: 25px !important; 
-             box-shadow: 0px 4px 15px rgba(0, 87, 164, 0.3) !important; 
-             padding: 0 !important;
+             
+             z-index: 999999 !important;
              background-color: #E6F2FF !important; 
              border: 2px solid #0057A4 !important;
+             border-radius: 25px !important; 
+             box-shadow: 0px 4px 15px rgba(0, 87, 164, 0.3) !important; 
+             
+             font-size: 13px !important; 
+             font-weight: bold !important;
+             color: #0057A4 !important;
+        }
+        
+        /* 버튼 내부 텍스트 색상 강제 */
+        div[data-testid="column"]:nth-of-type(3) button p {
+             color: #0057A4 !important;
         }
 
         .floating-top-btn { position: fixed; bottom: 20px; left: 15px; width: 50px; height: 50px; background-color: #FFFFFF; color: #333; border: 2px solid #ddd; border-radius: 15px; text-align: center; line-height: 50px; font-size: 20px; font-weight: bold; text-decoration: none; box-shadow: 0px 4px 15px rgba(0,0,0,0.2); z-index: 999999; }
