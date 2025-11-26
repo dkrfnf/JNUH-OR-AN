@@ -334,7 +334,7 @@ st.markdown("""
     /* (2) ★ [추가된 부분] 방 카드 내부(A3 <-> 오전)는 간격을 다시 넓힘 ★ */
     /* 이게 없으면 카드 내부도 2px로 딱 붙어서 답답해 보입니다. */
     [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stVerticalBlock"] {
-        gap: 0.4rem !important; /* 👈 이 숫자를 늘리면 내부 줄 간격이 벌어집니다 */
+        gap: 1rem !important; /* 👈 이 숫자를 늘리면 내부 줄 간격이 벌어집니다 */
     }
 
     /* (3) 테두리 박스(수술실 카드) 자체의 외부 여백 줄이기 */
