@@ -56,7 +56,6 @@ def load_data():
             
             df = pd.read_csv(DATA_FILE, encoding='utf-8')
             
-            # 결측치 및 컬럼 호환성 처리
             df['Morning'] = df['Morning'].fillna('')
             df['Afternoon'] = df['Afternoon'].fillna('')
             if 'Lunch' not in df.columns: df['Lunch'] = '식사-'
@@ -232,8 +231,16 @@ st.markdown("""
     .quick-link { flex: 1; display: block; text-decoration: none; text-align: center; padding: 8px 0; font-size: 11px; font-weight: bold; white-space: nowrap; border-radius: 8px; transition: opacity 0.2s; box-sizing: border-box; }
     .quick-link:hover { opacity: 0.8; }
 
-    /* 저장 버튼 커스텀 */
-    div[data-testid="column"]:nth-of-type(3) button { background-color: #E6F2FF !important; color: #0057A4 !important; border: 1px solid #0057A4 !important; border-radius: 8px !important; font-weight: bold !important; width: auto !important; min-width: 120px !important; }
+    /* PC에서 저장 버튼 기본 스타일 */
+    div[data-testid="column"]:nth-of-type(3) button { 
+        background-color: #E6F2FF !important; 
+        color: #0057A4 !important; 
+        border: 1px solid #0057A4 !important; 
+        border-radius: 8px !important; 
+        font-weight: bold !important; 
+        width: auto !important; 
+        min-width: 120px !important; 
+    }
 
     /* 관리자 메뉴 (하루 시작) 버튼 스타일 */
     div[data-testid="stExpander"] button {
@@ -254,16 +261,28 @@ st.markdown("""
 
         div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] { flex-direction: row !important; gap: 20px !important; }
         
-        /* [수정됨] 모바일에서 관리자 메뉴(Expander) 전체 숨김 */
+        /* 1. 모바일에서 관리자 메뉴(Expander) 숨김 */
         div[data-testid="stExpander"] {
             display: none !important;
         }
 
-        /* 저장 버튼 플로팅 */
-        div[data-testid="column"]:nth-of-type(3) > div > div > div > div > div > button {
-            position: fixed !important; bottom: 20px !important; left: 80px !important; width: 220px !important; height: 50px !important; 
-            z-index: 999999 !important; background-color: #E6F2FF !important; border: 2px solid #0057A4 !important; 
-            border-radius: 25px !important; box-shadow: 0px 4px 15px rgba(0, 87, 164, 0.3) !important;
+        /* 2. 변경사항 저장 버튼 플로팅 복구 */
+        /* 세 번째 컬럼 안에 있는 버튼만 정확히 타겟팅 */
+        div[data-testid="column"]:nth-of-type(3) div[data-testid="stButton"] {
+            position: fixed !important; 
+            bottom: 20px !important; 
+            left: 80px !important; 
+            width: auto !important;
+            z-index: 999999 !important;
+        }
+        
+        div[data-testid="column"]:nth-of-type(3) div[data-testid="stButton"] button {
+            width: 220px !important; 
+            height: 50px !important; 
+            background-color: #E6F2FF !important; 
+            border: 2px solid #0057A4 !important; 
+            border-radius: 25px !important; 
+            box-shadow: 0px 4px 15px rgba(0, 87, 164, 0.3) !important;
         }
 
         .floating-top-btn { position: fixed; bottom: 20px; left: 15px; width: 50px; height: 50px; background-color: #FFFFFF; color: #333; border: 2px solid #ddd; border-radius: 15px; text-align: center; line-height: 50px; font-size: 20px; font-weight: bold; text-decoration: none; box-shadow: 0px 4px 15px rgba(0,0,0,0.2); z-index: 999999; }
@@ -340,6 +359,7 @@ with col_notice:
 
     st.text_area("공지사항 내용", key="notice_area", height=200, label_visibility="collapsed", placeholder="전달사항을 입력하세요...", on_change=save_notice_callback)
     
+    # 이 버튼이 모바일에서 플로팅됩니다
     if st.button("변경사항 저장", use_container_width=False):
         save_notice_callback()
         save_data(df)
@@ -365,7 +385,7 @@ with col_notice:
 
 st.markdown("---")
 
-# PC에서만 보이는 관리자 메뉴
+# PC에서만 보이는 관리자 메뉴 (모바일에서는 CSS로 숨김 처리됨)
 with st.expander("⚙️ 관리자 메뉴 (하루 시작 / 초기화)"):
     st.warning("⚠️ 주의: 모든 데이터가 초기화됩니다.")
     if st.button("🔄 하루 시작 (전체 초기화)", use_container_width=True, type="primary"):
