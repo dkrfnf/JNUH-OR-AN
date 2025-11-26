@@ -315,7 +315,7 @@ st.markdown("""
     <style>
     /* 1. 상단 전체 여백 줄이기 */
     .block-container {
-        padding-top: 1rem !important;
+        padding-top: 0.5rem !important;
         padding-bottom: 3rem !important;
         padding-left: 1rem !important;
         padding-right: 1rem !important;
@@ -339,8 +339,8 @@ st.markdown("""
     
     /* (3) 카드 내부 내용물 간격 더 줄이기 */
     [data-testid="stVerticalBlockBorderWrapper"] > div {
-        padding-top: 5px !important;    /* 카드 내부 위쪽 여백 */
-        padding-bottom: 5px !important; /* 카드 내부 아래쪽 여백 */
+        padding-top: 3px !important;    /* 카드 내부 위쪽 여백 */
+        padding-bottom: 3px !important; /* 카드 내부 아래쪽 여백 */
     }
 
 
