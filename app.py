@@ -279,6 +279,10 @@ def render_final_card(room_name, df):
                 label_visibility="collapsed",
                 on_change=update_data_callback, args=(room_name, 'Status', key_status)
             )
+            
+        # 높이(height) 숫자를 늘리면 간격이 더 벌어집니다 (예: 10px, 15px, 20px)
+        st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
+        # ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
         s1, s2, s3 = st.columns([1, 0.8, 1], gap="small")
         key_m = f"m_{room_name}"
