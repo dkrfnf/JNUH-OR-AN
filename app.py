@@ -436,46 +436,18 @@ st.markdown("""
     }
     .quick-link:hover { opacity: 0.8; }
 
-/* [수정됨] 3번째 컬럼(공지사항 쪽) 버튼 전용 스타일 */
-    /* :last-of-type을 사용하여 마지막 컬럼(공지사항)의 버튼을 확실하게 잡습니다 */
-    div[data-testid="column"]:last-of-type button {
-        background-color: #E6F2FF !important; /* 모바일과 같은 연한 파랑 배경 */
-        color: #0057A4 !important;            /* 진한 파랑 글씨 */
-        border: 2px solid #0057A4 !important; /* 모바일과 같은 2px 테두리 */
-        border-radius: 8px !important; 
-        font-weight: bold !important; 
-        
-        /* 모바일 느낌의 그림자 추가 */
-        box-shadow: 0px 2px 5px rgba(0, 87, 164, 0.15) !important; 
-
-        /* 크기 조절 (입력창 높이와 맞춤) */
-        width: auto !important; 
-        min-width: 120px !important;    /* 너비 최소값 설정 */
-        padding-left: 20px !important;  /* 좌우 여백 */
-        padding-right: 20px !important;
-        height: 32px !important;
-        min-height: 32px !important;
-        padding-top: 0px !important;
-        padding-bottom: 0px !important;
-        line-height: 1 !important;
-        transition: all 0.3s ease;
+    /* '변경사항 저장' 버튼 스타일 (3번째 컬럼에 있는 버튼 타겟팅) */
+    div[data-testid="column"]:nth-of-type(3) button {
+        background-color: #E6F2FF !important; color: #0057A4 !important; border: 1px solid #0057A4 !important;
+        border-radius: 8px !important; font-weight: bold !important; transition: all 0.3s ease;
+        width: auto !important; padding-left: 20px !important; padding-right: 20px !important;
+        min-width: 120px !important; font-size: 13px !important;
     }
-    
-    /* 버튼 안의 텍스트 색상 강제 적용 (가끔 p태그가 색상을 먹는 경우 방지) */
-    div[data-testid="column"]:last-of-type button p {
-        color: #0057A4 !important;
+    div[data-testid="column"]:nth-of-type(3) button p { color: #0057A4 !important; }
+    div[data-testid="column"]:nth-of-type(3) button:hover {
+        background-color: #CCE4FF !important; border-color: #004080 !important;
     }
-    
-    /* 마우스 올렸을 때 (Hover) 효과 */
-    div[data-testid="column"]:last-of-type button:hover {
-        background-color: #CCE4FF !important; /* 조금 더 진한 배경 */
-        border-color: #004080 !important;
-        color: #004080 !important;
-        box-shadow: 0px 4px 8px rgba(0, 87, 164, 0.3) !important;
-    }
-    div[data-testid="column"]:last-of-type button:hover p {
-        color: #004080 !important;
-    }
+    div[data-testid="column"]:nth-of-type(3) button:hover p { color: #004080 !important; }
 
 
     /* ====================================================================
