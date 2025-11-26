@@ -313,27 +313,51 @@ check_daily_reset()
 st.markdown("<div id='top'></div>", unsafe_allow_html=True)
 st.markdown("""
     <style>
-    /* 1. 상단 여백 줄이기 (여기를 조절하세요: 1rem ~ 3rem 추천) */
+    /* 1. 상단 전체 여백 줄이기 */
     .block-container {
-        padding-top: 0.1rem !important; 
-        padding-bottom: 0.1rem !important;
+        padding-top: 1rem !important;
+        padding-bottom: 5rem !important;
         padding-left: 1rem !important;
         padding-right: 1rem !important;
     }
 
-    /* 2. 제목 자체의 상단 여백 제거 */
-    h3 {
-        margin-top: 0 !important;
-        padding-top: 0 !important;
+    /* 2. 제목(H3) 여백 제거 */
+    h3 { margin-top: 0 !important; padding-top: 0 !important; }
+
+    /* ▼▼▼ [수정된 부분] 간격 줄이기 핵심 코드 ▼▼▼ */
+    
+    /* (1) 수직 배열된 요소들의 간격(Gap)을 강제로 없앰 */
+    [data-testid="stVerticalBlock"] {
+        gap: 2px !important; /* 방과 방 사이 간격 (0으로 하면 너무 붙으니 2px 추천) */
+    }
+
+    /* (2) 테두리 박스(수술실 카드) 자체의 외부 여백 줄이기 */
+    [data-testid="stVerticalBlockBorderWrapper"] {
+        margin-bottom: 2px !important; /* 카드 아래쪽 여백 최소화 */
+        padding: 0px !important;       /* 카드 안쪽 패딩 제거 필요시 */
     }
     
-    /* 기존 스타일 유지 */
-    div[data-testid="column"] > div > div > div[data-testid="stVerticalBlock"] { gap: 0.1rem !important; }
-    div[data-testid="stVerticalBlockBorderWrapper"] { margin-bottom: 0.1rem !important; }
-    div[data-testid="stVerticalBlockBorderWrapper"] > div > div > div { gap: 0.1rem !important; }
-    h4 { margin-top: 0px !important; margin-bottom: -15px !important; padding-bottom: 0px !important; z-index: 1; position: relative; }
-    hr { margin-top: 0.2rem !important; margin-bottom: 0.5rem !important; }
+    /* (3) 카드 내부 내용물 간격 더 줄이기 */
+    [data-testid="stVerticalBlockBorderWrapper"] > div {
+        padding-top: 5px !important;    /* 카드 내부 위쪽 여백 */
+        padding-bottom: 5px !important; /* 카드 내부 아래쪽 여백 */
+    }
+
+    /* ▲▲▲ 수정 끝 ▲▲▲ */
+
+    /* 구역 제목(H4) 바짝 붙이기 */
+    h4 { 
+        margin-top: 0px !important; 
+        margin-bottom: -15px !important; 
+        padding-bottom: 0px !important; 
+        z-index: 1; 
+        position: relative; 
+    }
     
+    /* 구분선 여백 */
+    hr { margin-top: 0.2rem !important; margin-bottom: 0.3rem !important; }
+    
+    /* 기존 입력창/버튼 스타일 (그대로 유지) */
     div[data-testid="stSelectbox"] div[data-baseweb="select"] > div {
         padding-top: 0px; padding-bottom: 0px; padding-left: 5px; height: 32px; min-height: 32px;
         font-size: 14px; display: flex; align-items: center; border-color: #E0E0E0;
