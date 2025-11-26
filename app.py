@@ -509,7 +509,7 @@ with col_notice:
     if notice_time == "": notice_time = "-"
     
     st.markdown(f"""
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; margin-top: -5px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; margin-top: 5px;">
             <h5 style="margin:0; font-weight: bold; font-size: 1.35rem;">📢 공지사항</h5>
             <span style="font-size: 12px; color: #D32F2F; font-weight: bold;">Update: {notice_time}</span>
         </div>
