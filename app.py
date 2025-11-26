@@ -347,8 +347,8 @@ st.markdown("""
     /* 구역 제목(H4) 바짝 붙이기 */
     h4 { 
         margin-top: 5px !important; 
-        margin-bottom: 5px !important; 
-        padding-bottom: 0px !important; 
+        margin-bottom: 10px !important; 
+        padding-bottom: 5px !important; 
         z-index: 1; 
         position: relative; 
     }
