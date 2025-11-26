@@ -326,7 +326,7 @@ st.markdown("""
     }
 
     /* 제목(H3) 자체의 불필요한 위쪽 여백 제거 */
-    h3 { margin-top: 0 !important; padding-top: 0 !important; }
+    h3 { margin-top: 0 !important; padding-top: 2px !important; }
 
 
     /* ====================================================================
@@ -341,7 +341,7 @@ st.markdown("""
     /* (B) 카드 내부의 줄 간격 (방 이름 ↔ 오전 입력창 ↔ 점심... 사이 거리) */
     /* (A)에서 좁혀진 간격을 카드 내부만 다시 넓혀주는 역할입니다 */
     [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stVerticalBlock"] {
-        gap: 10rem !important; /* ⭐ 이걸 늘리면 카드 안의 내용물들이 서로 멀어집니다 */
+        gap: 2rem !important; /* ⭐ 이걸 늘리면 카드 안의 내용물들이 서로 멀어집니다 */
     }
 
     /* (C) 카드 테두리 박스 외부 여백 */
