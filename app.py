@@ -264,8 +264,8 @@ def render_final_card(room_name, df):
                 <div style='
                     width: 100%; font-size: 1.2rem; font-weight: bold;
                     color: {text_color}; background-color: {bg_color};
-                    padding: 1px 0px;             /* 4px -> 2px (박스 위아래 두께를 줄여서 날씬하게) */
-                    border-radius: 5px; text-align: center;
+                    padding: 2px 0px;             /* 4px -> 2px (박스 위아래 두께를 줄여서 날씬하게) */
+                    border-radius: 6px; text-align: center;
                     display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;margin-bottom: 5px;
                 '>
                     <span style='margin-right: 3px;'>{current_icon}</span>{room_name}
