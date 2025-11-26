@@ -310,36 +310,128 @@ st.set_page_config(page_title="JNUH OR", layout="wide")
 # [중요] 앱 실행 시 가장 먼저 날짜 리셋 체크
 check_daily_reset()
 
-st.markdown("<div id='top'></div>", unsafe_allow_html=True)
 st.markdown("""
     <style>
-    .block-container { padding: 1rem; }
-    div[data-testid="column"] > div > div > div[data-testid="stVerticalBlock"] { gap: 0.1rem !important; }
-    div[data-testid="stVerticalBlockBorderWrapper"] { margin-bottom: 0.1rem !important; }
-    div[data-testid="stVerticalBlockBorderWrapper"] > div > div > div { gap: 0.1rem !important; }
-    h4 { margin-top: 0px !important; margin-bottom: -15px !important; padding-bottom: 0px !important; z-index: 1; position: relative; }
-    hr { margin-top: 0.2rem !important; margin-bottom: 0.5rem !important; }
+    /* ====================================================================
+       1. 전체 화면 레이아웃 설정
+       ==================================================================== */
+    
+    /* 화면 전체의 여백 (맨 위, 아래, 좌우) */
+    .block-container {
+        padding-top: 5px !important;    /* ▲ 맨 위 여백 (이걸 줄이면 제목이 천장에 붙음) */
+        padding-bottom: 5rem !important; /* ▼ 맨 아래 여백 (모바일 버튼 가림 방지용) */
+        padding-left: 1rem !important;   /* ◀ 왼쪽 여백 */
+        padding-right: 1rem !important;  /* ▶ 오른쪽 여백 */
+    }
+
+    /* 제목(H3) 자체의 불필요한 위쪽 여백 제거 */
+    h3 { margin-top: 0 !important; padding-top: 0 !important; }
+
+
+    /* ====================================================================
+       2. 수술실 카드 간격 및 모양 설정 (가장 중요한 부분)
+       ==================================================================== */
+
+    /* (A) 방과 방 사이의 세로 간격 (카드끼리 얼마나 떨어뜨릴지) */
+    [data-testid="stVerticalBlock"] {
+        gap: 5px !important; /* ⭐ 0px: 딱 붙음 / 2px: 아주 살짝 틈 / 10px: 여유로움 */
+    }
+
+    /* (B) 카드 내부의 줄 간격 (방 이름 ↔ 오전 입력창 ↔ 점심... 사이 거리) */
+    /* (A)에서 좁혀진 간격을 카드 내부만 다시 넓혀주는 역할입니다 */
+    [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stVerticalBlock"] {
+        gap: 1rem !important; /* ⭐ 이걸 늘리면 카드 안의 내용물들이 서로 멀어집니다 */
+    }
+
+    /* (C) 카드 테두리 박스 외부 여백 */
+    [data-testid="stVerticalBlockBorderWrapper"] {
+        margin-bottom: 2px !important; /* 카드 아래쪽을 얼마나 띄울지 ((A)와 합쳐짐) */
+        padding: 0px !important;
+    }
+    
+    /* (D) 카드 테두리 박스 내부 여백 (카드의 '뚱뚱함' 조절) */
+    [data-testid="stVerticalBlockBorderWrapper"] > div {
+        padding-top: 5px !important;    /* 카드 안쪽 위 여백 */
+        padding-bottom: 5px !important; /* 카드 안쪽 아래 여백 */
+    }
+
+
+    /* ====================================================================
+       3. 텍스트 및 구분선 스타일
+       ==================================================================== */
+
+    /* 구역 제목 (A 구역, B 구역...) 위치 조정 */
+    h4 { 
+        margin-top: 0px !important; 
+        margin-bottom: 10px !important; /* ⭐ 제목과 첫 번째 카드 사이를 좁히는 핵심 (음수값) */
+        padding-bottom: 0px !important; 
+        z-index: 1; 
+        position: relative; 
+    }
+
+    /* 가로 구분선 (---) 여백 */
+    hr { 
+        margin-top: 0.2rem !important; 
+        margin-bottom: 0.5rem !important; 
+    }
+
+
+    /* ====================================================================
+       4. 입력창(Selectbox, Input) 디자인 커스텀
+       ==================================================================== */
+
+    /* 선택 상자 (Selectbox) 높이 및 여백 줄이기 */
     div[data-testid="stSelectbox"] div[data-baseweb="select"] > div {
-        padding-top: 0px; padding-bottom: 0px; padding-left: 5px; height: 32px; min-height: 32px;
+        padding-top: 0px; padding-bottom: 0px; padding-left: 5px; 
+        height: 32px; min-height: 32px; /* 높이 고정 */
         font-size: 14px; display: flex; align-items: center; border-color: #E0E0E0;
     }
+
+    /* 텍스트 입력창 (Text Input) 높이 및 여백 줄이기 */
     div[data-testid="stTextInput"] div[data-baseweb="input"] {
-        background-color: #FFFFFF !important; border: 1px solid #CCCCCC !important; border-radius: 4px;
-        padding-top: 0px; padding-bottom: 0px; height: 32px; min-height: 32px;
+        background-color: #FFFFFF !important; 
+        border: 1px solid #CCCCCC !important; 
+        border-radius: 4px;
+        padding-top: 0px; padding-bottom: 0px; 
+        height: 32px; min-height: 32px; /* 높이 고정 */
     }
+    
+    /* 입력창 내부 글자 스타일 */
     div[data-testid="stTextInput"] input {
-        background-color: #FFFFFF !important; color: #000000 !important; font-size: 14px; padding: 0px 5px !important;
+        background-color: #FFFFFF !important; 
+        color: #000000 !important; 
+        font-size: 14px; 
+        padding: 0px 5px !important;
     }
+
+    /* 공지사항 텍스트 영역 (Text Area) 스타일 */
     div[data-testid="stTextArea"] textarea {
-        background-color: #FFF9C4 !important; color: #333 !important; font-size: 13px !important; line-height: 1.5;
+        background-color: #FFF9C4 !important; /* 노란색 배경 */
+        color: #333 !important; 
+        font-size: 13px !important; 
+        line-height: 1.5;
     }
-    .link-container { display: flex; width: 100%; justify-content: space-between; gap: 2px; margin-bottom: 5px; }
+
+
+    /* ====================================================================
+       5. 빠른 이동 링크 및 버튼 스타일
+       ==================================================================== */
+
+    /* 링크들을 감싸는 컨테이너 */
+    .link-container { 
+        display: flex; width: 100%; justify-content: space-between; 
+        gap: 2px; margin-bottom: 5px; 
+    }
+
+    /* 개별 링크 버튼 스타일 */
     .quick-link {
         flex: 1; display: block; text-decoration: none; text-align: center; padding: 8px 0;
         font-size: 11px; font-weight: bold; white-space: nowrap; border-radius: 8px;
         transition: opacity 0.2s; box-sizing: border-box;
     }
     .quick-link:hover { opacity: 0.8; }
+
+    /* '변경사항 저장' 버튼 스타일 (3번째 컬럼에 있는 버튼 타겟팅) */
     div[data-testid="column"]:nth-of-type(3) button {
         background-color: #E6F2FF !important; color: #0057A4 !important; border: 1px solid #0057A4 !important;
         border-radius: 8px !important; font-weight: bold !important; transition: all 0.3s ease;
@@ -351,14 +443,26 @@ st.markdown("""
         background-color: #CCE4FF !important; border-color: #004080 !important;
     }
     div[data-testid="column"]:nth-of-type(3) button:hover p { color: #004080 !important; }
+
+
+    /* ====================================================================
+       6. 모바일(좁은 화면) 전용 설정
+       ==================================================================== */
     
     @media (max-width: 900px) {
+        /* 컬럼을 세로로 배치 (A구역, B구역, 공지사항을 한 줄로) */
         .block-container > div > div > div[data-testid="stHorizontalBlock"] { display: flex !important; flex-direction: column !important; }
-        .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(3) { order: 1; margin-bottom: 20px; }
-        .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(1) { order: 2; }
-        .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(2) { order: 3; }
+        
+        /* 모바일에서 보여질 순서 조정 (공지사항을 맨 위로, 그 다음 A, B) */
+        .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(3) { order: 1; margin-bottom: 20px; } /* 공지사항 */
+        .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(1) { order: 2; } /* A구역 */
+        .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(2) { order: 3; } /* B구역 */
+
+        /* 내부 요소 정렬 수정 */
         div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] { flex-direction: row !important; gap: 20px !important; }
         div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] > div { order: unset !important; margin-bottom: 0px !important; }
+        
+        /* 모바일 하단 고정 '변경사항 저장' 버튼 */
         div[data-testid="stButton"]:first-of-type {
             position: fixed !important; bottom: 20px !important; left: 80px !important; width: auto !important; z-index: 999999 !important;
             background-color: transparent !important; margin: 0 !important;
@@ -369,15 +473,21 @@ st.markdown("""
             background-color: #E6F2FF !important; border: 2px solid #0057A4 !important;
         }
         div[data-testid="stButton"]:first-of-type button p { color: #0057A4 !important; }
+        
+        /* 위로 가기 버튼 (TOP) */
         .floating-top-btn {
             position: fixed; bottom: 20px; left: 15px; width: 50px; height: 50px; background-color: #FFFFFF; color: #333;
             border: 2px solid #ddd; border-radius: 15px; text-align: center; line-height: 50px; font-size: 20px;
             font-weight: bold; text-decoration: none; box-shadow: 0px 4px 15px rgba(0,0,0,0.2); z-index: 999999; transition: all 0.2s;
         }
         .floating-top-btn:hover { background-color: #f0f0f0; color: #000; }
+        
+        /* 모바일 하단 여백 추가 (버튼에 가려지지 않게) */
         .block-container { padding-bottom: 100px !important; }
     }
+    
     @media (max-width: 600px) {
+        /* 아주 작은 화면에서 카드 너비 꽉 채우기 */
         div[data-testid="stVerticalBlockBorderWrapper"] { max-width: 95vw; margin: auto; }
     }
     </style>
