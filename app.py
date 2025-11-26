@@ -264,7 +264,8 @@ def render_final_card(room_name, df):
                 <div style='
                     width: 100%; font-size: 1.2rem; font-weight: bold;
                     color: {text_color}; background-color: {bg_color};
-                    padding: 1px 0px; border-radius: 5px; text-align: center;
+                    padding: 1px 0px;             /* 4px -> 2px (박스 위아래 두께를 줄여서 날씬하게) */
+                    border-radius: 5px; text-align: center;
                     display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;margin-bottom: 5px;
                 '>
                     <span style='margin-right: 3px;'>{current_icon}</span>{room_name}
@@ -527,7 +528,7 @@ with col_notice:
 
     st.markdown("<a href='#top' class='floating-top-btn'>🔝</a>", unsafe_allow_html=True)
 
-    st.markdown("<div style='margin-top: 5px; margin-bottom: 5px; font-weight: bold; font-size: 14px;'>🚀 빠른 이동</div>", unsafe_allow_html=True)
+    st.markdown("<div style='margin-top: 5px; margin-bottom: 10px; font-weight: bold; font-size: 14px;'>🚀 빠른 이동</div>", unsafe_allow_html=True)
     
     links_a = "<div class='link-container'>"
     for room in ZONE_A:
