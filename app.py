@@ -439,18 +439,19 @@ st.markdown("""
     }
     .quick-link:hover { opacity: 0.8; }
 
-    /* '변경사항 저장' 버튼 스타일 (3번째 컬럼에 있는 버튼 타겟팅) */
-    div[data-testid="column"]:nth-of-type(3) button {
+    /* '변경사항 저장' 버튼 스타일 (전체 버튼 타겟팅 - 모바일은 미디어 쿼리로 덮어씀) */
+    div[data-testid="stButton"] button {
         background-color: #E6F2FF !important; color: #0057A4 !important; border: 1px solid #0057A4 !important;
         border-radius: 8px !important; font-weight: bold !important; transition: all 0.3s ease;
-        width: auto !important; padding-left: 20px !important; padding-right: 20px !important;
-        min-width: 120px !important; font-size: 13px !important;
+        width: auto !important; padding: 4px 10px !important;
+        min-width: 0 !important; font-size: 11px !important; height: auto !important; line-height: 1.2 !important;
+        display: inline-flex !important; justify-content: center !important; align-items: center !important;
     }
-    div[data-testid="column"]:nth-of-type(3) button p { color: #0057A4 !important; }
-    div[data-testid="column"]:nth-of-type(3) button:hover {
+    div[data-testid="stButton"] button p { color: #0057A4 !important; }
+    div[data-testid="stButton"] button:hover {
         background-color: #CCE4FF !important; border-color: #004080 !important;
     }
-    div[data-testid="column"]:nth-of-type(3) button:hover p { color: #004080 !important; }
+    div[data-testid="stButton"] button:hover p { color: #004080 !important; }
 
 
     /* ====================================================================
