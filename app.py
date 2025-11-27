@@ -444,10 +444,14 @@ st.markdown("""
         background-color: #E6F2FF !important; color: #0057A4 !important; border: 1px solid #0057A4 !important;
         border-radius: 8px !important; font-weight: bold !important; transition: all 0.3s ease;
         width: auto !important; padding: 2px 8px !important;
-        min-width: 0 !important; font-size: 6px !important; height: auto !important; line-height: 1 !important;
+        min-width: 0 !important; font-size: 10px !important; height: auto !important; line-height: 1 !important;
         display: inline-flex !important; justify-content: center !important; align-items: center !important;
     }
-    div[data-testid="stButton"] button p { color: #0057A4 !important; }
+    div[data-testid="stButton"] button p { 
+        color: #0057A4 !important; 
+        font-size: 10px !important; 
+        line-height: 1 !important;
+    }
     div[data-testid="stButton"] button:hover {
         background-color: #CCE4FF !important; border-color: #004080 !important;
     }
@@ -481,7 +485,10 @@ st.markdown("""
             box-shadow: 0px 4px 15px rgba(0, 87, 164, 0.3) !important; padding: 0 !important;
             background-color: #E6F2FF !important; border: 2px solid #0057A4 !important;
         }
-        div[data-testid="stButton"]:first-of-type button p { color: #0057A4 !important; }
+        div[data-testid="stButton"]:first-of-type button p { 
+            color: #0057A4 !important; 
+            font-size: 13px !important; 
+        }
         
         /* 3. 위로 가기 버튼 (무조건 제일 위로) */
         .floating-top-btn {
