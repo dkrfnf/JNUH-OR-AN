@@ -416,7 +416,7 @@ st.markdown("""
     div[data-testid="stTextArea"] textarea {
         background-color: #FFF9C4 !important; /* 노란색 배경 */
         color: #333 !important; 
-        font-size: 13px !important; 
+        font-size: 15px !important; 
         line-height: 1.5;
     }
 
