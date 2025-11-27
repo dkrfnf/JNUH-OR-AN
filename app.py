@@ -444,12 +444,12 @@ st.markdown("""
         background-color: #E6F2FF !important; color: #0057A4 !important; border: 1px solid #0057A4 !important;
         border-radius: 8px !important; font-weight: bold !important; transition: all 0.3s ease;
         width: auto !important; padding: 2px 8px !important;
-        min-width: 0 !important; font-size: 10px !important; height: auto !important; line-height: 1 !important;
+        min-width: 0 !important; font-size: 12px !important; height: auto !important; line-height: 1 !important;
         display: inline-flex !important; justify-content: center !important; align-items: center !important;
     }
     div[data-testid="stButton"] button p { 
         color: #0057A4 !important; 
-        font-size: 10px !important; 
+        font-size: 12px !important; 
         line-height: 1 !important;
     }
     div[data-testid="stButton"] button:hover {
