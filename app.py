@@ -315,6 +315,9 @@ st.set_page_config(page_title="JNUH OR", layout="wide")
 # [중요] 앱 실행 시 가장 먼저 날짜 리셋 체크
 check_daily_reset()
 
+# [추가] 맨 위로 이동하기 위한 타겟 앵커
+st.markdown("<div id='top'></div>", unsafe_allow_html=True)
+
 st.markdown("""
     <style>
     /* ====================================================================
@@ -479,11 +482,16 @@ st.markdown("""
         }
         div[data-testid="stButton"]:first-of-type button p { color: #0057A4 !important; }
         
-        /* 위로 가기 버튼 (TOP) */
+        /* 3. 위로 가기 버튼 (무조건 제일 위로) */
         .floating-top-btn {
             position: fixed; bottom: 20px; left: 15px; width: 50px; height: 50px; background-color: #FFFFFF; color: #333;
             border: 2px solid #ddd; border-radius: 15px; text-align: center; line-height: 50px; font-size: 20px;
-            font-weight: bold; text-decoration: none; box-shadow: 0px 4px 15px rgba(0,0,0,0.2); z-index: 999999; transition: all 0.2s;
+            font-weight: bold; text-decoration: none; box-shadow: 0px 4px 15px rgba(0,0,0,0.2); 
+            
+            z-index: 99999 !important;      /* ★중요: 저장 버튼보다 높은 숫자 -> 맨 위로 올라옴 */
+            pointer-events: auto !important; /* ★중요: 강제로 클릭 활성화 */
+            
+            transition: all 0.2s;
         }
         .floating-top-btn:hover { background-color: #f0f0f0; color: #000; }
         
@@ -530,7 +538,7 @@ with col_notice:
         save_data(df)
         st.toast("모든 변경사항이 저장되었습니다!", icon="✅")
 
-    st.markdown("<a href='#top' class='floating-top-btn'>🔝</a>", unsafe_allow_html=True)
+    # st.markdown("<a href='#top' class='floating-top-btn'>🔝</a>", unsafe_allow_html=True)
 
     st.markdown("<div style='margin-top: 3px; margin-bottom: 20px; font-weight: bold; font-size: 14px;'>🚀 빠른 이동</div>", unsafe_allow_html=True)
     
@@ -548,3 +556,6 @@ with col_notice:
     links_b += "</div>"
     
     st.markdown(links_a + links_b, unsafe_allow_html=True)
+
+# [이동] 위로 가기 버튼을 컬럼 밖(최상위 레벨)으로 이동
+st.markdown("<a href='#top' class='floating-top-btn'>🔝</a>", unsafe_allow_html=True)
