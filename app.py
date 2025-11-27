@@ -443,8 +443,8 @@ st.markdown("""
     div[data-testid="column"]:nth-of-type(3) button {
         background-color: #E6F2FF !important; color: #0057A4 !important; border: 1px solid #0057A4 !important;
         border-radius: 8px !important; font-weight: bold !important; transition: all 0.3s ease;
-        width: auto !important; padding-left: 10px !important; padding-right: 10px !important;
-        min-width: 100px !important; font-size: 12px !important;
+        width: auto !important; padding: 4px 10px !important;
+        min-width: 0 !important; font-size: 11px !important; height: auto !important; line-height: 1.2 !important;
     }
     div[data-testid="column"]:nth-of-type(3) button p { color: #0057A4 !important; }
     div[data-testid="column"]:nth-of-type(3) button:hover {
