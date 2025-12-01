@@ -12,34 +12,32 @@ ALL_ROOMS = ZONE_A + ZONE_B
 DATA_FILE = 'or_status_kst.csv'
 NOTICE_FILE = 'notice.txt'
 NOTICE_TIME_FILE = 'notice_time.txt'
-RESET_LOG_FILE = 'reset_log.txt'  # 리셋 기록용 파일
+RESET_LOG_FILE = 'reset_log.txt'
 
 # 상태 옵션 정의
 OP_STATUS = ["▶ 수술", "Ⅱ 대기", "■ 종료"]
-LUNCH_OPTIONS = ["식사-", "식사+"] 
+# [변경] 교대 및 식사 상태 옵션 통합
+SHIFT_OPTIONS = ["--", "오전교대+", "식사+", "오후교대+"]
 
 # 2초 자동 새로고침
 st_autorefresh(interval=2000, key="datarefresh")
 
 # --- 시간 관련 함수 ---
 def get_korean_datetime():
-    """한국 시간 datetime 객체 반환"""
     utc_now = datetime.utcnow()
     kst_now = utc_now + timedelta(hours=9)
     return kst_now
 
 def get_korean_time_str():
-    """한국 시간 문자열(HH:MM) 반환"""
     return get_korean_datetime().strftime("%H:%M")
 
 def get_room_index(df, room_name):
     return df[df['Room'] == room_name].index[0]
 
-# --- 자동 리셋 로직 (핵심 변경) ---
+# --- 자동 리셋 로직 ---
 def load_last_reset_time():
-    """마지막 리셋 시간을 datetime 객체로 불러옴"""
     if not os.path.exists(RESET_LOG_FILE):
-        return datetime.min # 파일 없으면 아주 옛날 시간 반환
+        return datetime.min
     try:
         with open(RESET_LOG_FILE, "r", encoding="utf-8") as f:
             timestamp_str = f.read().strip()
@@ -48,49 +46,36 @@ def load_last_reset_time():
         return datetime.min
 
 def save_current_reset_time(dt_obj):
-    """현재 리셋 시간을 파일에 저장"""
     try:
         with open(RESET_LOG_FILE, "w", encoding="utf-8") as f:
             f.write(dt_obj.strftime("%Y-%m-%d %H:%M:%S"))
     except: pass
 
 def check_daily_reset():
-    """아침 7시 기준으로 리셋이 필요한지 확인하고 실행"""
     now = get_korean_datetime()
-    
-    # 오늘의 리셋 기준 시간 설정 (오늘 아침 7시)
     target_reset_time = now.replace(hour=7, minute=0, second=0, microsecond=0)
     
-    # 만약 현재 시간이 아침 7시 이전(예: 06:30)이라면, 
-    # 리셋 기준은 '어제 아침 7시'가 되어야 함 (아직 오늘 리셋 시간이 안 됨)
     if now.hour < 7:
         target_reset_time = target_reset_time - timedelta(days=1)
         
     last_reset = load_last_reset_time()
     
-    # 마지막 리셋 기록이 기준 시간보다 이전이면 리셋 실행
     if last_reset < target_reset_time:
         perform_reset(now)
 
 def perform_reset(current_time):
-    """실제 데이터 초기화 수행"""
-    # 1. 데이터 초기화
+    # [변경] 데이터 컬럼을 Memo, Shift로 변경하여 초기화
     df = pd.DataFrame({
         'Room': ALL_ROOMS,
         'Status': ['▶ 수술'] * len(ALL_ROOMS),
         'Last_Update': [current_time.strftime("%H:%M")] * len(ALL_ROOMS),
-        'Morning': [''] * len(ALL_ROOMS),
-        'Lunch': ['식사-'] * len(ALL_ROOMS),
-        'Afternoon': [''] * len(ALL_ROOMS)
+        'Memo': [''] * len(ALL_ROOMS),         # 자유 메모
+        'Shift': ['--'] * len(ALL_ROOMS)       # 교대/식사 상태
     })
     
-    # 2. 파일 저장
     df.to_csv(DATA_FILE, index=False, encoding='utf-8')
-    
-    # 3. 리셋 시간 기록 (중복 실행 방지)
     save_current_reset_time(current_time)
     
-    # 4. 세션 초기화 및 리런
     for key in list(st.session_state.keys()):
         del st.session_state[key]
     
@@ -101,7 +86,6 @@ def load_data():
     for _ in range(5):
         try:
             if not os.path.exists(DATA_FILE):
-                # 파일 없으면 초기화 로직 수행
                 now = get_korean_datetime()
                 perform_reset(now)
                 return pd.read_csv(DATA_FILE, encoding='utf-8')
@@ -112,12 +96,14 @@ def load_data():
                 os.remove(DATA_FILE)
                 continue 
             
-            df['Morning'] = df['Morning'].fillna('')
-            df['Afternoon'] = df['Afternoon'].fillna('')
-            if 'Lunch' not in df.columns:
-                df['Lunch'] = '식사-'
-            df['Lunch'] = df['Lunch'].fillna('식사-')
-            df['Lunch'] = df['Lunch'].apply(lambda x: x if x in LUNCH_OPTIONS else '식사-')
+            # [변경] 구버전 파일 호환성 처리 (컬럼이 없으면 생성)
+            if 'Memo' not in df.columns: df['Memo'] = ''
+            if 'Shift' not in df.columns: df['Shift'] = '--'
+            
+            df['Memo'] = df['Memo'].fillna('')
+            df['Shift'] = df['Shift'].fillna('--')
+            # 이상한 값이 있으면 '--'로 초기화
+            df['Shift'] = df['Shift'].apply(lambda x: x if x in SHIFT_OPTIONS else '--')
 
             return df
         except Exception:
@@ -172,21 +158,20 @@ def sync_session_state(df):
     for index, row in df.iterrows():
         room = row['Room']
         
+        # 수술 상태 동기화
         key_status = f"st_{room}"
         if key_status not in st.session_state or st.session_state[key_status] != row['Status']:
             st.session_state[key_status] = row['Status']
             
-        key_m = f"m_{room}"
-        if key_m not in st.session_state or st.session_state[key_m] != row['Morning']:
-            st.session_state[key_m] = row['Morning']
+        # [변경] 메모 동기화
+        key_memo = f"memo_{room}"
+        if key_memo not in st.session_state or st.session_state[key_memo] != row['Memo']:
+            st.session_state[key_memo] = row['Memo']
             
-        key_l = f"l_{room}"
-        if key_l not in st.session_state or st.session_state[key_l] != row['Lunch']:
-            st.session_state[key_l] = row['Lunch']
-            
-        key_a = f"a_{room}"
-        if key_a not in st.session_state or st.session_state[key_a] != row['Afternoon']:
-            st.session_state[key_a] = row['Afternoon']
+        # [변경] 교대 상태 동기화
+        key_shift = f"shift_{room}"
+        if key_shift not in st.session_state or st.session_state[key_shift] != row['Shift']:
+            st.session_state[key_shift] = row['Shift']
     
     server_time = load_notice_time()
     if "last_server_time" not in st.session_state:
@@ -208,12 +193,14 @@ def update_data_callback(room_name, col_name, session_key):
             df.loc[idx, 'Last_Update'] = get_korean_time_str()
             save_data(df)
 
-# --- 스타일 헬퍼 함수 ---
+# --- [중요] 스타일 헬퍼 함수 (테두리 색상 로직) ---
 def get_status_style(room, df):
     try:
         row = df[df['Room'] == room].iloc[0]
         status = row['Status']
-        lunch = row['Lunch']
+        shift = row['Shift']  # [변경] 교대 상태 확인
+        
+        # 기본 배경/글자색 (수술/대기 상태 기준)
         bg_color = "#f1f3f4"
         text_color = "#555"
         border_color = "#ddd"
@@ -228,11 +215,19 @@ def get_status_style(room, df):
             text_color = "#EF6C00"
             border_color = "#EF6C00"
         
-        if lunch == "식사+":
-            border_color = "#FF4081"
+        # [변경] 교대/식사 상태에 따른 테두리 색상 오버라이드
+        if shift == "오전교대+":
+            border_color = "#4CAF50" # 녹색
             border_width = "3px"
-            if text_color == "#555": 
-                text_color = "#000"
+            if text_color == "#555": text_color = "#000"
+        elif shift == "식사+":
+            border_color = "#FF4081" # 분홍색
+            border_width = "3px"
+            if text_color == "#555": text_color = "#000"
+        elif shift == "오후교대+":
+            border_color = "#1A237E" # 남색
+            border_width = "3px"
+            if text_color == "#555": text_color = "#000"
 
         return f"background-color: {bg_color}; color: {text_color}; border: {border_width} solid {border_color};"
     except:
@@ -243,30 +238,31 @@ def render_final_card(room_name, df):
     st.markdown(f"<div id='target_{room_name}' style='scroll-margin-top: 100px;'></div>", unsafe_allow_html=True)
     row = df[df['Room'] == room_name].iloc[0]
     status = row['Status']
-    lunch_status = row['Lunch']
     
+    # Memo와 Shift 값 가져오기
+    current_memo = row['Memo']
+    current_shift = row['Shift']
+    
+    # 카드 헤더 색상 설정
     if "수술" in status:
-        bg_color = "#E0F2FE"       
-        text_color = "#0EA5E9"     
+        bg_color = "#E0F2FE"; text_color = "#0EA5E9"
     elif "대기" in status:
-        bg_color = "#FFF3E0"       
-        text_color = "#EF6C00"     
+        bg_color = "#FFF3E0"; text_color = "#EF6C00"
     else: 
-        bg_color = "#E0E0E0"       
-        text_color = "#000000"     
+        bg_color = "#E0E0E0"; text_color = "#000000"
 
     current_icon = status.split(" ")[0] 
 
     with st.container(border=True):
+        # 상단: 방 이름 + 수술상태 선택
         c1, c2 = st.columns([0.6, 1.2], gap="medium")
         with c1:
             st.markdown(f"""
                 <div style='
                     width: 100%; font-size: 1.2rem; font-weight: bold;
                     color: {text_color}; background-color: {bg_color};
-                    padding: 2px 0px;             /* 4px -> 2px (박스 위아래 두께를 줄여서 날씬하게) */
-                    border-radius: 6px; text-align: center;
-                    display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;margin-bottom: 5px;
+                    padding: 2px 0px; border-radius: 6px; text-align: center;
+                    display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-bottom: 5px;
                 '>
                     <span style='margin-right: 3px;'>{current_icon}</span>{room_name}
                 </div>
@@ -280,22 +276,22 @@ def render_final_card(room_name, df):
                 on_change=update_data_callback, args=(room_name, 'Status', key_status)
             )
             
-        # 높이(height) 숫자를 늘리면 간격이 더 벌어집니다 (예: 10px, 15px, 20px)
         st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
-        # ▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲▲
 
-        s1, s2, s3 = st.columns([1, 0.8, 1], gap="small")
-        key_m = f"m_{room_name}"
-        key_l = f"l_{room_name}"
-        key_a = f"a_{room_name}"
+        # [변경] 하단: 메모 입력창(왼쪽) + 교대 상태 선택(오른쪽)
+        s1, s2 = st.columns([1.5, 1], gap="small")
         
-        s1.text_input("오전", key=key_m, placeholder="오전", label_visibility="collapsed",
-                      on_change=update_data_callback, args=(room_name, 'Morning', key_m))
-        s2.selectbox("점심", LUNCH_OPTIONS, key=key_l, label_visibility="collapsed",
-                      index=LUNCH_OPTIONS.index(lunch_status) if lunch_status in LUNCH_OPTIONS else 0,
-                      on_change=update_data_callback, args=(room_name, 'Lunch', key_l))
-        s3.text_input("오후", key=key_a, placeholder="오후", label_visibility="collapsed",
-                      on_change=update_data_callback, args=(room_name, 'Afternoon', key_a))
+        key_memo = f"memo_{room_name}"
+        key_shift = f"shift_{room_name}"
+        
+        # 1. 메모 (Free Text)
+        s1.text_input("메모", key=key_memo, placeholder="메모", label_visibility="collapsed",
+                      on_change=update_data_callback, args=(room_name, 'Memo', key_memo))
+        
+        # 2. 교대/식사 상태 (선택)
+        s2.selectbox("교대", SHIFT_OPTIONS, key=key_shift, label_visibility="collapsed",
+                      index=SHIFT_OPTIONS.index(current_shift) if current_shift in SHIFT_OPTIONS else 0,
+                      on_change=update_data_callback, args=(room_name, 'Shift', key_shift))
 
         st.markdown(f"""
             <div style='text-align: right; font-size: 10px; color: #aaa; margin-top: 2px;'>
@@ -312,126 +308,43 @@ def render_zone(col, title, zone_list, df):
 # --- 메인 실행 ---
 st.set_page_config(page_title="JNUH OR", layout="wide")
 
-# [중요] 앱 실행 시 가장 먼저 날짜 리셋 체크
-check_daily_reset()
+check_daily_reset() # 리셋 체크
 
-# [추가] 맨 위로 이동하기 위한 타겟 앵커
 st.markdown("<div id='top'></div>", unsafe_allow_html=True)
 
+# CSS 스타일 정의 (기존과 동일하게 유지하되 필요한 부분만 수정)
 st.markdown("""
     <style>
-    /* ====================================================================
-       1. 전체 화면 레이아웃 설정
-       ==================================================================== */
-    
-    /* 화면 전체의 여백 (맨 위, 아래, 좌우) */
     .block-container {
-        padding-top: 30px !important;    /* ▲ 맨 위 여백 (이걸 줄이면 제목이 천장에 붙음) */
-        padding-bottom: 5rem !important; /* ▼ 맨 아래 여백 (모바일 버튼 가림 방지용) */
-        padding-left: 1rem !important;   /* ◀ 왼쪽 여백 */
-        padding-right: 1rem !important;  /* ▶ 오른쪽 여백 */
+        padding-top: 30px !important;
+        padding-bottom: 5rem !important;
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
     }
-
-    /* 제목(H3) 자체의 불필요한 위쪽 여백 제거 */
     h3 { margin-top: 0 !important; padding-top: 2px !important; }
-
-
-    /* ====================================================================
-       2. 수술실 카드 간격 및 모양 설정 (가장 중요한 부분)
-       ==================================================================== */
-
-    /* (A) 방과 방 사이의 세로 간격 (카드끼리 얼마나 떨어뜨릴지) */
-    [data-testid="stVerticalBlock"] {
-        gap: 5px !important; /* ⭐ 0px: 딱 붙음 / 2px: 아주 살짝 틈 / 10px: 여유로움 */
-    }
-
-    /* (B) 카드 내부의 줄 간격 (방 이름 ↔ 오전 입력창 ↔ 점심... 사이 거리) */
-    /* (A)에서 좁혀진 간격을 카드 내부만 다시 넓혀주는 역할입니다 */
-    [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stVerticalBlock"] {
-        gap: 2rem !important; /* ⭐ 이걸 늘리면 카드 안의 내용물들이 서로 멀어집니다 */
-    }
-
-    /* (C) 카드 테두리 박스 외부 여백 */
-    [data-testid="stVerticalBlockBorderWrapper"] {
-        margin-bottom: 2px !important; /* 카드 아래쪽을 얼마나 띄울지 ((A)와 합쳐짐) */
-        padding: 0px !important;
-    }
+    [data-testid="stVerticalBlock"] { gap: 5px !important; }
+    [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stVerticalBlock"] { gap: 2rem !important; }
+    [data-testid="stVerticalBlockBorderWrapper"] { margin-bottom: 2px !important; padding: 0px !important; }
+    [data-testid="stVerticalBlockBorderWrapper"] > div { padding-top: 10px !important; padding-bottom: 10px !important; }
+    h4 { margin-top: 0px !important; margin-bottom: 10px !important; padding-bottom: 0px !important; z-index: 1; position: relative; }
+    hr { margin-top: 0.2rem !important; margin-bottom: 0.5rem !important; }
     
-    /* (D) 카드 테두리 박스 내부 여백 (카드의 '뚱뚱함' 조절) */
-    [data-testid="stVerticalBlockBorderWrapper"] > div {
-        padding-top: 10px !important;    /* 카드 안쪽 위 여백 */
-        padding-bottom: 10px !important; /* 카드 안쪽 아래 여백 */
-    }
-
-
-    /* ====================================================================
-       3. 텍스트 및 구분선 스타일
-       ==================================================================== */
-
-    /* 구역 제목 (A 구역, B 구역...) 위치 조정 */
-    h4 { 
-        margin-top: 0px !important; 
-        margin-bottom: 10px !important; /* ⭐ 제목과 첫 번째 카드 사이를 좁히는 핵심 (음수값) */
-        padding-bottom: 0px !important; 
-        z-index: 1; 
-        position: relative; 
-    }
-
-    /* 가로 구분선 (---) 여백 */
-    hr { 
-        margin-top: 0.2rem !important; 
-        margin-bottom: 0.5rem !important; 
-    }
-
-
-    /* ====================================================================
-       4. 입력창(Selectbox, Input) 디자인 커스텀
-       ==================================================================== */
-
-    /* 선택 상자 (Selectbox) 높이 및 여백 줄이기 */
     div[data-testid="stSelectbox"] div[data-baseweb="select"] > div {
         padding-top: 0px; padding-bottom: 0px; padding-left: 5px; 
-        height: 32px; min-height: 32px; /* 높이 고정 */
-        font-size: 14px; display: flex; align-items: center; border-color: #E0E0E0;
+        height: 32px; min-height: 32px; font-size: 14px; display: flex; align-items: center; border-color: #E0E0E0;
     }
-
-    /* 텍스트 입력창 (Text Input) 높이 및 여백 줄이기 */
     div[data-testid="stTextInput"] div[data-baseweb="input"] {
-        background-color: #FFFFFF !important; 
-        border: 1px solid #CCCCCC !important; 
-        border-radius: 4px;
-        padding-top: 0px; padding-bottom: 0px; 
-        height: 32px; min-height: 32px; /* 높이 고정 */
+        background-color: #FFFFFF !important; border: 1px solid #CCCCCC !important; border-radius: 4px;
+        padding-top: 0px; padding-bottom: 0px; height: 32px; min-height: 32px;
     }
-    
-    /* 입력창 내부 글자 스타일 */
     div[data-testid="stTextInput"] input {
-        background-color: #FFFFFF !important; 
-        color: #000000 !important; 
-        font-size: 14px; 
-        padding: 0px 5px !important;
+        background-color: #FFFFFF !important; color: #000000 !important; font-size: 14px; padding: 0px 5px !important;
     }
-
-    /* 공지사항 텍스트 영역 (Text Area) 스타일 */
     div[data-testid="stTextArea"] textarea {
-        background-color: #FFF9C4 !important; /* 노란색 배경 */
-        color: #333 !important; 
-        font-size: 14px !important; 
-        line-height: 1.5;
+        background-color: #FFF9C4 !important; color: #333 !important; font-size: 14px !important; line-height: 1.5;
     }
 
-
-    /* ====================================================================
-       5. 빠른 이동 링크 및 버튼 스타일
-       ==================================================================== */
-
-    /* 링크들을 감싸는 컨테이너 */
-    .link-container { 
-        display: flex; width: 100%; justify-content: space-between; 
-        gap: 2px; margin-bottom: 5px; 
-    }
-
-    /* 개별 링크 버튼 스타일 */
+    .link-container { display: flex; width: 100%; justify-content: space-between; gap: 2px; margin-bottom: 5px; }
     .quick-link {
         flex: 1; display: block; text-decoration: none; text-align: center; padding: 8px 0;
         font-size: 11px; font-weight: bold; white-space: nowrap; border-radius: 8px;
@@ -439,7 +352,6 @@ st.markdown("""
     }
     .quick-link:hover { opacity: 0.8; }
 
-    /* '변경사항 저장' 버튼 스타일 (전체 버튼 타겟팅 - 모바일은 미디어 쿼리로 덮어씀) */
     div[data-testid="stButton"] button {
         background-color: #E6F2FF !important; color: #0057A4 !important; border: 1px solid #0057A4 !important;
         border-radius: 8px !important; font-weight: bold !important; transition: all 0.3s ease;
@@ -447,35 +359,18 @@ st.markdown("""
         min-width: 0 !important; font-size: 13px !important; height: auto !important; line-height: 1 !important;
         display: inline-flex !important; justify-content: center !important; align-items: center !important;
     }
-    div[data-testid="stButton"] button p { 
-        color: #0057A4 !important; 
-        font-size: 13px !important; 
-        line-height: 1 !important;
-    }
-    div[data-testid="stButton"] button:hover {
-        background-color: #CCE4FF !important; border-color: #004080 !important;
-    }
+    div[data-testid="stButton"] button p { color: #0057A4 !important; font-size: 13px !important; line-height: 1 !important; }
+    div[data-testid="stButton"] button:hover { background-color: #CCE4FF !important; border-color: #004080 !important; }
     div[data-testid="stButton"] button:hover p { color: #004080 !important; }
 
-
-    /* ====================================================================
-       6. 모바일(좁은 화면) 전용 설정
-       ==================================================================== */
-    
     @media (max-width: 900px) {
-        /* 컬럼을 세로로 배치 (A구역, B구역, 공지사항을 한 줄로) */
         .block-container > div > div > div[data-testid="stHorizontalBlock"] { display: flex !important; flex-direction: column !important; }
-        
-        /* 모바일에서 보여질 순서 조정 (공지사항을 맨 위로, 그 다음 A, B) */
-        .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(3) { order: 1; margin-bottom: 20px; } /* 공지사항 */
-        .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(1) { order: 2; } /* A구역 */
-        .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(2) { order: 3; } /* B구역 */
-
-        /* 내부 요소 정렬 수정 */
+        .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(3) { order: 1; margin-bottom: 20px; } 
+        .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(1) { order: 2; } 
+        .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(2) { order: 3; } 
         div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] { flex-direction: row !important; gap: 20px !important; }
         div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] > div { order: unset !important; margin-bottom: 0px !important; }
         
-        /* 모바일 하단 고정 '변경사항 저장' 버튼 */
         div[data-testid="stButton"]:first-of-type {
             position: fixed !important; bottom: 20px !important; left: 80px !important; width: auto !important; z-index: 999999 !important;
             background-color: transparent !important; margin: 0 !important;
@@ -485,30 +380,19 @@ st.markdown("""
             box-shadow: 0px 4px 15px rgba(0, 87, 164, 0.3) !important; padding: 0 !important;
             background-color: #E6F2FF !important; border: 2px solid #0057A4 !important;
         }
-        div[data-testid="stButton"]:first-of-type button p { 
-            color: #0057A4 !important; 
-            font-size: 13px !important; 
-        }
+        div[data-testid="stButton"]:first-of-type button p { color: #0057A4 !important; font-size: 13px !important; }
         
-        /* 3. 위로 가기 버튼 (무조건 제일 위로) */
         .floating-top-btn {
             position: fixed; bottom: 20px; left: 15px; width: 50px; height: 50px; background-color: #FFFFFF; color: #333;
             border: 2px solid #ddd; border-radius: 15px; text-align: center; line-height: 50px; font-size: 20px;
             font-weight: bold; text-decoration: none; box-shadow: 0px 4px 15px rgba(0,0,0,0.2); 
-            
-            z-index: 99999 !important;      /* ★중요: 저장 버튼보다 높은 숫자 -> 맨 위로 올라옴 */
-            pointer-events: auto !important; /* ★중요: 강제로 클릭 활성화 */
-            
-            transition: all 0.2s;
+            z-index: 99999 !important; pointer-events: auto !important; transition: all 0.2s;
         }
         .floating-top-btn:hover { background-color: #f0f0f0; color: #000; }
-        
-        /* 모바일 하단 여백 추가 (버튼에 가려지지 않게) */
         .block-container { padding-bottom: 100px !important; }
     }
     
     @media (max-width: 600px) {
-        /* 아주 작은 화면에서 카드 너비 꽉 채우기 */
         div[data-testid="stVerticalBlockBorderWrapper"] { max-width: 95vw; margin: auto; }
     }
     </style>
@@ -546,8 +430,6 @@ with col_notice:
         save_data(df)
         st.toast("모든 변경사항이 저장되었습니다!", icon="✅")
 
-    # st.markdown("<a href='#top' class='floating-top-btn'>🔝</a>", unsafe_allow_html=True)
-
     st.markdown("<div style='margin-top: 3px; margin-bottom: 20px; font-weight: bold; font-size: 14px;'>🚀 빠른 이동</div>", unsafe_allow_html=True)
     
     links_a = "<div class='link-container'>"
@@ -565,5 +447,4 @@ with col_notice:
     
     st.markdown(links_a + links_b, unsafe_allow_html=True)
 
-# [이동] 위로 가기 버튼을 컬럼 밖(최상위 레벨)으로 이동
 st.markdown("<a href='#top' class='floating-top-btn'>🔝</a>", unsafe_allow_html=True)
