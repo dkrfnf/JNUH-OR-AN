@@ -394,6 +394,15 @@ st.markdown("""
     }
     .quick-link:hover { opacity: 0.8; }
 
+    /* OFF 전공의 칩 버튼 */
+    .off-container { display: flex; width: 100%; justify-content: space-between; gap: 4px; margin-bottom: 5px; }
+    .off-chip {
+        flex: 1; display: block; text-decoration: none; text-align: center; padding: 8px 2px;
+        font-size: 11px; font-weight: bold; white-space: nowrap; border-radius: 8px;
+        transition: opacity 0.2s; box-sizing: border-box;
+    }
+    .off-chip:hover { opacity: 0.8; }
+
     div[data-testid="stButton"] button {
         background-color: #E6F2FF !important; color: #0057A4 !important; border: 1px solid #0057A4 !important;
         border-radius: 8px !important; font-weight: bold !important; transition: all 0.3s ease;
@@ -405,27 +414,6 @@ st.markdown("""
     div[data-testid="stButton"] button:hover { background-color: #CCE4FF !important; border-color: #004080 !important; }
     div[data-testid="stButton"] button:hover p { color: #004080 !important; }
 
-    /* OFF 전공의 버튼 - 선택 안 된 상태 (secondary) */
-    div[data-testid="stHorizontalBlock"] div[data-testid="stColumn"] div[data-testid="stButton"] button[kind="secondary"] {
-        background-color: #F5F5F5 !important; color: #666 !important; border: 1px solid #DDD !important;
-        padding: 6px 2px !important; font-size: 11px !important; border-radius: 6px !important;
-    }
-    div[data-testid="stHorizontalBlock"] div[data-testid="stColumn"] div[data-testid="stButton"] button[kind="secondary"] p {
-        color: #666 !important; font-size: 11px !important;
-    }
-    div[data-testid="stHorizontalBlock"] div[data-testid="stColumn"] div[data-testid="stButton"] button[kind="secondary"]:hover {
-        background-color: #FFCDD2 !important; border-color: #E53935 !important;
-    }
-    /* OFF 전공의 버튼 - 선택된 상태 (primary) */
-    div[data-testid="stHorizontalBlock"] div[data-testid="stColumn"] div[data-testid="stButton"] button[kind="primary"] {
-        background-color: #FFCDD2 !important; color: #C62828 !important; border: 3px solid #E53935 !important;
-        padding: 6px 2px !important; font-size: 11px !important; border-radius: 6px !important;
-    }
-    div[data-testid="stHorizontalBlock"] div[data-testid="stColumn"] div[data-testid="stButton"] button[kind="primary"] p {
-        color: #C62828 !important; font-size: 11px !important;
-    }
-
-
     @media (max-width: 900px) {
         .block-container > div > div > div[data-testid="stHorizontalBlock"] { display: flex !important; flex-direction: column !important; }
         .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(3) { order: 1; margin-bottom: 20px; }
@@ -434,27 +422,17 @@ st.markdown("""
         div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] { flex-direction: row !important; gap: 20px !important; }
         div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] > div { order: unset !important; margin-bottom: 0px !important; }
 
-        /* OFF 전공의 버튼 - 가로 유지 및 스타일 */
-        div[data-testid="stColumn"] div[data-testid="stButton"] {
-            margin: 0 !important;
-        }
-        div[data-testid="stColumn"] div[data-testid="stButton"] button {
-            padding: 8px 2px !important; font-size: 10px !important; min-width: 0 !important;
-            width: 100% !important; height: auto !important;
-        }
-        div[data-testid="stColumn"] div[data-testid="stButton"] button p { font-size: 10px !important; }
-
-        /* 변경사항 저장 버튼만 플로팅 (columns 밖의 버튼) */
-        div[data-testid="stVerticalBlock"] > div[data-testid="stButton"] {
+        /* 변경사항 저장 버튼 플로팅 */
+        div[data-testid="stButton"]:first-of-type {
             position: fixed !important; bottom: 20px !important; left: 80px !important; width: auto !important; z-index: 999999 !important;
             background-color: transparent !important; margin: 0 !important;
         }
-        div[data-testid="stVerticalBlock"] > div[data-testid="stButton"] button {
+        div[data-testid="stButton"]:first-of-type button {
             width: 220px !important; height: 50px !important; font-size: 13px !important; border-radius: 25px !important;
             box-shadow: 0px 4px 15px rgba(0, 87, 164, 0.3) !important; padding: 0 !important;
             background-color: #E6F2FF !important; border: 2px solid #0057A4 !important;
         }
-        div[data-testid="stVerticalBlock"] > div[data-testid="stButton"] button p { color: #0057A4 !important; font-size: 13px !important; }
+        div[data-testid="stButton"]:first-of-type button p { color: #0057A4 !important; font-size: 13px !important; }
 
         .floating-top-btn {
             position: fixed; bottom: 20px; left: 15px; width: 50px; height: 50px; background-color: #FFFFFF; color: #333;
@@ -484,6 +462,14 @@ render_zone(col_a, "A 구역", ZONE_A, df)
 render_zone(col_b, "B / C / 기타", ZONE_B, df)
 
 with col_notice:
+    # URL 파라미터로 OFF 전공의 처리
+    query_params = st.query_params
+    if "off" in query_params:
+        selected_off = query_params["off"]
+        if selected_off in RESIDENTS:
+            toggle_off_resident(selected_off)
+        st.query_params.clear()
+
     # OFF 전공의 표시
     current_off_list = load_off_residents()
 
@@ -491,18 +477,17 @@ with col_notice:
         <div style="font-weight: bold; color: #C62828; font-size: 14px; margin-top: 15px; margin-bottom: 10px;">🚫 오늘 OFF (전화금지)</div>
     """, unsafe_allow_html=True)
 
-    # 버튼으로 OFF 전공의 선택 (페이지 이동 없음)
-    off_cols = st.columns(len(RESIDENTS))
-    for i, name in enumerate(RESIDENTS):
+    # HTML 칩 버튼으로 OFF 전공의 선택
+    off_chips = "<div class='off-container'>"
+    for name in RESIDENTS:
         is_selected = (name in current_off_list)
-        with off_cols[i]:
-            if st.button(
-                name,
-                key=f"off_{name}",
-                use_container_width=True,
-                type="primary" if is_selected else "secondary"
-            ):
-                toggle_off_resident(name)
+        if is_selected:
+            style = "background-color: #FFCDD2; color: #C62828; border: 3px solid #E53935;"
+        else:
+            style = "background-color: #F5F5F5; color: #666; border: 1px solid #DDD;"
+        off_chips += f"<a href='?off={name}' class='off-chip' style='{style}'>{name}</a>"
+    off_chips += "</div>"
+    st.markdown(off_chips, unsafe_allow_html=True)
 
     st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
 
