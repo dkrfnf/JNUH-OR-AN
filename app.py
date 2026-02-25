@@ -476,9 +476,10 @@ with col_notice:
     current_off_list = load_off_residents()
 
     # OFF 전공의 - 라벨과 multiselect 한 줄로
-    off_label_col, off_select_col = st.columns([0.22, 0.78])
+    st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
+    off_label_col, off_select_col = st.columns([0.18, 0.82])
     with off_label_col:
-        st.markdown("<div style='font-weight: bold; color: #C62828; font-size: 17px; margin-top: 15px; padding-top: 4px;'>🚫 OFF</div>", unsafe_allow_html=True)
+        st.markdown("<div style='font-weight: bold; color: #C62828; font-size: 17px; padding-top: 4px;'>OFF</div>", unsafe_allow_html=True)
     with off_select_col:
         selected_off = st.multiselect(
             "OFF 전공의",
