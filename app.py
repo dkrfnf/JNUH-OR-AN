@@ -428,27 +428,38 @@ st.markdown("""
 
     @media (max-width: 900px) {
         .block-container > div > div > div[data-testid="stHorizontalBlock"] { display: flex !important; flex-direction: column !important; }
-        .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(3) { order: 1; margin-bottom: 20px; } 
-        .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(1) { order: 2; } 
-        .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(2) { order: 3; } 
+        .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(3) { order: 1; margin-bottom: 20px; }
+        .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(1) { order: 2; }
+        .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(2) { order: 3; }
         div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] { flex-direction: row !important; gap: 20px !important; }
         div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] > div { order: unset !important; margin-bottom: 0px !important; }
-        
-        div[data-testid="stButton"]:first-of-type {
+
+        /* OFF 전공의 버튼 - 가로 유지 및 스타일 */
+        div[data-testid="stColumn"] div[data-testid="stButton"] {
+            margin: 0 !important;
+        }
+        div[data-testid="stColumn"] div[data-testid="stButton"] button {
+            padding: 8px 2px !important; font-size: 10px !important; min-width: 0 !important;
+            width: 100% !important; height: auto !important;
+        }
+        div[data-testid="stColumn"] div[data-testid="stButton"] button p { font-size: 10px !important; }
+
+        /* 변경사항 저장 버튼만 플로팅 (columns 밖의 버튼) */
+        div[data-testid="stVerticalBlock"] > div[data-testid="stButton"] {
             position: fixed !important; bottom: 20px !important; left: 80px !important; width: auto !important; z-index: 999999 !important;
             background-color: transparent !important; margin: 0 !important;
         }
-        div[data-testid="stButton"]:first-of-type button {
+        div[data-testid="stVerticalBlock"] > div[data-testid="stButton"] button {
             width: 220px !important; height: 50px !important; font-size: 13px !important; border-radius: 25px !important;
             box-shadow: 0px 4px 15px rgba(0, 87, 164, 0.3) !important; padding: 0 !important;
             background-color: #E6F2FF !important; border: 2px solid #0057A4 !important;
         }
-        div[data-testid="stButton"]:first-of-type button p { color: #0057A4 !important; font-size: 13px !important; }
-        
+        div[data-testid="stVerticalBlock"] > div[data-testid="stButton"] button p { color: #0057A4 !important; font-size: 13px !important; }
+
         .floating-top-btn {
             position: fixed; bottom: 20px; left: 15px; width: 50px; height: 50px; background-color: #FFFFFF; color: #333;
             border: 2px solid #ddd; border-radius: 15px; text-align: center; line-height: 50px; font-size: 20px;
-            font-weight: bold; text-decoration: none; box-shadow: 0px 4px 15px rgba(0,0,0,0.2); 
+            font-weight: bold; text-decoration: none; box-shadow: 0px 4px 15px rgba(0,0,0,0.2);
             z-index: 99999 !important; pointer-events: auto !important; transition: all 0.2s;
         }
         .floating-top-btn:hover { background-color: #f0f0f0; color: #000; }
