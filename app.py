@@ -404,23 +404,26 @@ st.markdown("""
     }
     div[data-testid="stColumn"] div[data-testid="stCheckbox"] > label {
         background-color: #F5F5F5; border: 1px solid #DDD; border-radius: 8px;
-        padding: 6px 2px !important; text-align: center; cursor: pointer;
+        padding: 6px 4px !important; text-align: center; cursor: pointer;
         display: flex !important; justify-content: center; align-items: center;
         min-height: 32px;
     }
     div[data-testid="stColumn"] div[data-testid="stCheckbox"] > label:hover {
         background-color: #FFCDD2; border-color: #E53935;
     }
-    div[data-testid="stColumn"] div[data-testid="stCheckbox"] > label > span {
-        font-size: 11px !important; font-weight: bold;
+    /* 체크박스 라벨 텍스트 스타일 */
+    div[data-testid="stColumn"] div[data-testid="stCheckbox"] > label > span,
+    div[data-testid="stColumn"] div[data-testid="stCheckbox"] > label > p {
+        font-size: 11px !important; font-weight: bold !important; display: block !important;
     }
-    /* 체크박스 체크 아이콘 숨기기 */
-    div[data-testid="stColumn"] div[data-testid="stCheckbox"] > label > div { display: none !important; }
+    /* 체크박스 아이콘만 숨기기 (첫번째 div) */
+    div[data-testid="stColumn"] div[data-testid="stCheckbox"] > label > div:first-child { display: none !important; }
     /* 선택된 상태 */
     div[data-testid="stColumn"] div[data-testid="stCheckbox"] > label:has(input:checked) {
         background-color: #FFCDD2 !important; border: 3px solid #E53935 !important;
     }
-    div[data-testid="stColumn"] div[data-testid="stCheckbox"] > label:has(input:checked) > span {
+    div[data-testid="stColumn"] div[data-testid="stCheckbox"] > label:has(input:checked) > span,
+    div[data-testid="stColumn"] div[data-testid="stCheckbox"] > label:has(input:checked) > p {
         color: #C62828 !important;
     }
 
