@@ -19,8 +19,8 @@ OFF_RESIDENT_FILE = 'off_resident.txt'
 OP_STATUS = ["▶ 수술", "Ⅱ 대기", "■ 종료"]
 # [변경] 교대 및 식사 상태 옵션 통합
 SHIFT_OPTIONS = ["--", "오전교대+", "식사+", "오후교대+"]
-# 전공의 목록
-RESIDENTS = ["--", "유수란", "임우희", "정우석", "남현우", "이형섭"]
+# 전공의 목록 (--는 제외, 실제 이름만)
+RESIDENTS = ["유수란", "임우희", "정우석", "남현우", "이형섭"]
 
 # 2초 자동 새로고침
 st_autorefresh(interval=2000, key="datarefresh")
@@ -165,17 +165,17 @@ def save_notice_callback():
     except: pass
 
 def load_off_resident():
-    if not os.path.exists(OFF_RESIDENT_FILE): return "--"
+    if not os.path.exists(OFF_RESIDENT_FILE): return ""
     try:
         with open(OFF_RESIDENT_FILE, "r", encoding="utf-8") as f:
-            return f.read().strip() or "--"
-    except: return "--"
+            val = f.read().strip()
+            return "" if val == "--" else val
+    except: return ""
 
-def save_off_resident_callback():
-    selected = st.session_state.get("off_resident_select", "--")
+def save_off_resident(name):
     try:
         with open(OFF_RESIDENT_FILE, "w", encoding="utf-8") as f:
-            f.write(selected)
+            f.write(name)
             f.flush()
             os.fsync(f.fileno())
     except: pass
@@ -392,6 +392,25 @@ st.markdown("""
     div[data-testid="stButton"] button:hover { background-color: #CCE4FF !important; border-color: #004080 !important; }
     div[data-testid="stButton"] button:hover p { color: #004080 !important; }
 
+    /* OFF 전공의 버튼 스타일 - 선택 안 된 상태 */
+    div[data-testid="stHorizontalBlock"] div[data-testid="stColumn"] button[kind="secondary"] {
+        background-color: #F5F5F5 !important; color: #666 !important; border: 1px solid #DDD !important;
+        padding: 8px 4px !important; font-size: 12px !important;
+    }
+    div[data-testid="stHorizontalBlock"] div[data-testid="stColumn"] button[kind="secondary"] p {
+        color: #666 !important; font-size: 12px !important;
+    }
+    div[data-testid="stHorizontalBlock"] div[data-testid="stColumn"] button[kind="secondary"]:hover {
+        background-color: #FFCDD2 !important; border-color: #E53935 !important;
+    }
+    div[data-testid="stHorizontalBlock"] div[data-testid="stColumn"] button[kind="secondary"]:hover p {
+        color: #C62828 !important;
+    }
+    /* OFF 전공의 버튼 - 선택된 상태 (🚫 이모지 포함) */
+    div[data-testid="stHorizontalBlock"] div[data-testid="stColumn"] button[kind="secondary"] p:first-child {
+        font-size: 12px !important;
+    }
+
     @media (max-width: 900px) {
         .block-container > div > div > div[data-testid="stHorizontalBlock"] { display: flex !important; flex-direction: column !important; }
         .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(3) { order: 1; margin-bottom: 20px; } 
@@ -441,20 +460,26 @@ render_zone(col_b, "B / C / 기타", ZONE_B, df)
 with col_notice:
     # OFF 전공의 표시
     current_off = load_off_resident()
-    if "off_resident_select" not in st.session_state:
-        st.session_state["off_resident_select"] = current_off
 
     st.markdown("""
-        <div style="background-color: #FFEBEE; border: 2px solid #E53935; border-radius: 8px; padding: 10px; margin-bottom: 10px;">
-            <div style="font-weight: bold; color: #C62828; font-size: 14px; margin-bottom: 5px;">🚫 오늘 OFF (전화금지)</div>
-        </div>
+        <div style="font-weight: bold; color: #C62828; font-size: 14px; margin-bottom: 8px;">🚫 오늘 OFF (전화금지)</div>
     """, unsafe_allow_html=True)
-    st.selectbox(
-        "OFF 전공의", RESIDENTS, key="off_resident_select",
-        index=RESIDENTS.index(current_off) if current_off in RESIDENTS else 0,
-        label_visibility="collapsed",
-        on_change=save_off_resident_callback
-    )
+
+    # 칩 버튼 스타일로 전공의 선택
+    off_cols = st.columns(len(RESIDENTS))
+    for i, name in enumerate(RESIDENTS):
+        with off_cols[i]:
+            is_selected = (current_off == name)
+            if is_selected:
+                # 선택된 상태: 빨간 배경
+                if st.button(f"🚫 {name}", key=f"off_{name}", use_container_width=True):
+                    save_off_resident("")  # 다시 누르면 해제
+                    st.rerun()
+            else:
+                # 선택 안 된 상태: 회색 배경
+                if st.button(name, key=f"off_{name}", use_container_width=True):
+                    save_off_resident(name)
+                    st.rerun()
 
     st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
 
