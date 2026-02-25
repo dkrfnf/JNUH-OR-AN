@@ -508,7 +508,9 @@ with col_notice:
         "공지사항 내용", key="notice_area", height=120, label_visibility="collapsed",
         placeholder="전달사항을 입력하세요...", on_change=save_notice_callback
     )
-    
+
+    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+
     if st.button("변경사항 저장", use_container_width=False):
         save_notice_callback()
         save_data(df)
