@@ -392,24 +392,6 @@ st.markdown("""
     div[data-testid="stButton"] button:hover { background-color: #CCE4FF !important; border-color: #004080 !important; }
     div[data-testid="stButton"] button:hover p { color: #004080 !important; }
 
-    /* OFF 전공의 버튼 스타일 - 선택 안 된 상태 */
-    div[data-testid="stHorizontalBlock"] div[data-testid="stColumn"] button[kind="secondary"] {
-        background-color: #F5F5F5 !important; color: #666 !important; border: 1px solid #DDD !important;
-        padding: 8px 4px !important; font-size: 12px !important;
-    }
-    div[data-testid="stHorizontalBlock"] div[data-testid="stColumn"] button[kind="secondary"] p {
-        color: #666 !important; font-size: 12px !important;
-    }
-    div[data-testid="stHorizontalBlock"] div[data-testid="stColumn"] button[kind="secondary"]:hover {
-        background-color: #FFCDD2 !important; border-color: #E53935 !important;
-    }
-    div[data-testid="stHorizontalBlock"] div[data-testid="stColumn"] button[kind="secondary"]:hover p {
-        color: #C62828 !important;
-    }
-    /* OFF 전공의 버튼 - 선택된 상태 (🚫 이모지 포함) */
-    div[data-testid="stHorizontalBlock"] div[data-testid="stColumn"] button[kind="secondary"] p:first-child {
-        font-size: 12px !important;
-    }
 
     @media (max-width: 900px) {
         .block-container > div > div > div[data-testid="stHorizontalBlock"] { display: flex !important; flex-direction: column !important; }
@@ -462,26 +444,36 @@ with col_notice:
     current_off = load_off_resident()
 
     st.markdown("""
-        <div style="font-weight: bold; color: #C62828; font-size: 14px; margin-bottom: 8px;">🚫 오늘 OFF (전화금지)</div>
+        <div style="font-weight: bold; color: #C62828; font-size: 14px; margin-top: 15px; margin-bottom: 10px;">🚫 오늘 OFF (전화금지)</div>
     """, unsafe_allow_html=True)
 
-    # 칩 버튼 스타일로 전공의 선택
-    off_cols = st.columns(len(RESIDENTS))
-    for i, name in enumerate(RESIDENTS):
-        with off_cols[i]:
-            is_selected = (current_off == name)
-            if is_selected:
-                # 선택된 상태: 빨간 배경
-                if st.button(f"🚫 {name}", key=f"off_{name}", use_container_width=True):
-                    save_off_resident("")  # 다시 누르면 해제
-                    st.rerun()
-            else:
-                # 선택 안 된 상태: 회색 배경
-                if st.button(name, key=f"off_{name}", use_container_width=True):
-                    save_off_resident(name)
-                    st.rerun()
+    # 빠른이동 스타일 칩으로 표시
+    off_chips = "<div class='link-container'>"
+    for name in RESIDENTS:
+        is_selected = (current_off == name)
+        if is_selected:
+            # 선택된 상태: 빨간 테두리 + 빨간 배경
+            style = "background-color: #FFCDD2; color: #C62828; border: 3px solid #E53935;"
+        else:
+            # 선택 안 된 상태: 회색
+            style = "background-color: #F5F5F5; color: #666; border: 1px solid #DDD;"
+        off_chips += f"<a href='?off={name}' class='quick-link' style='{style}' target='_self'>{name}</a>"
+    off_chips += "</div>"
+    st.markdown(off_chips, unsafe_allow_html=True)
 
-    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+    # URL 파라미터로 OFF 전공의 처리
+    query_params = st.query_params
+    if "off" in query_params:
+        selected_off = query_params["off"]
+        if selected_off in RESIDENTS:
+            if current_off == selected_off:
+                save_off_resident("")  # 다시 누르면 해제
+            else:
+                save_off_resident(selected_off)
+        st.query_params.clear()
+        st.rerun()
+
+    st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
 
     notice_time = load_notice_time()
     if notice_time == "": notice_time = "-"
