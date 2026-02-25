@@ -402,7 +402,7 @@ st.markdown("""
     }
     div[data-testid="stMultiSelect"] span[data-baseweb="tag"] span {
         color: #C62828 !important; font-weight: bold !important;
-        font-size: 15px !important;
+        font-size: 13px !important;
     }
 
     div[data-testid="stButton"] button {
@@ -478,7 +478,7 @@ with col_notice:
     # OFF 전공의 - 라벨과 multiselect 한 줄로
     off_label_col, off_select_col = st.columns([0.22, 0.78])
     with off_label_col:
-        st.markdown("<div style='font-weight: bold; color: #C62828; font-size: 13px; padding-top: 6px;'>🚫 OFF</div>", unsafe_allow_html=True)
+        st.markdown("<div style='font-weight: bold; color: #C62828; font-size: 16px; padding-top: 4px;'>🚫 OFF</div>", unsafe_allow_html=True)
     with off_select_col:
         selected_off = st.multiselect(
             "OFF 전공의",
