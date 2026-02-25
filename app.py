@@ -485,7 +485,7 @@ with col_notice:
             style = "background-color: #FFCDD2; color: #C62828; border: 3px solid #E53935;"
         else:
             style = "background-color: #F5F5F5; color: #666; border: 1px solid #DDD;"
-        off_chips += f"<a href='?off={name}' class='off-chip' style='{style}'>{name}</a>"
+        off_chips += f"<a href='?off={name}' class='off-chip' style='{style}' target='_self'>{name}</a>"
     off_chips += "</div>"
     st.markdown(off_chips, unsafe_allow_html=True)
 
