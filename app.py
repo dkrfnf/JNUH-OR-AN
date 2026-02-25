@@ -474,24 +474,23 @@ with col_notice:
     # OFF 전공의 표시
     current_off_list = load_off_residents()
 
-    st.markdown("""
-        <div style="font-weight: bold; color: #C62828; font-size: 14px; margin-top: 15px; margin-bottom: 8px;">🚫 오늘 OFF (전화금지)</div>
-    """, unsafe_allow_html=True)
+    # OFF 전공의 - 라벨과 multiselect 한 줄로
+    off_label_col, off_select_col = st.columns([0.35, 0.65])
+    with off_label_col:
+        st.markdown("<div style='font-weight: bold; color: #C62828; font-size: 13px; padding-top: 5px;'>🚫 OFF</div>", unsafe_allow_html=True)
+    with off_select_col:
+        selected_off = st.multiselect(
+            "OFF 전공의",
+            options=RESIDENTS,
+            default=current_off_list,
+            key="off_select",
+            label_visibility="collapsed",
+            placeholder="선택..."
+        )
+        if set(selected_off) != set(current_off_list):
+            save_off_residents(selected_off)
 
-    # multiselect로 OFF 전공의 선택
-    selected_off = st.multiselect(
-        "OFF 전공의",
-        options=RESIDENTS,
-        default=current_off_list,
-        key="off_select",
-        label_visibility="collapsed",
-        placeholder="전공의 선택..."
-    )
-    # 변경 시 저장
-    if set(selected_off) != set(current_off_list):
-        save_off_residents(selected_off)
-
-    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='height: 5px;'></div>", unsafe_allow_html=True)
 
     notice_time = load_notice_time()
     if notice_time == "": notice_time = "-"
