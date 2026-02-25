@@ -395,13 +395,19 @@ st.markdown("""
     .quick-link:hover { opacity: 0.8; }
 
     /* OFF 전공의 multiselect 스타일 */
+    div[data-testid="stMultiSelect"] div[data-baseweb="select"] {
+        min-height: 36px !important;
+    }
     div[data-testid="stMultiSelect"] span[data-baseweb="tag"] {
         background-color: #FFCDD2 !important;
-        border: 2px solid #E53935 !important;
-        border-radius: 6px !important;
+        border: 1px solid #E53935 !important;
+        border-radius: 4px !important;
+        padding: 2px 4px !important;
+        height: auto !important;
     }
     div[data-testid="stMultiSelect"] span[data-baseweb="tag"] span {
         color: #C62828 !important; font-weight: bold !important;
+        font-size: 11px !important;
     }
 
     div[data-testid="stButton"] button {
@@ -475,9 +481,15 @@ with col_notice:
     current_off_list = load_off_residents()
 
     # OFF 전공의 - 라벨과 multiselect 한 줄로
-    off_label_col, off_select_col = st.columns([0.35, 0.65])
+    off_label_col, off_select_col = st.columns([0.28, 0.72])
     with off_label_col:
-        st.markdown("<div style='font-weight: bold; color: #C62828; font-size: 13px; padding-top: 5px;'>🚫 OFF</div>", unsafe_allow_html=True)
+        st.markdown("""
+            <div style='
+                font-weight: bold; color: #C62828; font-size: 15px;
+                background-color: #FFEBEE; border: 2px solid #E53935;
+                border-radius: 8px; padding: 6px 8px; text-align: center;
+            '>🚫 OFF</div>
+        """, unsafe_allow_html=True)
     with off_select_col:
         selected_off = st.multiselect(
             "OFF 전공의",
