@@ -184,18 +184,14 @@ def save_off_residents(names_list):
             os.fsync(f.fileno())
     except: pass
 
-def off_resident_callback(name):
-    """체크박스 변경 시 호출되는 콜백"""
-    key = f"off_{name}"
-    is_checked = st.session_state.get(key, False)
+def toggle_off_resident(name):
+    """클릭 시 토글 (선택/해제)"""
     current_list = load_off_residents()
-
-    if is_checked and name not in current_list:
-        current_list.append(name)
-        save_off_residents(current_list)
-    elif not is_checked and name in current_list:
+    if name in current_list:
         current_list.remove(name)
-        save_off_residents(current_list)
+    else:
+        current_list.append(name)
+    save_off_residents(current_list)
 
 # --- 스마트 동기화 로직 ---
 def sync_session_state(df):
@@ -398,34 +394,14 @@ st.markdown("""
     }
     .quick-link:hover { opacity: 0.8; }
 
-    /* OFF 전공의 체크박스 스타일 */
-    div[data-testid="stColumn"] div[data-testid="stCheckbox"] {
-        margin: 0 !important;
+    /* OFF 전공의 칩 버튼 */
+    .off-container { display: flex; width: 100%; justify-content: space-between; gap: 4px; margin-bottom: 5px; }
+    .off-chip {
+        flex: 1; display: block; text-decoration: none; text-align: center; padding: 8px 2px;
+        font-size: 11px; font-weight: bold; white-space: nowrap; border-radius: 8px;
+        transition: opacity 0.2s; box-sizing: border-box;
     }
-    div[data-testid="stColumn"] div[data-testid="stCheckbox"] > label {
-        background-color: #F5F5F5; border: 1px solid #DDD; border-radius: 8px;
-        padding: 6px 4px !important; text-align: center; cursor: pointer;
-        display: flex !important; justify-content: center; align-items: center;
-        min-height: 32px;
-    }
-    div[data-testid="stColumn"] div[data-testid="stCheckbox"] > label:hover {
-        background-color: #FFCDD2; border-color: #E53935;
-    }
-    /* 체크박스 라벨 텍스트 스타일 */
-    div[data-testid="stColumn"] div[data-testid="stCheckbox"] > label > span,
-    div[data-testid="stColumn"] div[data-testid="stCheckbox"] > label > p {
-        font-size: 11px !important; font-weight: bold !important; display: block !important;
-    }
-    /* 체크박스 아이콘만 숨기기 (첫번째 div) */
-    div[data-testid="stColumn"] div[data-testid="stCheckbox"] > label > div:first-child { display: none !important; }
-    /* 선택된 상태 */
-    div[data-testid="stColumn"] div[data-testid="stCheckbox"] > label:has(input:checked) {
-        background-color: #FFCDD2 !important; border: 3px solid #E53935 !important;
-    }
-    div[data-testid="stColumn"] div[data-testid="stCheckbox"] > label:has(input:checked) > span,
-    div[data-testid="stColumn"] div[data-testid="stCheckbox"] > label:has(input:checked) > p {
-        color: #C62828 !important;
-    }
+    .off-chip:hover { opacity: 0.8; }
 
     div[data-testid="stButton"] button {
         background-color: #E6F2FF !important; color: #0057A4 !important; border: 1px solid #0057A4 !important;
@@ -445,17 +421,6 @@ st.markdown("""
         .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(2) { order: 3; }
         div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] { flex-direction: row !important; gap: 20px !important; }
         div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] > div { order: unset !important; margin-bottom: 0px !important; }
-
-        /* OFF 전공의 체크박스 - 한 줄에 5명 */
-        div[data-testid="stColumn"] > div > div[data-testid="stHorizontalBlock"] {
-            display: flex !important; flex-direction: row !important; flex-wrap: nowrap !important; gap: 4px !important;
-        }
-        div[data-testid="stColumn"] > div > div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"] {
-            flex: 1 !important; min-width: 0 !important;
-        }
-        div[data-testid="stColumn"] div[data-testid="stCheckbox"] > label > span {
-            font-size: 9px !important;
-        }
 
         /* 변경사항 저장 버튼 플로팅 */
         div[data-testid="stButton"]:first-of-type {
@@ -497,6 +462,14 @@ render_zone(col_a, "A 구역", ZONE_A, df)
 render_zone(col_b, "B / C / 기타", ZONE_B, df)
 
 with col_notice:
+    # URL 파라미터로 OFF 전공의 처리
+    query_params = st.query_params
+    if "off" in query_params:
+        selected_off = query_params["off"]
+        if selected_off in RESIDENTS:
+            toggle_off_resident(selected_off)
+        st.query_params.clear()
+
     # OFF 전공의 표시
     current_off_list = load_off_residents()
 
@@ -504,18 +477,17 @@ with col_notice:
         <div style="font-weight: bold; color: #C62828; font-size: 14px; margin-top: 15px; margin-bottom: 10px;">🚫 오늘 OFF (전화금지)</div>
     """, unsafe_allow_html=True)
 
-    # 체크박스로 OFF 전공의 선택 (페이지 이동 없음, 콜백 사용)
-    off_cols = st.columns(len(RESIDENTS))
-    for i, name in enumerate(RESIDENTS):
+    # HTML 칩 버튼으로 OFF 전공의 선택
+    off_chips = "<div class='off-container'>"
+    for name in RESIDENTS:
         is_selected = (name in current_off_list)
-        with off_cols[i]:
-            st.checkbox(
-                name,
-                value=is_selected,
-                key=f"off_{name}",
-                on_change=off_resident_callback,
-                args=(name,)
-            )
+        if is_selected:
+            style = "background-color: #FFCDD2; color: #C62828; border: 3px solid #E53935;"
+        else:
+            style = "background-color: #F5F5F5; color: #666; border: 1px solid #DDD;"
+        off_chips += f"<a href='?off={name}' class='off-chip' style='{style}'>{name}</a>"
+    off_chips += "</div>"
+    st.markdown(off_chips, unsafe_allow_html=True)
 
     st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
 
