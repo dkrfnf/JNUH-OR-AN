@@ -396,7 +396,7 @@ st.markdown("""
 
     /* 마커 숨기기 */
     .save-btn-marker { display: none; }
-    .off-buttons-container { display: none; }
+    .off-marker-selected { display: none; }
 
     /* OFF 전공의 버튼 스타일 (stColumn 내부 버튼) */
     div[data-testid="stColumn"] div[data-testid="stButton"] button {
@@ -404,12 +404,30 @@ st.markdown("""
         border: 1px solid #DDD !important; border-radius: 8px !important;
         font-size: 11px !important; font-weight: bold !important;
         padding: 6px 2px !important; min-height: 32px !important;
+        position: relative !important; overflow: hidden !important;
     }
     div[data-testid="stColumn"] div[data-testid="stButton"] button:hover {
-        background-color: #FFCDD2 !important; border-color: #E53935 !important;
+        background-color: #FFEBEE !important; border-color: #E53935 !important;
     }
     div[data-testid="stColumn"] div[data-testid="stButton"] button p {
         font-size: 11px !important; color: #333 !important;
+    }
+
+    /* 선택된 OFF 전공의 버튼 - 빨간 테두리 + 대각선 */
+    .off-marker-selected + div[data-testid="element-container"] div[data-testid="stButton"] button {
+        border: 3px solid #E53935 !important;
+        background:
+            linear-gradient(
+                to top right,
+                transparent calc(50% - 1px),
+                #E53935 calc(50% - 1px),
+                #E53935 calc(50% + 1px),
+                transparent calc(50% + 1px)
+            ),
+            #FFEBEE !important;
+    }
+    .off-marker-selected + div[data-testid="element-container"] div[data-testid="stButton"] button p {
+        color: #C62828 !important; font-weight: bold !important;
     }
 
     /* 저장 버튼 스타일 */
@@ -447,6 +465,19 @@ st.markdown("""
         }
         div[data-testid="stColumn"] div[data-testid="stButton"] button p {
             font-size: 9px !important;
+        }
+        /* 모바일에서 선택된 OFF 버튼 대각선 유지 */
+        .off-marker-selected + div[data-testid="element-container"] div[data-testid="stButton"] button {
+            border: 3px solid #E53935 !important;
+            background:
+                linear-gradient(
+                    to top right,
+                    transparent calc(50% - 1px),
+                    #E53935 calc(50% - 1px),
+                    #E53935 calc(50% + 1px),
+                    transparent calc(50% + 1px)
+                ),
+                #FFEBEE !important;
         }
 
         /* 변경사항 저장 버튼 플로팅 (마커 다음 버튼만) */
@@ -498,18 +529,17 @@ with col_notice:
         <div style="font-weight: bold; color: #C62828; font-size: 14px; margin-top: 15px; margin-bottom: 10px;">🚫 오늘 OFF (전화금지)</div>
     """, unsafe_allow_html=True)
 
-    # 버튼으로 OFF 전공의 선택 (off-buttons 컨테이너로 감싸기)
-    st.markdown("<div class='off-buttons-container'>", unsafe_allow_html=True)
+    # OFF 전공의 선택 - 마커로 선택 상태 표시
     off_cols = st.columns(len(RESIDENTS))
     for i, name in enumerate(RESIDENTS):
         is_selected = (name in current_off_list)
         with off_cols[i]:
-            # 선택 여부에 따라 버튼 텍스트에 표시 추가
-            btn_label = f"🔴 {name}" if is_selected else name
-            if st.button(btn_label, key=f"off_{name}", use_container_width=True):
+            # 선택 상태 마커 (CSS에서 다음 버튼 스타일링에 사용)
+            if is_selected:
+                st.markdown("<span class='off-marker-selected'></span>", unsafe_allow_html=True)
+            if st.button(name, key=f"off_{name}", use_container_width=True):
                 toggle_off_resident(name)
                 st.rerun()
-    st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
 
