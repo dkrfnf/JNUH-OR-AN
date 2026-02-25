@@ -79,14 +79,14 @@ def perform_reset(current_time):
     df.to_csv(DATA_FILE, index=False, encoding='utf-8')
     save_current_reset_time(current_time)
 
-    # 공지사항 리셋
+    # 공지사항 및 OFF 전공의 리셋
     try:
         with open(NOTICE_FILE, "w", encoding="utf-8") as f:
             f.write("")
         with open(NOTICE_TIME_FILE, "w", encoding="utf-8") as f:
             f.write("")
         with open(OFF_RESIDENT_FILE, "w", encoding="utf-8") as f:
-            f.write("--")
+            f.write("")
     except: pass
 
     for key in list(st.session_state.keys()):
@@ -164,21 +164,34 @@ def save_notice_callback():
         st.session_state["last_server_time"] = now_time
     except: pass
 
-def load_off_resident():
-    if not os.path.exists(OFF_RESIDENT_FILE): return ""
+def load_off_residents():
+    """여러 명의 OFF 전공의를 리스트로 반환"""
+    if not os.path.exists(OFF_RESIDENT_FILE): return []
     try:
         with open(OFF_RESIDENT_FILE, "r", encoding="utf-8") as f:
             val = f.read().strip()
-            return "" if val == "--" else val
-    except: return ""
+            if not val or val == "--":
+                return []
+            return [x.strip() for x in val.split(",") if x.strip()]
+    except: return []
 
-def save_off_resident(name):
+def save_off_residents(names_list):
+    """여러 명의 OFF 전공의를 저장"""
     try:
         with open(OFF_RESIDENT_FILE, "w", encoding="utf-8") as f:
-            f.write(name)
+            f.write(",".join(names_list))
             f.flush()
             os.fsync(f.fileno())
     except: pass
+
+def toggle_off_resident(name):
+    """클릭 시 토글 (선택/해제)"""
+    current_list = load_off_residents()
+    if name in current_list:
+        current_list.remove(name)
+    else:
+        current_list.append(name)
+    save_off_residents(current_list)
 
 # --- 스마트 동기화 로직 ---
 def sync_session_state(df):
@@ -392,6 +405,26 @@ st.markdown("""
     div[data-testid="stButton"] button:hover { background-color: #CCE4FF !important; border-color: #004080 !important; }
     div[data-testid="stButton"] button:hover p { color: #004080 !important; }
 
+    /* OFF 전공의 버튼 - 선택 안 된 상태 (secondary) */
+    div[data-testid="stHorizontalBlock"] div[data-testid="stColumn"] div[data-testid="stButton"] button[kind="secondary"] {
+        background-color: #F5F5F5 !important; color: #666 !important; border: 1px solid #DDD !important;
+        padding: 6px 2px !important; font-size: 11px !important; border-radius: 6px !important;
+    }
+    div[data-testid="stHorizontalBlock"] div[data-testid="stColumn"] div[data-testid="stButton"] button[kind="secondary"] p {
+        color: #666 !important; font-size: 11px !important;
+    }
+    div[data-testid="stHorizontalBlock"] div[data-testid="stColumn"] div[data-testid="stButton"] button[kind="secondary"]:hover {
+        background-color: #FFCDD2 !important; border-color: #E53935 !important;
+    }
+    /* OFF 전공의 버튼 - 선택된 상태 (primary) */
+    div[data-testid="stHorizontalBlock"] div[data-testid="stColumn"] div[data-testid="stButton"] button[kind="primary"] {
+        background-color: #FFCDD2 !important; color: #C62828 !important; border: 3px solid #E53935 !important;
+        padding: 6px 2px !important; font-size: 11px !important; border-radius: 6px !important;
+    }
+    div[data-testid="stHorizontalBlock"] div[data-testid="stColumn"] div[data-testid="stButton"] button[kind="primary"] p {
+        color: #C62828 !important; font-size: 11px !important;
+    }
+
 
     @media (max-width: 900px) {
         .block-container > div > div > div[data-testid="stHorizontalBlock"] { display: flex !important; flex-direction: column !important; }
@@ -441,37 +474,24 @@ render_zone(col_b, "B / C / 기타", ZONE_B, df)
 
 with col_notice:
     # OFF 전공의 표시
-    current_off = load_off_resident()
+    current_off_list = load_off_residents()
 
     st.markdown("""
         <div style="font-weight: bold; color: #C62828; font-size: 14px; margin-top: 15px; margin-bottom: 10px;">🚫 오늘 OFF (전화금지)</div>
     """, unsafe_allow_html=True)
 
-    # 빠른이동 스타일 칩으로 표시
-    off_chips = "<div class='link-container'>"
-    for name in RESIDENTS:
-        is_selected = (current_off == name)
-        if is_selected:
-            # 선택된 상태: 빨간 테두리 + 빨간 배경
-            style = "background-color: #FFCDD2; color: #C62828; border: 3px solid #E53935;"
-        else:
-            # 선택 안 된 상태: 회색
-            style = "background-color: #F5F5F5; color: #666; border: 1px solid #DDD;"
-        off_chips += f"<a href='?off={name}' class='quick-link' style='{style}' target='_self'>{name}</a>"
-    off_chips += "</div>"
-    st.markdown(off_chips, unsafe_allow_html=True)
-
-    # URL 파라미터로 OFF 전공의 처리
-    query_params = st.query_params
-    if "off" in query_params:
-        selected_off = query_params["off"]
-        if selected_off in RESIDENTS:
-            if current_off == selected_off:
-                save_off_resident("")  # 다시 누르면 해제
-            else:
-                save_off_resident(selected_off)
-        st.query_params.clear()
-        st.rerun()
+    # 버튼으로 OFF 전공의 선택 (페이지 이동 없음)
+    off_cols = st.columns(len(RESIDENTS))
+    for i, name in enumerate(RESIDENTS):
+        is_selected = (name in current_off_list)
+        with off_cols[i]:
+            if st.button(
+                name,
+                key=f"off_{name}",
+                use_container_width=True,
+                type="primary" if is_selected else "secondary"
+            ):
+                toggle_off_resident(name)
 
     st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
 
@@ -486,7 +506,7 @@ with col_notice:
     """, unsafe_allow_html=True)
 
     st.text_area(
-        "공지사항 내용", key="notice_area", height=200, label_visibility="collapsed",
+        "공지사항 내용", key="notice_area", height=120, label_visibility="collapsed",
         placeholder="전달사항을 입력하세요...", on_change=save_notice_callback
     )
     
