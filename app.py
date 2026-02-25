@@ -13,11 +13,14 @@ DATA_FILE = 'or_status_kst.csv'
 NOTICE_FILE = 'notice.txt'
 NOTICE_TIME_FILE = 'notice_time.txt'
 RESET_LOG_FILE = 'reset_log.txt'
+OFF_RESIDENT_FILE = 'off_resident.txt'
 
 # 상태 옵션 정의
 OP_STATUS = ["▶ 수술", "Ⅱ 대기", "■ 종료"]
 # [변경] 교대 및 식사 상태 옵션 통합
 SHIFT_OPTIONS = ["--", "오전교대+", "식사+", "오후교대+"]
+# 전공의 목록
+RESIDENTS = ["--", "유수란", "임우희", "정우석", "남현우", "이형섭"]
 
 # 2초 자동 새로고침
 st_autorefresh(interval=2000, key="datarefresh")
@@ -72,13 +75,23 @@ def perform_reset(current_time):
         'Memo': [''] * len(ALL_ROOMS),         # 자유 메모
         'Shift': ['--'] * len(ALL_ROOMS)       # 교대/식사 상태
     })
-    
+
     df.to_csv(DATA_FILE, index=False, encoding='utf-8')
     save_current_reset_time(current_time)
-    
+
+    # 공지사항 리셋
+    try:
+        with open(NOTICE_FILE, "w", encoding="utf-8") as f:
+            f.write("")
+        with open(NOTICE_TIME_FILE, "w", encoding="utf-8") as f:
+            f.write("")
+        with open(OFF_RESIDENT_FILE, "w", encoding="utf-8") as f:
+            f.write("--")
+    except: pass
+
     for key in list(st.session_state.keys()):
         del st.session_state[key]
-    
+
     st.rerun()
 
 # --- 데이터 로드/저장 ---
@@ -147,8 +160,24 @@ def save_notice_callback():
             f.write(now_time)
             f.flush()
             os.fsync(f.fileno())
-        
+
         st.session_state["last_server_time"] = now_time
+    except: pass
+
+def load_off_resident():
+    if not os.path.exists(OFF_RESIDENT_FILE): return "--"
+    try:
+        with open(OFF_RESIDENT_FILE, "r", encoding="utf-8") as f:
+            return f.read().strip() or "--"
+    except: return "--"
+
+def save_off_resident_callback():
+    selected = st.session_state.get("off_resident_select", "--")
+    try:
+        with open(OFF_RESIDENT_FILE, "w", encoding="utf-8") as f:
+            f.write(selected)
+            f.flush()
+            os.fsync(f.fileno())
     except: pass
 
 # --- 스마트 동기화 로직 ---
@@ -410,9 +439,28 @@ render_zone(col_a, "A 구역", ZONE_A, df)
 render_zone(col_b, "B / C / 기타", ZONE_B, df)
 
 with col_notice:
+    # OFF 전공의 표시
+    current_off = load_off_resident()
+    if "off_resident_select" not in st.session_state:
+        st.session_state["off_resident_select"] = current_off
+
+    st.markdown("""
+        <div style="background-color: #FFEBEE; border: 2px solid #E53935; border-radius: 8px; padding: 10px; margin-bottom: 10px;">
+            <div style="font-weight: bold; color: #C62828; font-size: 14px; margin-bottom: 5px;">🚫 오늘 OFF (전화금지)</div>
+        </div>
+    """, unsafe_allow_html=True)
+    st.selectbox(
+        "OFF 전공의", RESIDENTS, key="off_resident_select",
+        index=RESIDENTS.index(current_off) if current_off in RESIDENTS else 0,
+        label_visibility="collapsed",
+        on_change=save_off_resident_callback
+    )
+
+    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+
     notice_time = load_notice_time()
     if notice_time == "": notice_time = "-"
-    
+
     st.markdown(f"""
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; margin-top: 5px;">
             <h5 style="margin:0; font-weight: bold; font-size: 1.35rem;">📢 공지사항</h5>
