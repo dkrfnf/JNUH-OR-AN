@@ -514,23 +514,12 @@ with col_notice:
 
     st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
 
-    # 어레인지 완료 토글
+    # 어레인지 완료 토글 (버튼만)
     arrange_done = load_arrange_done()
-
-    notice_time = load_notice_time()
-    if notice_time == "": notice_time = "-"
-
-    # 공지사항 헤더 + 토글 + 시간을 한 줄에
-    notice_col, toggle_col, time_col = st.columns([0.45, 0.25, 0.3])
-    with notice_col:
-        st.markdown("<h5 style='margin:0; font-weight: bold; font-size: 1.35rem;'>📢 공지사항</h5>", unsafe_allow_html=True)
-    with toggle_col:
-        new_arrange = st.toggle("어레인지", value=arrange_done, key="arrange_toggle", label_visibility="collapsed")
-        if new_arrange != arrange_done:
-            save_arrange_done(new_arrange)
-            st.rerun()
-    with time_col:
-        st.markdown(f"<div style='font-size: 12px; color: #D32F2F; font-weight: bold; text-align: right; padding-top: 5px;'>Update: {notice_time}</div>", unsafe_allow_html=True)
+    new_arrange = st.toggle("어레인지 완료", value=arrange_done, key="arrange_toggle", label_visibility="collapsed")
+    if new_arrange != arrange_done:
+        save_arrange_done(new_arrange)
+        st.rerun()
 
     # 어레인지 완료 시 메시지 표시
     if arrange_done:
@@ -542,6 +531,18 @@ with col_notice:
                 margin: 5px 0;
             '>✅ 오늘 어레인지 끝!</div>
         """, unsafe_allow_html=True)
+
+    st.markdown("<div style='height: 5px;'></div>", unsafe_allow_html=True)
+
+    notice_time = load_notice_time()
+    if notice_time == "": notice_time = "-"
+
+    st.markdown(f"""
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; margin-top: 5px;">
+            <h5 style="margin:0; font-weight: bold; font-size: 1.35rem;">📢 공지사항</h5>
+            <span style="font-size: 12px; color: #D32F2F; font-weight: bold;">Update: {notice_time}</span>
+        </div>
+    """, unsafe_allow_html=True)
 
     st.text_area(
         "공지사항 내용", key="notice_area", height=120, label_visibility="collapsed",
