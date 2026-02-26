@@ -484,24 +484,24 @@ render_zone(col_a, "A 구역", ZONE_A, df)
 render_zone(col_b, "B / C / 기타", ZONE_B, df)
 
 with col_notice:
-    # URL 파라미터로 OFF 전공의 처리 (세션당 1회만)
-    if "off_param_processed" not in st.session_state:
-        query_params = st.query_params
-        if "off" in query_params:
-            # URL 파라미터는 토글이 아니라 "추가" 동작만 수행
-            off_values = query_params.get("off")
-            if not isinstance(off_values, list):
-                off_values = [off_values]
-            current_list = load_off_residents()
-            for name in off_values:
-                if name in RESIDENTS and name not in current_list:
-                    current_list.append(name)
-            save_off_residents(current_list)
-            st.query_params.clear()
-            st.session_state["off_param_processed"] = True
-            st.rerun()
-        else:
-            st.session_state["off_param_processed"] = True
+# URL 파라미터로 OFF 전공의 처리 (세션당 1회만)  ✅ 비활성화(주석처리)
+# if "off_param_processed" not in st.session_state:
+#     query_params = st.query_params
+#     if "off" in query_params:
+#         # URL 파라미터는 토글이 아니라 "추가" 동작만 수행
+#         off_values = query_params.get("off")
+#         if not isinstance(off_values, list):
+#             off_values = [off_values]
+#         current_list = load_off_residents()
+#         for name in off_values:
+#             if name in RESIDENTS and name not in current_list:
+#                 current_list.append(name)
+#         save_off_residents(current_list)
+#         st.query_params.clear()
+#         st.session_state["off_param_processed"] = True
+#         st.rerun()
+#     else:
+#         st.session_state["off_param_processed"] = True
 
     # OFF 전공의 표시
     current_off_list = load_off_residents()
