@@ -483,27 +483,56 @@ col_a, col_b, col_notice = st.columns([1, 1, 0.5], gap="small")
 render_zone(col_a, "A 구역", ZONE_A, df)
 render_zone(col_b, "B / C / 기타", ZONE_B, df)
 
-with col_notice:
-# URL 파라미터로 OFF 전공의 처리 (세션당 1회만)  ✅ 비활성화(주석처리)
-# if "off_param_processed" not in st.session_state:
-#     query_params = st.query_params
-#     if "off" in query_params:
-#         # URL 파라미터는 토글이 아니라 "추가" 동작만 수행
-#         off_values = query_params.get("off")
-#         if not isinstance(off_values, list):
-#             off_values = [off_values]
-#         current_list = load_off_residents()
-#         for name in off_values:
-#             if name in RESIDENTS and name not in current_list:
-#                 current_list.append(name)
-#         save_off_residents(current_list)
-#         st.query_params.clear()
-#         st.session_state["off_param_processed"] = True
-#         st.rerun()
-#     else:
-#         st.session_state["off_param_processed"] = True
 
-    
+with col_notice:
+    # URL 파라미터로 OFF 전공의 처리 (세션당 1회만)  ✅ 비활성화(주석처리)
+    # if "off_param_processed" not in st.session_state:
+    #     query_params = st.query_params
+    #     if "off" in query_params:
+    #         off_values = query_params.get("off")
+    #         if not isinstance(off_values, list):
+    #             off_values = [off_values]
+    #         current_list = load_off_residents()
+    #         for name in off_values:
+    #             if name in RESIDENTS and name not in current_list:
+    #                 current_list.append(name)
+    #         save_off_residents(current_list)
+    #         st.query_params.clear()
+    #         st.session_state["off_param_processed"] = True
+    #         st.rerun()
+    #     else:
+    #         st.session_state["off_param_processed"] = True
+
+    # ---------------------------
+    # OFF 전공의 (핵심 수정)
+    # ---------------------------
+    current_off_list = load_off_residents()
+
+    # 세션이 처음 시작될 때만 파일 값으로 초기화
+    if "off_select" not in st.session_state:
+        st.session_state["off_select"] = current_off_list
+
+    def save_off_callback():
+        # 사용자가 실제로 바꾼 순간에만 저장
+        save_off_residents(st.session_state.get("off_select", []))
+
+    # OFF 전공의 - 라벨과 multiselect 한 줄로
+    st.markdown("<div style='height: 25px;'></div>", unsafe_allow_html=True)
+    off_label_col, off_select_col = st.columns([0.18, 0.82])
+    with off_label_col:
+        st.markdown(
+            "<div style='font-weight: bold; color: #C62828; font-size: 17px; padding-top: 4px;'>OFF</div>",
+            unsafe_allow_html=True
+        )
+    with off_select_col:
+        st.multiselect(
+            "OFF 전공의",
+            options=RESIDENTS,
+            key="off_select",
+            label_visibility="collapsed",
+            placeholder="선택...",
+            on_change=save_off_callback
+        )
 
     st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
 
@@ -528,7 +557,8 @@ with col_notice:
     st.markdown("<div style='height: 5px;'></div>", unsafe_allow_html=True)
 
     notice_time = load_notice_time()
-    if notice_time == "": notice_time = "-"
+    if notice_time == "":
+        notice_time = "-"
 
     st.markdown(f"""
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; margin-top: 5px;">
@@ -550,20 +580,20 @@ with col_notice:
         st.toast("모든 변경사항이 저장되었습니다!", icon="✅")
 
     st.markdown("<div style='margin-top: 3px; margin-bottom: 20px; font-weight: bold; font-size: 14px;'>🚀 빠른 이동</div>", unsafe_allow_html=True)
-    
+
     links_a = "<div class='link-container'>"
     for room in ZONE_A:
         style = get_status_style(room, df)
         links_a += f"<a href='#target_{room}' class='quick-link' style='{style}' target='_self'>{room}</a>"
     links_a += "</div>"
-    
+
     links_b = "<div class='link-container'>"
     for room in ZONE_B:
         short_name = room.replace("회복실", "회복")
         style = get_status_style(room, df)
         links_b += f"<a href='#target_{room}' class='quick-link' style='{style}' target='_self'>{short_name}</a>"
     links_b += "</div>"
-    
+
     st.markdown(links_a + links_b, unsafe_allow_html=True)
 
 st.markdown("<a href='#top' class='floating-top-btn'>🔝</a>", unsafe_allow_html=True)
