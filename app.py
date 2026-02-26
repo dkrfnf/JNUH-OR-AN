@@ -14,6 +14,7 @@ NOTICE_FILE = 'notice.txt'
 NOTICE_TIME_FILE = 'notice_time.txt'
 RESET_LOG_FILE = 'reset_log.txt'
 OFF_RESIDENT_FILE = 'off_resident.txt'
+ARRANGE_DONE_FILE = 'arrange_done.txt'
 
 # 상태 옵션 정의
 OP_STATUS = ["▶ 수술", "Ⅱ 대기", "■ 종료"]
@@ -79,7 +80,7 @@ def perform_reset(current_time):
     df.to_csv(DATA_FILE, index=False, encoding='utf-8')
     save_current_reset_time(current_time)
 
-    # 공지사항 및 OFF 전공의 리셋
+    # 공지사항, OFF 전공의, 어레인지 리셋
     try:
         with open(NOTICE_FILE, "w", encoding="utf-8") as f:
             f.write("")
@@ -87,6 +88,8 @@ def perform_reset(current_time):
             f.write("")
         with open(OFF_RESIDENT_FILE, "w", encoding="utf-8") as f:
             f.write("")
+        with open(ARRANGE_DONE_FILE, "w", encoding="utf-8") as f:
+            f.write("0")
     except: pass
 
     for key in list(st.session_state.keys()):
@@ -192,6 +195,23 @@ def toggle_off_resident(name):
     else:
         current_list.append(name)
     save_off_residents(current_list)
+
+def load_arrange_done():
+    """어레인지 완료 상태 로드"""
+    if not os.path.exists(ARRANGE_DONE_FILE): return False
+    try:
+        with open(ARRANGE_DONE_FILE, "r", encoding="utf-8") as f:
+            return f.read().strip() == "1"
+    except: return False
+
+def save_arrange_done(is_done):
+    """어레인지 완료 상태 저장"""
+    try:
+        with open(ARRANGE_DONE_FILE, "w", encoding="utf-8") as f:
+            f.write("1" if is_done else "0")
+            f.flush()
+            os.fsync(f.fileno())
+    except: pass
 
 # --- 스마트 동기화 로직 ---
 def sync_session_state(df):
@@ -491,6 +511,30 @@ with col_notice:
         )
         if set(selected_off) != set(current_off_list):
             save_off_residents(selected_off)
+
+    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+
+    # 어레인지 완료 토글
+    arrange_done = load_arrange_done()
+    arr_label_col, arr_toggle_col = st.columns([0.6, 0.4])
+    with arr_label_col:
+        st.markdown("<div style='font-size: 14px; padding-top: 5px;'>어레인지</div>", unsafe_allow_html=True)
+    with arr_toggle_col:
+        new_arrange = st.toggle("완료", value=arrange_done, key="arrange_toggle", label_visibility="collapsed")
+        if new_arrange != arrange_done:
+            save_arrange_done(new_arrange)
+            st.rerun()
+
+    # 어레인지 완료 시 메시지 표시
+    if arrange_done:
+        st.markdown("""
+            <div style='
+                background-color: #E8F5E9; border: 2px solid #4CAF50;
+                border-radius: 8px; padding: 10px; text-align: center;
+                font-size: 16px; font-weight: bold; color: #2E7D32;
+                margin: 5px 0;
+            '>✅ 오늘 어레인지 끝!</div>
+        """, unsafe_allow_html=True)
 
     st.markdown("<div style='height: 5px;'></div>", unsafe_allow_html=True)
 
