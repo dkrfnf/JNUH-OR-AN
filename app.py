@@ -503,34 +503,7 @@ with col_notice:
 #     else:
 #         st.session_state["off_param_processed"] = True
 
-    # OFF 전공의 표시
-current_off_list = load_off_residents()
-
-# 처음 접속(세션 시작) 때만 파일 값으로 초기화
-if "off_select" not in st.session_state:
-    st.session_state["off_select"] = current_off_list
-
-def save_off_callback():
-    # 사용자가 멀티셀렉트 값을 바꾼 순간에만 저장
-    save_off_residents(st.session_state.get("off_select", []))
-
-# OFF 전공의 - 라벨과 multiselect 한 줄로
-st.markdown("<div style='height: 25px;'></div>", unsafe_allow_html=True)
-off_label_col, off_select_col = st.columns([0.18, 0.82])
-with off_label_col:
-    st.markdown(
-        "<div style='font-weight: bold; color: #C62828; font-size: 17px; padding-top: 4px;'>OFF</div>",
-        unsafe_allow_html=True
-    )
-with off_select_col:
-    st.multiselect(
-        "OFF 전공의",
-        options=RESIDENTS,
-        key="off_select",
-        label_visibility="collapsed",
-        placeholder="선택...",
-        on_change=save_off_callback
-    )
+    
 
     st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
 
