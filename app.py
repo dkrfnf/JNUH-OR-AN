@@ -13,18 +13,19 @@ NTFY_URL = f"https://ntfy.sh/{NTFY_TOPIC}"
 def send_ntfy(title: str, message: str, priority: str = "high"):
     """ntfy 푸시 알림 발송"""
     try:
-        requests.post(
+        r = requests.post(
             NTFY_URL,
             data=message.encode("utf-8"),
             headers={
                 "Title": title,
-                "Priority": priority,   # urgent / high / default / low
-                "Tags": "loudspeaker",  # 🔊 이모지
+                "Priority": priority,
+                "Tags": "loudspeaker",
             },
             timeout=5
         )
-    except Exception:
-        pass  # 알림 실패해도 앱은 정상 작동
+        st.toast(f"✅ ntfy 전송됨 (응답: {r.status_code})", icon="🔔")
+    except Exception as e:
+        st.toast(f"❌ ntfy 오류: {e}", icon="❌")
 
 # --- 설정 ---
 ZONE_A = ["A1", "A2", "A3", "A4", "A5", "A6", "A7"]
@@ -192,12 +193,16 @@ def save_notice_callback():
 
         # 📢 ntfy 푸시 알림 발송 (내용이 있고, 이전과 달라졌을 때만)
         if new_notice.strip() and new_notice.strip() != prev_notice:
+            st.toast(f"🔍 prev='{prev_notice[:20]}' new='{new_notice.strip()[:20]}'")
             send_ntfy(
                 title=f"📢 JNUH OR 공지 ({now_time})",
                 message=new_notice.strip(),
                 priority="high"
             )
-    except: pass
+        else:
+            st.toast(f"⚠️ 알림 스킵: 내용없음={not new_notice.strip()}, 동일={new_notice.strip()==prev_notice}")
+    except Exception as e:
+        st.toast(f"❌ callback 오류: {e}")
 
 def load_off_residents():
     """여러 명의 OFF 전공의를 리스트로 반환"""
