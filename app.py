@@ -176,6 +176,9 @@ def save_notice_callback():
     new_notice = st.session_state["notice_area"]
     now_time = get_korean_time_str()
     try:
+        # 이전 공지 내용 읽기
+        prev_notice = load_notice().strip()
+
         with open(NOTICE_FILE, "w", encoding="utf-8") as f:
             f.write(new_notice)
             f.flush()
@@ -187,8 +190,8 @@ def save_notice_callback():
 
         st.session_state["last_server_time"] = now_time
 
-        # 📢 ntfy 푸시 알림 발송 (내용이 있을 때만)
-        if new_notice.strip():
+        # 📢 ntfy 푸시 알림 발송 (내용이 있고, 이전과 달라졌을 때만)
+        if new_notice.strip() and new_notice.strip() != prev_notice:
             send_ntfy(
                 title=f"📢 JNUH OR 공지 ({now_time})",
                 message=new_notice.strip(),
