@@ -13,19 +13,18 @@ NTFY_URL = f"https://ntfy.sh/{NTFY_TOPIC}"
 def send_ntfy(title: str, message: str, priority: str = "high"):
     """ntfy 푸시 알림 발송"""
     try:
-        r = requests.post(
+        requests.post(
             NTFY_URL,
             data=message.encode("utf-8"),
             headers={
                 "Title": title,
-                "Priority": priority,
-                "Tags": "loudspeaker",
+                "Priority": priority,   # urgent / high / default / low
+                "Tags": "loudspeaker",  # 🔊 이모지
             },
             timeout=5
         )
-        st.toast(f"✅ ntfy 전송됨 (응답: {r.status_code})", icon="🔔")
-    except Exception as e:
-        st.toast(f"❌ ntfy 오류: {e}", icon="❌")
+    except Exception:
+        pass  # 알림 실패해도 앱은 정상 작동
 
 # --- 설정 ---
 ZONE_A = ["A1", "A2", "A3", "A4", "A5", "A6", "A7"]
@@ -177,8 +176,9 @@ def save_notice_callback():
     new_notice = st.session_state["notice_area"]
     now_time = get_korean_time_str()
     try:
-        # 이전 공지 내용 읽기
+        # 이전 공지 내용 읽기 (저장 전에 먼저!)
         prev_notice = load_notice().strip()
+        is_new = new_notice.strip() and new_notice.strip() != prev_notice
 
         with open(NOTICE_FILE, "w", encoding="utf-8") as f:
             f.write(new_notice)
@@ -191,18 +191,14 @@ def save_notice_callback():
 
         st.session_state["last_server_time"] = now_time
 
-        # 📢 ntfy 푸시 알림 발송 (내용이 있고, 이전과 달라졌을 때만)
-        if new_notice.strip() and new_notice.strip() != prev_notice:
-            st.toast(f"🔍 prev='{prev_notice[:20]}' new='{new_notice.strip()[:20]}'")
+        # 📢 ntfy 푸시 알림 발송 (새 내용일 때만)
+        if is_new:
             send_ntfy(
                 title=f"📢 JNUH OR 공지 ({now_time})",
                 message=new_notice.strip(),
                 priority="high"
             )
-        else:
-            st.toast(f"⚠️ 알림 스킵: 내용없음={not new_notice.strip()}, 동일={new_notice.strip()==prev_notice}")
-    except Exception as e:
-        st.toast(f"❌ callback 오류: {e}")
+    except: pass
 
 def load_off_residents():
     """여러 명의 OFF 전공의를 리스트로 반환"""
