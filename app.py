@@ -13,19 +13,18 @@ NTFY_URL = f"https://ntfy.sh/{NTFY_TOPIC}"
 def send_ntfy(title: str, message: str, priority: str = "high"):
     """ntfy 푸시 알림 발송"""
     try:
-        r = requests.post(
+        requests.post(
             NTFY_URL,
             data=message.encode("utf-8"),
             headers={
                 "Title": title,
-                "Priority": priority,
-                "Tags": "loudspeaker",
+                "Priority": priority,   # urgent / high / default / low
+                "Tags": "loudspeaker",  # 🔊 이모지
             },
             timeout=5
         )
-        st.toast(f"✅ ntfy 전송 완료 (응답: {r.status_code})", icon="🔔")
-    except Exception as e:
-        st.toast(f"❌ ntfy 오류: {e}", icon="❌")
+    except Exception:
+        pass  # 알림 실패해도 앱은 정상 작동
 
 # --- 설정 ---
 ZONE_A = ["A1", "A2", "A3", "A4", "A5", "A6", "A7"]
@@ -191,6 +190,9 @@ def save_notice_callback():
             os.fsync(f.fileno())
 
         st.session_state["last_server_time"] = now_time
+
+        # 디버그
+        st.toast(f"is_new={is_new} / prev='{prev_notice[:15]}' / new='{new_notice.strip()[:15]}'")
 
         # 📢 ntfy 푸시 알림 발송 (새 내용일 때만)
         if is_new:
