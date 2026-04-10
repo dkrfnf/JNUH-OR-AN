@@ -3,7 +3,28 @@ import pandas as pd
 from datetime import datetime, timedelta
 import os
 import time
+import requests
 from streamlit_autorefresh import st_autorefresh
+
+# --- ntfy 설정 ---
+NTFY_TOPIC = "oranda-jnuh-2025-xk9q"  # ← 이 이름을 원하는 대로 바꾸세요 (복잡할수록 보안상 좋음)
+NTFY_URL = f"https://ntfy.sh/{NTFY_TOPIC}"
+
+def send_ntfy(title: str, message: str, priority: str = "high"):
+    """ntfy 푸시 알림 발송"""
+    try:
+        requests.post(
+            NTFY_URL,
+            data=message.encode("utf-8"),
+            headers={
+                "Title": title,
+                "Priority": priority,   # urgent / high / default / low
+                "Tags": "loudspeaker",  # 🔊 이모지
+            },
+            timeout=5
+        )
+    except Exception:
+        pass  # 알림 실패해도 앱은 정상 작동
 
 # --- 설정 ---
 ZONE_A = ["A1", "A2", "A3", "A4", "A5", "A6", "A7"]
@@ -165,6 +186,14 @@ def save_notice_callback():
             os.fsync(f.fileno())
 
         st.session_state["last_server_time"] = now_time
+
+        # 📢 ntfy 푸시 알림 발송 (내용이 있을 때만)
+        if new_notice.strip():
+            send_ntfy(
+                title=f"📢 JNUH OR 공지 ({now_time})",
+                message=new_notice.strip(),
+                priority="high"
+            )
     except: pass
 
 def load_off_residents():
