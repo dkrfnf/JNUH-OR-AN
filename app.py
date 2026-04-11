@@ -569,29 +569,40 @@ with col_notice:
 
     st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
 
-    st.markdown("<div style='height: 5px;'></div>", unsafe_allow_html=True)
-
     notice_time = load_notice_time()
-    if notice_time == "":
+    if notice_time == "" :
         notice_time = "-"
 
-    # 공지사항 헤더 + 발송 버튼 한 줄
-    notice_col, send_col = st.columns([0.7, 0.3])
-    with notice_col:
-        st.markdown(f"""
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; margin-top: 5px;">
-                <h5 style="margin:0; font-weight: bold; font-size: 1.35rem;">📢 공지사항</h5>
-                <span style="font-size: 12px; color: #D32F2F; font-weight: bold;">Update: {notice_time}</span>
-            </div>
-        """, unsafe_allow_html=True)
-    with send_col:
-        import json
-        current_notice = st.session_state.get("notice_area", "").strip()
-        notice_json = json.dumps(current_notice)
-        now_time = get_korean_time_str()
-        title_json = json.dumps(f"📢 JNUH OR 공지 ({now_time})")
-        ntfy_topic = NTFY_TOPIC
-        st.markdown(f"""
+    # 공지사항 헤더
+    st.markdown(f"""
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; margin-top: 5px;">
+            <h5 style="margin:0; font-weight: bold; font-size: 1.35rem;">📢 공지사항</h5>
+            <span style="font-size: 12px; color: #D32F2F; font-weight: bold;">Update: {notice_time}</span>
+        </div>
+    """, unsafe_allow_html=True)
+
+    st.text_area(
+        "공지사항 내용", key="notice_area", height=120, label_visibility="collapsed",
+        placeholder="전달사항을 입력하세요...", on_change=save_notice_callback
+    )
+
+    # 저장 버튼 + 발송 버튼 나란히
+    import json
+    import streamlit.components.v1 as components
+    current_notice = st.session_state.get("notice_area", "").strip()
+    notice_json = json.dumps(current_notice)
+    now_time = get_korean_time_str()
+    title_json = json.dumps(f"📢 JNUH OR 공지 ({now_time})")
+    ntfy_topic = NTFY_TOPIC
+
+    btn_col1, btn_col2 = st.columns([1, 1])
+    with btn_col1:
+        if st.button("변경사항 저장", use_container_width=True):
+            save_notice_callback()
+            save_data(df)
+            st.toast("모든 변경사항이 저장되었습니다!", icon="✅")
+    with btn_col2:
+        components.html(f"""
         <script>
         function sendNtfy() {{
             var body = {notice_json};
@@ -607,26 +618,13 @@ with col_notice:
             }}).catch(function(e) {{ alert('❌ 오류: ' + e); }});
         }}
         </script>
-        <div style="display:flex; align-items:center; height:100%; padding-top:8px;">
         <button onclick="sendNtfy()" style="
             background-color: #FF6B35; color: white; border: none;
-            border-radius: 8px; padding: 6px 10px; font-size: 12px;
-            font-weight: bold; cursor: pointer; width: 100%;
-        ">📣 발송</button>
-        </div>
-        """, unsafe_allow_html=True)
-
-    st.text_area(
-        "공지사항 내용", key="notice_area", height=120, label_visibility="collapsed",
-        placeholder="전달사항을 입력하세요...", on_change=save_notice_callback
-    )
-
-    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
-
-    if st.button("변경사항 저장", use_container_width=False):
-        save_notice_callback()
-        save_data(df)
-        st.toast("모든 변경사항이 저장되었습니다!", icon="✅")
+            border-radius: 8px; padding: 5px 8px; font-size: 12px;
+            font-weight: bold; cursor: pointer; width: 100%; height: 36px;
+            margin-top: 2px;
+        ">📣 알림 발송</button>
+        """, height=45)
 
     st.markdown("<div style='margin-top: 3px; margin-bottom: 20px; font-weight: bold; font-size: 14px;'>🚀 빠른 이동</div>", unsafe_allow_html=True)
 
