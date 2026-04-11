@@ -595,13 +595,17 @@ with col_notice:
         notice_time = "-"
 
     # 공지사항 헤더 + 발송 버튼
-    st.markdown(f"""
-        <div style="display:flex; align-items:center; gap:8px; margin-top:5px; margin-bottom:2px;">
-            <span style="font-weight:bold; font-size:1.15rem; white-space:nowrap;">📢 공지사항</span>
-            <span style="font-size:12px; color:#D32F2F; font-weight:bold; white-space:nowrap;">Update: {notice_time}</span>
-        </div>
-    """, unsafe_allow_html=True)
-    send_notice = st.button("📣 발송", key="send_notice_btn", use_container_width=False)
+    _hcol_title, _hcol_btn = st.columns([1.6, 1], gap="small")
+    with _hcol_title:
+        st.markdown(f"""
+            <div style="padding-top:6px;">
+                <div style="font-weight:bold; font-size:1.1rem;">📢 공지사항</div>
+                <div style="font-size:11px; color:#D32F2F; font-weight:bold; margin-top:2px;">Update: {notice_time}</div>
+            </div>
+        """, unsafe_allow_html=True)
+    with _hcol_btn:
+        st.markdown("<div style='height:6px;'></div>", unsafe_allow_html=True)
+        send_notice = st.button("📣 발송", key="send_notice_btn", use_container_width=True)
 
     st.text_area(
         "공지사항 내용", key="notice_area", height=120, label_visibility="collapsed",
