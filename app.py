@@ -503,22 +503,6 @@ st.markdown("""
     div[data-testid="stButton"] button:hover p { color: #004080 !important; }
 
     @media (max-width: 900px) {
-        /* 최상위 3컬럼: A구역(1), B구역(2), 공지(3) → 공지를 오른쪽 상단에 유지 */
-        .block-container > div > div > div[data-testid="stHorizontalBlock"] {
-            display: grid !important;
-            grid-template-columns: 1fr 1fr !important;
-            grid-template-rows: auto auto !important;
-            gap: 8px !important;
-        }
-        .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(1) {
-            grid-column: 2; grid-row: 1;
-        }
-        .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(2) {
-            grid-column: 2; grid-row: 2;
-        }
-        .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(3) {
-            grid-column: 1; grid-row: 1 / span 2;
-        }
         div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] { flex-direction: row !important; gap: 20px !important; }
         div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] > div { order: unset !important; margin-bottom: 0px !important; }
 
@@ -545,46 +529,22 @@ st.markdown("---")
 df = load_data()
 sync_session_state(df)
 
-col_a, col_b, col_notice = st.columns([1, 1, 0.5], gap="small")
-
-render_zone(col_a, "A 구역", ZONE_A, df)
-render_zone(col_b, "B / C / 기타", ZONE_B, df)
-
+# ── 공지/OFF/빠른이동: 전체 너비 (모바일: 그대로, 데스크탑: 오른쪽 정렬) ──
+_notice_spacer, col_notice = st.columns([2, 1], gap="small")
 
 with col_notice:
-    # URL 파라미터로 OFF 전공의 처리 (세션당 1회만)  ✅ 비활성화(주석처리)
-    # if "off_param_processed" not in st.session_state:
-    #     query_params = st.query_params
-    #     if "off" in query_params:
-    #         off_values = query_params.get("off")
-    #         if not isinstance(off_values, list):
-    #             off_values = [off_values]
-    #         current_list = load_off_residents()
-    #         for name in off_values:
-    #             if name in RESIDENTS and name not in current_list:
-    #                 current_list.append(name)
-    #         save_off_residents(current_list)
-    #         st.query_params.clear()
-    #         st.session_state["off_param_processed"] = True
-    #         st.rerun()
-    #     else:
-    #         st.session_state["off_param_processed"] = True
-
     # ---------------------------
-    # OFF 전공의 (핵심 수정)
+    # OFF 전공의
     # ---------------------------
     current_off_list = load_off_residents()
 
-    # 세션이 처음 시작될 때만 파일 값으로 초기화
     if "off_select" not in st.session_state:
         st.session_state["off_select"] = current_off_list
 
     def save_off_callback():
-        # 사용자가 실제로 바꾼 순간에만 저장
         save_off_residents(st.session_state.get("off_select", []))
 
-    # OFF 전공의 - 라벨과 multiselect 한 줄로
-    st.markdown("<div style='height: 25px;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
     off_label_col, off_select_col = st.columns([0.18, 0.82])
     with off_label_col:
         st.markdown(
@@ -601,9 +561,7 @@ with col_notice:
             on_change=save_off_callback
         )
 
-    st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
-
-    st.markdown("<div style='height: 5px;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='height: 12px;'></div>", unsafe_allow_html=True)
 
     notice_time = load_notice_time()
     if notice_time == "":
@@ -650,7 +608,7 @@ with col_notice:
         else:
             st.error(f"공지 저장 실패: {result.get('reason', 'unknown error')}")
 
-    st.markdown("<div style='margin-top: 3px; margin-bottom: 20px; font-weight: bold; font-size: 14px;'>🚀 빠른 이동</div>", unsafe_allow_html=True)
+    st.markdown("<div style='margin-top: 3px; margin-bottom: 8px; font-weight: bold; font-size: 14px;'>🚀 빠른 이동</div>", unsafe_allow_html=True)
 
     links_a = "<div class='link-container'>"
     for room in ZONE_A:
@@ -666,5 +624,12 @@ with col_notice:
     links_b += "</div>"
 
     st.markdown(links_a + links_b, unsafe_allow_html=True)
+
+st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
+
+# ── A구역 / B구역: 항상 2열 ──
+col_a, col_b = st.columns([1, 1], gap="small")
+render_zone(col_a, "A 구역", ZONE_A, df)
+render_zone(col_b, "B / C / 기타", ZONE_B, df)
 
 st.markdown("<a href='#top' class='floating-top-btn'>🔝</a>", unsafe_allow_html=True)
