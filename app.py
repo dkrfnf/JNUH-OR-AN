@@ -570,10 +570,9 @@ with col_notice:
     st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
 
     notice_time = load_notice_time()
-    if notice_time == "" :
+    if notice_time == "":
         notice_time = "-"
 
-    # 공지사항 헤더
     st.markdown(f"""
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; margin-top: 5px;">
             <h5 style="margin:0; font-weight: bold; font-size: 1.35rem;">📢 공지사항</h5>
@@ -586,13 +585,10 @@ with col_notice:
         placeholder="전달사항을 입력하세요...", on_change=save_notice_callback
     )
 
-    # 저장 버튼 + 발송 버튼 나란히
     import json
     import streamlit.components.v1 as components
     current_notice = st.session_state.get("notice_area", "").strip()
     notice_json = json.dumps(current_notice)
-    now_time = get_korean_time_str()
-    title_json = json.dumps(f"📢 JNUH OR 공지 ({now_time})")
     ntfy_topic = NTFY_TOPIC
 
     btn_col1, btn_col2 = st.columns([1, 1])
@@ -606,16 +602,19 @@ with col_notice:
         <script>
         function sendNtfy() {{
             var body = {notice_json};
-            var title = {title_json};
             if (!body) {{ alert('공지 내용을 먼저 입력하세요.'); return; }}
             fetch('https://ntfy.sh/{ntfy_topic}', {{
                 method: 'POST',
-                headers: {{ 'Title': title, 'Priority': 'high', 'Tags': 'loudspeaker' }},
+                headers: {{
+                    'Title': 'JNUH OR Notice',
+                    'Priority': 'high',
+                    'Tags': 'loudspeaker'
+                }},
                 body: body
             }}).then(function(r) {{
-                if(r.ok) {{ alert('✅ 알림 발송 완료!'); }}
-                else {{ alert('❌ 발송 실패: ' + r.status); }}
-            }}).catch(function(e) {{ alert('❌ 오류: ' + e); }});
+                if(r.ok) {{ alert('알림 발송 완료!'); }}
+                else {{ alert('발송 실패: ' + r.status); }}
+            }}).catch(function(e) {{ alert('오류: ' + e); }});
         }}
         </script>
         <button onclick="sendNtfy()" style="
@@ -623,7 +622,7 @@ with col_notice:
             border-radius: 8px; padding: 5px 8px; font-size: 12px;
             font-weight: bold; cursor: pointer; width: 100%; height: 36px;
             margin-top: 2px;
-        ">📣 알림 발송</button>
+        ">알림 발송</button>
         """, height=45)
 
     st.markdown("<div style='margin-top: 3px; margin-bottom: 20px; font-weight: bold; font-size: 14px;'>🚀 빠른 이동</div>", unsafe_allow_html=True)
