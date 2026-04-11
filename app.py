@@ -502,6 +502,15 @@ st.markdown("""
     div[data-testid="stButton"] button:hover { background-color: #CCE4FF !important; border-color: #004080 !important; }
     div[data-testid="stButton"] button:hover p { color: #004080 !important; }
 
+    /* 발송 버튼만 작게 */
+    div[data-testid="stButton"]:has(button[kind="secondary"][data-testid*="send_notice"]) button,
+    button[key="send_notice_btn"] {
+        font-size: 11px !important;
+        padding: 2px 6px !important;
+        height: 28px !important;
+        min-height: 28px !important;
+    }
+
     @media (max-width: 900px) {
         /* 최상위 3열(A|B|공지) → 모바일: 공지 위 전체, A/B 아래 2열 */
         .block-container > div > div > div[data-testid="stHorizontalBlock"] {
@@ -595,17 +604,17 @@ with col_notice:
         notice_time = "-"
 
     # 공지사항 헤더 + 발송 버튼
-    _hcol_title, _hcol_btn = st.columns([1.6, 1], gap="small")
+    _hcol_title, _hcol_btn = st.columns([2.5, 1], gap="small")
     with _hcol_title:
         st.markdown(f"""
-            <div style="padding-top:6px;">
+            <div style="padding-top:4px;">
                 <div style="font-weight:bold; font-size:1.1rem;">📢 공지사항</div>
-                <div style="font-size:11px; color:#D32F2F; font-weight:bold; margin-top:2px;">Update: {notice_time}</div>
+                <div style="font-size:11px; color:#D32F2F; font-weight:bold; margin-top:6px;">Update: {notice_time}</div>
             </div>
         """, unsafe_allow_html=True)
     with _hcol_btn:
-        st.markdown("<div style='height:6px;'></div>", unsafe_allow_html=True)
-        send_notice = st.button("📣 발송", key="send_notice_btn", use_container_width=True)
+        st.markdown("<div style='height:8px;'></div>", unsafe_allow_html=True)
+        send_notice = st.button("📣 발송", key="send_notice_btn", use_container_width=False)
 
     st.text_area(
         "공지사항 내용", key="notice_area", height=120, label_visibility="collapsed",
