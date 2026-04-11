@@ -510,17 +510,6 @@ st.markdown("""
         div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] { flex-direction: row !important; gap: 20px !important; }
         div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] > div { order: unset !important; margin-bottom: 0px !important; }
 
-        /* 변경사항 저장 버튼 플로팅 */
-        div[data-testid="stButton"]:first-of-type {
-            position: fixed !important; bottom: 20px !important; left: 80px !important; width: auto !important; z-index: 999999 !important;
-            background-color: transparent !important; margin: 0 !important;
-        }
-        div[data-testid="stButton"]:first-of-type button {
-            width: 220px !important; height: 50px !important; font-size: 13px !important; border-radius: 25px !important;
-            box-shadow: 0px 4px 15px rgba(0, 87, 164, 0.3) !important; padding: 0 !important;
-            background-color: #E6F2FF !important; border: 2px solid #0057A4 !important;
-        }
-        div[data-testid="stButton"]:first-of-type button p { color: #0057A4 !important; font-size: 13px !important; }
 
         .floating-top-btn {
             position: fixed; bottom: 20px; left: 15px; width: 50px; height: 50px; background-color: #FFFFFF; color: #333;
@@ -608,25 +597,27 @@ with col_notice:
     if notice_time == "":
         notice_time = "-"
 
-    # 공지사항 헤더
-    st.markdown(f"""
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; margin-top: 5px;">
-            <h5 style="margin:0; font-weight: bold; font-size: 1.35rem;">📢 공지사항</h5>
-            <span style="font-size: 12px; color: #D32F2F; font-weight: bold;">Update: {notice_time}</span>
-        </div>
-    """, unsafe_allow_html=True)
+    # 공지사항 헤더 + 발송 버튼
+    header_left, header_right = st.columns([0.68, 0.32], gap="small")
+    with header_left:
+        st.markdown(f"""
+            <div style="margin-bottom: 5px; margin-top: 5px;">
+                <h5 style="margin:0; font-weight: bold; font-size: 1.35rem;">📢 공지사항</h5>
+                <span style="font-size: 12px; color: #D32F2F; font-weight: bold;">Update: {notice_time}</span>
+            </div>
+        """, unsafe_allow_html=True)
+    with header_right:
+        st.markdown("<div style='height: 6px;'></div>", unsafe_allow_html=True)
+        send_notice = st.button("📣 발송", key="send_notice_btn", use_container_width=True)
 
-    with st.form("notice_form", clear_on_submit=False):
-        st.text_area(
-            "공지사항 내용", key="notice_area", height=120, label_visibility="collapsed",
-            placeholder="전달사항을 입력하세요..."
-        )
+    st.text_area(
+        "공지사항 내용", key="notice_area", height=120, label_visibility="collapsed",
+        placeholder="전달사항을 입력하세요..."
+    )
 
-        btn_col1, btn_col2 = st.columns(2)
-        with btn_col1:
-            save_only = st.form_submit_button("💾 저장", use_container_width=True)
-        with btn_col2:
-            save_and_send = st.form_submit_button("📣 저장 + 알림발송", use_container_width=True)
+    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
+
+    save_only = st.button("변경사항 저장", key="save_notice_btn", use_container_width=False)
 
     if save_only:
         result = save_notice_callback(send_push=False)
@@ -636,7 +627,7 @@ with col_notice:
         else:
             st.error(f"공지 저장 실패: {result.get('reason', 'unknown error')}")
 
-    if save_and_send:
+    if send_notice:
         result = save_notice_callback(send_push=True)
         save_data(df)
         if result.get("reason") == "empty":
