@@ -209,7 +209,7 @@ def save_notice_callback(send_push: bool = False):
                 }
 
             result = send_ntfy(
-                title=f"📢 JNUH OR 공지 ({now_time})",
+                title=f"JNUH OR Notice ({now_time})",
                 message=stripped_notice,
                 priority="high"
             )
