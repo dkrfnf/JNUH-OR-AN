@@ -494,10 +494,9 @@ st.markdown("""
     div[data-testid="stButton"] button {
         background-color: #E6F2FF !important; color: #0057A4 !important; border: 1px solid #0057A4 !important;
         border-radius: 8px !important; font-weight: bold !important; transition: all 0.3s ease;
-        width: auto !important; max-width: fit-content !important; padding: 4px 12px !important;
-        min-width: 0 !important; font-size: 12px !important; height: 36px !important; line-height: 1.2 !important;
+        width: auto !important; max-width: fit-content !important; padding: 2px 12px !important;
+        min-width: 0 !important; font-size: 12px !important; min-height: 34px !important; line-height: 1.2 !important;
         display: inline-flex !important; justify-content: center !important; align-items: center !important;
-        white-space: nowrap !important;
     }
     div[data-testid="stButton"] button p { color: #0057A4 !important; font-size: 13px !important; line-height: 1 !important; }
     div[data-testid="stButton"] button:hover { background-color: #CCE4FF !important; border-color: #004080 !important; }
@@ -511,7 +510,8 @@ st.markdown("""
             display: grid !important;
             grid-template-columns: 1fr 1fr !important;
             grid-template-rows: auto auto !important;
-            gap: 8px !important;
+            column-gap: 8px !important;
+            row-gap: 22px !important;
         }
         /* 공지(3번째) → 위, 전체 2열 차지 */
         .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(3) {
@@ -597,18 +597,18 @@ with col_notice:
     if notice_time == "":
         notice_time = "-"
 
-    # 공지사항 헤더 + 우측 소형 발송 버튼
-    notice_header_col, notice_send_col = st.columns([0.74, 0.26], gap="small")
-    with notice_header_col:
+    # 공지사항 헤더
+    notice_title_col, notice_send_col = st.columns([0.72, 0.28], gap="small")
+    with notice_title_col:
         st.markdown(f"""
-            <div style="padding-top:2px; line-height:1.2; margin-bottom:2px;">
+            <div style="padding-top:2px; line-height:1.25; margin-bottom:2px;">
                 <div style="font-weight:bold; font-size:1.1rem; white-space:nowrap;">📢 공지사항</div>
                 <div style="font-size:11px; color:#D32F2F; font-weight:bold; margin-top:4px;">Update: {notice_time}</div>
             </div>
         """, unsafe_allow_html=True)
     with notice_send_col:
-        st.markdown("<div style='height:2px;'></div>", unsafe_allow_html=True)
-        send_notice = st.button("📣 발송", key="send_notice_btn", use_container_width=False)
+        st.markdown("<div style='height: 4px;'></div>", unsafe_allow_html=True)
+        send_notice = st.button("📣 발송", key="send_notice_btn", use_container_width=True)
 
     st.text_area(
         "공지사항 내용", key="notice_area", height=120, label_visibility="collapsed",
