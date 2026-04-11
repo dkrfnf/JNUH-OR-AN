@@ -478,16 +478,16 @@ st.markdown("""
         div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] > div { order: unset !important; margin-bottom: 0px !important; }
 
         /* 변경사항 저장 버튼 플로팅 */
-        .save-btn-wrap {
+        .floating-save-btn {
             position: fixed !important; bottom: 20px !important; left: 80px !important; width: auto !important; z-index: 999999 !important;
             background-color: transparent !important; margin: 0 !important;
         }
-        .save-btn-wrap div[data-testid="stButton"] button {
+        .floating-save-btn button {
             width: 220px !important; height: 50px !important; font-size: 13px !important; border-radius: 25px !important;
             box-shadow: 0px 4px 15px rgba(0, 87, 164, 0.3) !important; padding: 0 !important;
             background-color: #E6F2FF !important; border: 2px solid #0057A4 !important;
         }
-        .save-btn-wrap div[data-testid="stButton"] button p { color: #0057A4 !important; font-size: 13px !important; }
+        .floating-save-btn button p { color: #0057A4 !important; font-size: 13px !important; }
 
         .floating-top-btn {
             position: fixed; bottom: 20px; left: 15px; width: 50px; height: 50px; background-color: #FFFFFF; color: #333;
@@ -593,7 +593,7 @@ with col_notice:
     if notice_time == "":
         notice_time = "-"
 
-    # 공지사항 헤더 + 알림 발송 버튼
+    # 공지사항 헤더 + 알림 발송 버튼 나란히
     notice_hdr_col, notice_btn_col = st.columns([0.62, 0.38])
     with notice_hdr_col:
         st.markdown(f"""
@@ -628,8 +628,8 @@ with col_notice:
 
     st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
 
-    # 변경사항 저장 — .save-btn-wrap으로 감싸서 모바일 플로팅
-    st.markdown("<div class='save-btn-wrap'>", unsafe_allow_html=True)
+    # 변경사항 저장: .floating-save-btn으로 감싸서 모바일 플로팅
+    st.markdown("<div class='floating-save-btn'>", unsafe_allow_html=True)
     if st.button("변경사항 저장", use_container_width=False):
         save_notice_callback()
         save_data(df)
