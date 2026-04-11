@@ -503,6 +503,29 @@ st.markdown("""
     div[data-testid="stButton"] button:hover p { color: #004080 !important; }
 
     @media (max-width: 900px) {
+        /* 최상위 3열(A|B|공지) → 모바일: 공지 위 전체, A/B 아래 2열 */
+        .block-container > div > div > div[data-testid="stHorizontalBlock"] {
+            display: grid !important;
+            grid-template-columns: 1fr 1fr !important;
+            grid-template-rows: auto auto !important;
+            gap: 8px !important;
+        }
+        /* 공지(3번째) → 위, 전체 2열 차지 */
+        .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(3) {
+            grid-column: 1 / span 2 !important;
+            grid-row: 1 !important;
+        }
+        /* A구역(1번째) → 아래 왼쪽 */
+        .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(1) {
+            grid-column: 1 !important;
+            grid-row: 2 !important;
+        }
+        /* B구역(2번째) → 아래 오른쪽 */
+        .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(2) {
+            grid-column: 2 !important;
+            grid-row: 2 !important;
+        }
+        /* 카드 내부 horizontal block은 row 유지 */
         div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] { flex-direction: row !important; gap: 20px !important; }
         div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] > div { order: unset !important; margin-bottom: 0px !important; }
 
@@ -529,8 +552,12 @@ st.markdown("---")
 df = load_data()
 sync_session_state(df)
 
-# ── 공지/OFF/빠른이동: 전체 너비 (모바일: 그대로, 데스크탑: 오른쪽 정렬) ──
-_notice_spacer, col_notice = st.columns([2, 1], gap="small")
+# ── 3열 레이아웃: A구역 | B구역 | 공지 (데스크탑 기준) ──
+# 모바일에서는 CSS로 재배치: 공지 위 전체 → A/B 2열 아래
+col_a, col_b, col_notice = st.columns([1, 1, 0.55], gap="small")
+
+render_zone(col_a, "A 구역", ZONE_A, df)
+render_zone(col_b, "B / C / 기타", ZONE_B, df)
 
 with col_notice:
     # ---------------------------
@@ -567,7 +594,7 @@ with col_notice:
     if notice_time == "":
         notice_time = "-"
 
-    # 공지사항 헤더 + 발송 버튼 한 줄 인라인
+    # 공지사항 헤더 + 발송 버튼
     st.markdown(f"""
         <div style="display:flex; align-items:center; gap:8px; margin-top:5px; margin-bottom:2px;">
             <span style="font-weight:bold; font-size:1.15rem; white-space:nowrap;">📢 공지사항</span>
@@ -624,12 +651,5 @@ with col_notice:
     links_b += "</div>"
 
     st.markdown(links_a + links_b, unsafe_allow_html=True)
-
-st.markdown("<div style='height: 16px;'></div>", unsafe_allow_html=True)
-
-# ── A구역 / B구역: 항상 2열 ──
-col_a, col_b = st.columns([1, 1], gap="small")
-render_zone(col_a, "A 구역", ZONE_A, df)
-render_zone(col_b, "B / C / 기타", ZONE_B, df)
 
 st.markdown("<a href='#top' class='floating-top-btn'>🔝</a>", unsafe_allow_html=True)
