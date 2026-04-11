@@ -612,32 +612,37 @@ with col_notice:
         save_data(df)
         st.toast("모든 변경사항이 저장되었습니다!", icon="✅")
 
-    # 📢 공지 알림 발송 버튼 (브라우저가 직접 ntfy.sh에 요청)
+    # 📣 공지 알림 발송 버튼 (브라우저가 직접 ntfy.sh에 요청)
     current_notice = st.session_state.get("notice_area", "").strip()
     if current_notice:
-        ntfy_url = f"https://ntfy.sh/{NTFY_TOPIC}"
-        encoded = current_notice.replace("\", "\\").replace("").replace("
-", "\n")
+        import json
+        ntfy_topic = NTFY_TOPIC
         now_time = get_korean_time_str()
+        notice_json = json.dumps(current_notice)  # JS-safe 문자열 이스케이프
+        title_json = json.dumps(f"📢 JNUH OR 공지 ({now_time})")
         st.markdown(f"""
-        <button onclick="
-            fetch('{ntfy_url}', {{
+        <script>
+        function sendNtfy() {{
+            var body = {notice_json};
+            var title = {title_json};
+            fetch('https://ntfy.sh/{ntfy_topic}', {{
                 method: 'POST',
                 headers: {{
-                    'Title': '📢 JNUH OR 공지 ({now_time})',
+                    'Title': title,
                     'Priority': 'high',
                     'Tags': 'loudspeaker'
                 }},
-                body: 
-            }}).then(r => {{
+                body: body
+            }}).then(function(r) {{
                 if(r.ok) {{ alert('✅ 알림 발송 완료!'); }}
                 else {{ alert('❌ 발송 실패: ' + r.status); }}
-            }}).catch(e => {{ alert('❌ 오류: ' + e); }});
-        " style="
+            }}).catch(function(e) {{ alert('❌ 오류: ' + e); }});
+        }}
+        </script>
+        <button onclick="sendNtfy()" style="
             background-color: #FF6B35; color: white; border: none;
             border-radius: 8px; padding: 6px 14px; font-size: 13px;
-            font-weight: bold; cursor: pointer; margin-top: 4px;
-            width: 100%;
+            font-weight: bold; cursor: pointer; margin-top: 4px; width: 100%;
         ">📣 공지 알림 발송</button>
         """, unsafe_allow_html=True)
 
