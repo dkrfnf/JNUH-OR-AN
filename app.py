@@ -511,13 +511,13 @@ st.markdown("""
             gap: 8px !important;
         }
         .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(1) {
-            grid-column: 1; grid-row: 1;
+            grid-column: 2; grid-row: 1;
         }
         .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(2) {
-            grid-column: 1; grid-row: 2;
+            grid-column: 2; grid-row: 2;
         }
         .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(3) {
-            grid-column: 2; grid-row: 1 / span 2;
+            grid-column: 1; grid-row: 1 / span 2;
         }
         div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] { flex-direction: row !important; gap: 20px !important; }
         div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] > div { order: unset !important; margin-bottom: 0px !important; }
@@ -609,18 +609,14 @@ with col_notice:
     if notice_time == "":
         notice_time = "-"
 
-    # 공지사항 헤더 + 발송 버튼 (항상 가로 배치)
-    notice_header_col, notice_btn_col = st.columns([0.7, 0.3], gap="small")
-    with notice_header_col:
-        st.markdown(f"""
-            <div style="margin-bottom: 4px; margin-top: 5px;">
-                <span style="font-weight: bold; font-size: 1.15rem;">📢 공지사항</span><br>
-                <span style="font-size: 12px; color: #D32F2F; font-weight: bold;">Update: {notice_time}</span>
-            </div>
-        """, unsafe_allow_html=True)
-    with notice_btn_col:
-        st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
-        send_notice = st.button("📣 발송", key="send_notice_btn", use_container_width=True)
+    # 공지사항 헤더 + 발송 버튼 한 줄 인라인
+    st.markdown(f"""
+        <div style="display:flex; align-items:center; gap:8px; margin-top:5px; margin-bottom:2px;">
+            <span style="font-weight:bold; font-size:1.15rem; white-space:nowrap;">📢 공지사항</span>
+            <span style="font-size:12px; color:#D32F2F; font-weight:bold; white-space:nowrap;">Update: {notice_time}</span>
+        </div>
+    """, unsafe_allow_html=True)
+    send_notice = st.button("📣 발송", key="send_notice_btn", use_container_width=False)
 
     st.text_area(
         "공지사항 내용", key="notice_area", height=120, label_visibility="collapsed",
