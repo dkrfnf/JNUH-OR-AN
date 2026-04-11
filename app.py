@@ -569,49 +569,66 @@ with col_notice:
 
     st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
 
+    # 어레인지 완료 토글 (버튼만)
+    arrange_done = load_arrange_done()
+    new_arrange = st.toggle("어레인지 완료", value=arrange_done, key="arrange_toggle", label_visibility="collapsed")
+    if new_arrange != arrange_done:
+        save_arrange_done(new_arrange)
+        st.rerun()
+
+    # 어레인지 완료 시 메시지 표시
+    if arrange_done:
+        st.markdown("""
+            <div style='
+                background-color: #E8F5E9; border: 2px solid #4CAF50;
+                border-radius: 8px; padding: 10px; text-align: center;
+                font-size: 16px; font-weight: bold; color: #2E7D32;
+                margin: 5px 0;
+            '>✅ 오늘 어레인지 끝!</div>
+        """, unsafe_allow_html=True)
+
+    st.markdown("<div style='height: 5px;'></div>", unsafe_allow_html=True)
+
     notice_time = load_notice_time()
     if notice_time == "":
         notice_time = "-"
 
-    # 공지사항 헤더 + 발송 버튼
-    hdr_col, send_col = st.columns([0.65, 0.35])
-    with hdr_col:
-        st.markdown(f"""
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; margin-top: 5px;">
-                <h5 style="margin:0; font-weight: bold; font-size: 1.35rem;">📢 공지사항</h5>
-                <span style="font-size: 12px; color: #D32F2F; font-weight: bold;">Update: {notice_time}</span>
-            </div>
-        """, unsafe_allow_html=True)
-    with send_col:
-        send_clicked = st.button("📣 알림 발송", use_container_width=True)
+    st.markdown(f"""
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; margin-top: 5px;">
+            <h5 style="margin:0; font-weight: bold; font-size: 1.35rem;">📢 공지사항</h5>
+            <span style="font-size: 12px; color: #D32F2F; font-weight: bold;">Update: {notice_time}</span>
+        </div>
+    """, unsafe_allow_html=True)
 
     st.text_area(
         "공지사항 내용", key="notice_area", height=120, label_visibility="collapsed",
         placeholder="전달사항을 입력하세요...", on_change=save_notice_callback
     )
 
-    if send_clicked:
-        notice_content = st.session_state.get("notice_area", "").strip()
-        if not notice_content:
-            st.warning("공지 내용을 먼저 입력하세요.")
-        else:
-            now_time = get_korean_time_str()
-            result = send_ntfy(
-                title=f"JNUH OR Notice ({now_time})",
-                message=notice_content,
-                priority="high"
-            )
-            if result.get("ok"):
-                st.toast("알림 발송 완료!", icon="📣")
+    st.markdown("<div style='height: 6px;'></div>", unsafe_allow_html=True)
+
+    save_col, send_col = st.columns(2)
+    with save_col:
+        if st.button("변경사항 저장", use_container_width=True):
+            save_notice_callback()
+            save_data(df)
+            st.toast("모든 변경사항이 저장되었습니다!", icon="✅")
+    with send_col:
+        if st.button("📣 알림 발송", use_container_width=True):
+            notice_content = st.session_state.get("notice_area", "").strip()
+            if not notice_content:
+                st.warning("공지 내용을 먼저 입력하세요.")
             else:
-                st.error(f"알림 발송 실패 (status={result.get('status_code')}): {result.get('text')}")
-
-    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
-
-    if st.button("변경사항 저장", use_container_width=False):
-        save_notice_callback()
-        save_data(df)
-        st.toast("모든 변경사항이 저장되었습니다!", icon="✅")
+                now_time = get_korean_time_str()
+                result = send_ntfy(
+                    title=f"JNUH OR Notice ({now_time})",
+                    message=notice_content,
+                    priority="high"
+                )
+                if result.get("ok"):
+                    st.toast("알림 발송 완료!", icon="📣")
+                else:
+                    st.error(f"알림 발송 실패: {result.get('text')}")
 
     st.markdown("<div style='margin-top: 3px; margin-bottom: 20px; font-weight: bold; font-size: 14px;'>🚀 빠른 이동</div>", unsafe_allow_html=True)
 
