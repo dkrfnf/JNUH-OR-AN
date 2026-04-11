@@ -13,7 +13,7 @@ NTFY_URL = f"https://ntfy.sh/{NTFY_TOPIC}"
 def send_ntfy(title: str, message: str, priority: str = "high"):
     """ntfy 푸시 알림 발송"""
     try:
-        requests.post(
+        resp = requests.post(
             NTFY_URL,
             data=message.encode("utf-8"),
             headers={
@@ -21,10 +21,19 @@ def send_ntfy(title: str, message: str, priority: str = "high"):
                 "Priority": priority,   # urgent / high / default / low
                 "Tags": "loudspeaker",  # 🔊 이모지
             },
-            timeout=5
+            timeout=10
         )
-    except Exception:
-        pass  # 알림 실패해도 앱은 정상 작동
+        return {
+            "ok": resp.ok,
+            "status_code": resp.status_code,
+            "text": resp.text[:300]
+        }
+    except Exception as e:
+        return {
+            "ok": False,
+            "status_code": None,
+            "text": str(e)
+        }
 
 # --- 설정 ---
 ZONE_A = ["A1", "A2", "A3", "A4", "A5", "A6", "A7"]
@@ -172,13 +181,13 @@ def load_notice_time():
         except: time.sleep(0.1)
     return ""
 
-def save_notice_callback():
-    new_notice = st.session_state["notice_area"]
+def save_notice_callback(send_push: bool = False):
+    new_notice = st.session_state.get("notice_area", "")
     now_time = get_korean_time_str()
     try:
-        # 이전 공지 내용 읽기 (저장 전에 먼저!)
         prev_notice = load_notice().strip()
-        is_new = new_notice.strip() and new_notice.strip() != prev_notice
+        stripped_notice = new_notice.strip()
+        is_new = bool(stripped_notice) and stripped_notice != prev_notice
 
         with open(NOTICE_FILE, "w", encoding="utf-8") as f:
             f.write(new_notice)
@@ -191,14 +200,38 @@ def save_notice_callback():
 
         st.session_state["last_server_time"] = now_time
 
-        # 📢 ntfy 푸시 알림 발송 (새 내용일 때만)
-        if is_new:
-            send_ntfy(
+        if send_push:
+            if not stripped_notice:
+                return {
+                    "saved": True,
+                    "sent": False,
+                    "reason": "empty"
+                }
+
+            result = send_ntfy(
                 title=f"📢 JNUH OR 공지 ({now_time})",
-                message=new_notice.strip(),
+                message=stripped_notice,
                 priority="high"
             )
-    except: pass
+            return {
+                "saved": True,
+                "sent": result.get("ok", False),
+                "is_new": is_new,
+                "status_code": result.get("status_code"),
+                "response_text": result.get("text", "")
+            }
+
+        return {
+            "saved": True,
+            "sent": False,
+            "is_new": is_new
+        }
+    except Exception as e:
+        return {
+            "saved": False,
+            "sent": False,
+            "reason": str(e)
+        }
 
 def load_off_residents():
     """여러 명의 OFF 전공의를 리스트로 반환"""
@@ -569,10 +602,13 @@ with col_notice:
 
     st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
 
+    st.markdown("<div style='height: 5px;'></div>", unsafe_allow_html=True)
+
     notice_time = load_notice_time()
     if notice_time == "":
         notice_time = "-"
 
+    # 공지사항 헤더
     st.markdown(f"""
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; margin-top: 5px;">
             <h5 style="margin:0; font-weight: bold; font-size: 1.35rem;">📢 공지사항</h5>
@@ -580,50 +616,40 @@ with col_notice:
         </div>
     """, unsafe_allow_html=True)
 
-    st.text_area(
-        "공지사항 내용", key="notice_area", height=120, label_visibility="collapsed",
-        placeholder="전달사항을 입력하세요...", on_change=save_notice_callback
-    )
+    with st.form("notice_form", clear_on_submit=False):
+        st.text_area(
+            "공지사항 내용", key="notice_area", height=120, label_visibility="collapsed",
+            placeholder="전달사항을 입력하세요..."
+        )
 
-    import json
-    import streamlit.components.v1 as components
-    current_notice = st.session_state.get("notice_area", "").strip()
-    notice_json = json.dumps(current_notice)
-    ntfy_topic = NTFY_TOPIC
+        btn_col1, btn_col2 = st.columns(2)
+        with btn_col1:
+            save_only = st.form_submit_button("💾 저장", use_container_width=True)
+        with btn_col2:
+            save_and_send = st.form_submit_button("📣 저장 + 알림발송", use_container_width=True)
 
-    btn_col1, btn_col2 = st.columns([1, 1])
-    with btn_col1:
-        if st.button("변경사항 저장", use_container_width=True):
-            save_notice_callback()
-            save_data(df)
-            st.toast("모든 변경사항이 저장되었습니다!", icon="✅")
-    with btn_col2:
-        components.html(f"""
-        <script>
-        function sendNtfy() {{
-            var body = {notice_json};
-            if (!body) {{ alert('공지 내용을 먼저 입력하세요.'); return; }}
-            fetch('https://ntfy.sh/{ntfy_topic}', {{
-                method: 'POST',
-                headers: {{
-                    'Title': 'JNUH OR Notice',
-                    'Priority': 'high',
-                    'Tags': 'loudspeaker'
-                }},
-                body: body
-            }}).then(function(r) {{
-                if(r.ok) {{ alert('알림 발송 완료!'); }}
-                else {{ alert('발송 실패: ' + r.status); }}
-            }}).catch(function(e) {{ alert('오류: ' + e); }});
-        }}
-        </script>
-        <button onclick="sendNtfy()" style="
-            background-color: #FF6B35; color: white; border: none;
-            border-radius: 8px; padding: 5px 8px; font-size: 12px;
-            font-weight: bold; cursor: pointer; width: 100%; height: 36px;
-            margin-top: 2px;
-        ">알림 발송</button>
-        """, height=45)
+    if save_only:
+        result = save_notice_callback(send_push=False)
+        save_data(df)
+        if result.get("saved"):
+            st.toast("공지사항이 저장되었습니다!", icon="✅")
+        else:
+            st.error(f"공지 저장 실패: {result.get('reason', 'unknown error')}")
+
+    if save_and_send:
+        result = save_notice_callback(send_push=True)
+        save_data(df)
+        if result.get("reason") == "empty":
+            st.warning("공지 내용을 먼저 입력하세요.")
+        elif result.get("saved") and result.get("sent"):
+            code = result.get("status_code")
+            st.success(f"공지 저장 및 알림 발송 완료 ({code})")
+        elif result.get("saved") and not result.get("sent"):
+            code = result.get("status_code")
+            detail = result.get("response_text", "")
+            st.error(f"공지는 저장됐지만 알림 발송은 실패했습니다. status={code}, detail={detail}")
+        else:
+            st.error(f"공지 저장 실패: {result.get('reason', 'unknown error')}")
 
     st.markdown("<div style='margin-top: 3px; margin-bottom: 20px; font-weight: bold; font-size: 14px;'>🚀 빠른 이동</div>", unsafe_allow_html=True)
 
