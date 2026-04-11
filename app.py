@@ -404,7 +404,7 @@ def render_final_card(room_name, df):
                 on_change=update_data_callback, args=(room_name, 'Status', key_status)
             )
             
-        st.markdown("<div style='height: 15px;'></div>", unsafe_allow_html=True)
+        st.markdown("<div style='height: 6px;'></div>", unsafe_allow_html=True)
 
         # [변경] 하단: 메모 입력창(왼쪽) + 교대 상태 선택(오른쪽)
         s1, s2 = st.columns([1.5, 1], gap="small")
@@ -453,7 +453,7 @@ st.markdown("""
     [data-testid="stVerticalBlock"] { gap: 5px !important; }
     [data-testid="stVerticalBlockBorderWrapper"] [data-testid="stVerticalBlock"] { gap: 2rem !important; }
     [data-testid="stVerticalBlockBorderWrapper"] { margin-bottom: 2px !important; padding: 0px !important; }
-    [data-testid="stVerticalBlockBorderWrapper"] > div { padding-top: 10px !important; padding-bottom: 10px !important; }
+    [data-testid="stVerticalBlockBorderWrapper"] > div { padding-top: 6px !important; padding-bottom: 6px !important; }
     h4 { margin-top: 0px !important; margin-bottom: 10px !important; padding-bottom: 0px !important; z-index: 1; position: relative; }
     hr { margin-top: 0.2rem !important; margin-bottom: 0.5rem !important; }
     
@@ -503,10 +503,22 @@ st.markdown("""
     div[data-testid="stButton"] button:hover p { color: #004080 !important; }
 
     @media (max-width: 900px) {
-        .block-container > div > div > div[data-testid="stHorizontalBlock"] { display: flex !important; flex-direction: column !important; }
-        .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(3) { order: 1; margin-bottom: 20px; }
-        .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(1) { order: 2; }
-        .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(2) { order: 3; }
+        /* 최상위 3컬럼: A구역(1), B구역(2), 공지(3) → 공지를 오른쪽 상단에 유지 */
+        .block-container > div > div > div[data-testid="stHorizontalBlock"] {
+            display: grid !important;
+            grid-template-columns: 1fr 1fr !important;
+            grid-template-rows: auto auto !important;
+            gap: 8px !important;
+        }
+        .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(1) {
+            grid-column: 1; grid-row: 1;
+        }
+        .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(2) {
+            grid-column: 1; grid-row: 2;
+        }
+        .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(3) {
+            grid-column: 2; grid-row: 1 / span 2;
+        }
         div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] { flex-direction: row !important; gap: 20px !important; }
         div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] > div { order: unset !important; margin-bottom: 0px !important; }
 
@@ -597,17 +609,17 @@ with col_notice:
     if notice_time == "":
         notice_time = "-"
 
-    # 공지사항 헤더 + 발송 버튼
-    header_left, header_right = st.columns([0.68, 0.32], gap="small")
-    with header_left:
+    # 공지사항 헤더 + 발송 버튼 (항상 가로 배치)
+    notice_header_col, notice_btn_col = st.columns([0.7, 0.3], gap="small")
+    with notice_header_col:
         st.markdown(f"""
-            <div style="margin-bottom: 5px; margin-top: 5px;">
-                <h5 style="margin:0; font-weight: bold; font-size: 1.35rem;">📢 공지사항</h5>
+            <div style="margin-bottom: 4px; margin-top: 5px;">
+                <span style="font-weight: bold; font-size: 1.15rem;">📢 공지사항</span><br>
                 <span style="font-size: 12px; color: #D32F2F; font-weight: bold;">Update: {notice_time}</span>
             </div>
         """, unsafe_allow_html=True)
-    with header_right:
-        st.markdown("<div style='height: 6px;'></div>", unsafe_allow_html=True)
+    with notice_btn_col:
+        st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
         send_notice = st.button("📣 발송", key="send_notice_btn", use_container_width=True)
 
     st.text_area(
