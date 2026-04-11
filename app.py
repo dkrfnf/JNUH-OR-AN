@@ -478,16 +478,16 @@ st.markdown("""
         div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] > div { order: unset !important; margin-bottom: 0px !important; }
 
         /* 변경사항 저장 버튼 플로팅 */
-        div[data-testid="stButton"]:first-of-type {
+        .save-btn-wrap {
             position: fixed !important; bottom: 20px !important; left: 80px !important; width: auto !important; z-index: 999999 !important;
             background-color: transparent !important; margin: 0 !important;
         }
-        div[data-testid="stButton"]:first-of-type button {
+        .save-btn-wrap div[data-testid="stButton"] button {
             width: 220px !important; height: 50px !important; font-size: 13px !important; border-radius: 25px !important;
             box-shadow: 0px 4px 15px rgba(0, 87, 164, 0.3) !important; padding: 0 !important;
             background-color: #E6F2FF !important; border: 2px solid #0057A4 !important;
         }
-        div[data-testid="stButton"]:first-of-type button p { color: #0057A4 !important; font-size: 13px !important; }
+        .save-btn-wrap div[data-testid="stButton"] button p { color: #0057A4 !important; font-size: 13px !important; }
 
         .floating-top-btn {
             position: fixed; bottom: 20px; left: 15px; width: 50px; height: 50px; background-color: #FFFFFF; color: #333;
@@ -593,42 +593,48 @@ with col_notice:
     if notice_time == "":
         notice_time = "-"
 
-    st.markdown(f"""
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; margin-top: 5px;">
-            <h5 style="margin:0; font-weight: bold; font-size: 1.35rem;">📢 공지사항</h5>
-            <span style="font-size: 12px; color: #D32F2F; font-weight: bold;">Update: {notice_time}</span>
-        </div>
-    """, unsafe_allow_html=True)
+    # 공지사항 헤더 + 알림 발송 버튼
+    notice_hdr_col, notice_btn_col = st.columns([0.62, 0.38])
+    with notice_hdr_col:
+        st.markdown(f"""
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; margin-top: 5px;">
+                <h5 style="margin:0; font-weight: bold; font-size: 1.35rem;">📢 공지사항</h5>
+                <span style="font-size: 12px; color: #D32F2F; font-weight: bold;">Update: {notice_time}</span>
+            </div>
+        """, unsafe_allow_html=True)
+    with notice_btn_col:
+        send_clicked = st.button("📣 알림 발송", use_container_width=True, key="send_ntfy_btn")
+
+    if send_clicked:
+        notice_content = st.session_state.get("notice_area", "").strip()
+        if not notice_content:
+            st.warning("공지 내용을 먼저 입력하세요.")
+        else:
+            now_time = get_korean_time_str()
+            result = send_ntfy(
+                title=f"JNUH OR Notice ({now_time})",
+                message=notice_content,
+                priority="high"
+            )
+            if result.get("ok"):
+                st.toast("알림 발송 완료!", icon="📣")
+            else:
+                st.error(f"알림 발송 실패: {result.get('text')}")
 
     st.text_area(
         "공지사항 내용", key="notice_area", height=120, label_visibility="collapsed",
         placeholder="전달사항을 입력하세요...", on_change=save_notice_callback
     )
 
-    st.markdown("<div style='height: 6px;'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
 
-    save_col, send_col = st.columns(2)
-    with save_col:
-        if st.button("변경사항 저장", use_container_width=True):
-            save_notice_callback()
-            save_data(df)
-            st.toast("모든 변경사항이 저장되었습니다!", icon="✅")
-    with send_col:
-        if st.button("📣 알림 발송", use_container_width=True):
-            notice_content = st.session_state.get("notice_area", "").strip()
-            if not notice_content:
-                st.warning("공지 내용을 먼저 입력하세요.")
-            else:
-                now_time = get_korean_time_str()
-                result = send_ntfy(
-                    title=f"JNUH OR Notice ({now_time})",
-                    message=notice_content,
-                    priority="high"
-                )
-                if result.get("ok"):
-                    st.toast("알림 발송 완료!", icon="📣")
-                else:
-                    st.error(f"알림 발송 실패: {result.get('text')}")
+    # 변경사항 저장 — .save-btn-wrap으로 감싸서 모바일 플로팅
+    st.markdown("<div class='save-btn-wrap'>", unsafe_allow_html=True)
+    if st.button("변경사항 저장", use_container_width=False):
+        save_notice_callback()
+        save_data(df)
+        st.toast("모든 변경사항이 저장되었습니다!", icon="✅")
+    st.markdown("</div>", unsafe_allow_html=True)
 
     st.markdown("<div style='margin-top: 3px; margin-bottom: 20px; font-weight: bold; font-size: 14px;'>🚀 빠른 이동</div>", unsafe_allow_html=True)
 
