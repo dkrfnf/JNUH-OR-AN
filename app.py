@@ -191,9 +191,6 @@ def save_notice_callback():
 
         st.session_state["last_server_time"] = now_time
 
-        # 디버그
-        st.toast(f"is_new={is_new} / prev='{prev_notice[:15]}' / new='{new_notice.strip()[:15]}'")
-
         # 📢 ntfy 푸시 알림 발송 (새 내용일 때만)
         if is_new:
             send_ntfy(
@@ -614,6 +611,35 @@ with col_notice:
         save_notice_callback()
         save_data(df)
         st.toast("모든 변경사항이 저장되었습니다!", icon="✅")
+
+    # 📢 공지 알림 발송 버튼 (브라우저가 직접 ntfy.sh에 요청)
+    current_notice = st.session_state.get("notice_area", "").strip()
+    if current_notice:
+        ntfy_url = f"https://ntfy.sh/{NTFY_TOPIC}"
+        encoded = current_notice.replace("\", "\\").replace("").replace("
+", "\n")
+        now_time = get_korean_time_str()
+        st.markdown(f"""
+        <button onclick="
+            fetch('{ntfy_url}', {{
+                method: 'POST',
+                headers: {{
+                    'Title': '📢 JNUH OR 공지 ({now_time})',
+                    'Priority': 'high',
+                    'Tags': 'loudspeaker'
+                }},
+                body: 
+            }}).then(r => {{
+                if(r.ok) {{ alert('✅ 알림 발송 완료!'); }}
+                else {{ alert('❌ 발송 실패: ' + r.status); }}
+            }}).catch(e => {{ alert('❌ 오류: ' + e); }});
+        " style="
+            background-color: #FF6B35; color: white; border: none;
+            border-radius: 8px; padding: 6px 14px; font-size: 13px;
+            font-weight: bold; cursor: pointer; margin-top: 4px;
+            width: 100%;
+        ">📣 공지 알림 발송</button>
+        """, unsafe_allow_html=True)
 
     st.markdown("<div style='margin-top: 3px; margin-bottom: 20px; font-weight: bold; font-size: 14px;'>🚀 빠른 이동</div>", unsafe_allow_html=True)
 
