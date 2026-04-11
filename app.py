@@ -569,36 +569,52 @@ with col_notice:
 
     st.markdown("<div style='height: 20px;'></div>", unsafe_allow_html=True)
 
-    # 어레인지 완료 토글 (버튼만)
-    arrange_done = load_arrange_done()
-    new_arrange = st.toggle("어레인지 완료", value=arrange_done, key="arrange_toggle", label_visibility="collapsed")
-    if new_arrange != arrange_done:
-        save_arrange_done(new_arrange)
-        st.rerun()
-
-    # 어레인지 완료 시 메시지 표시
-    if arrange_done:
-        st.markdown("""
-            <div style='
-                background-color: #E8F5E9; border: 2px solid #4CAF50;
-                border-radius: 8px; padding: 10px; text-align: center;
-                font-size: 16px; font-weight: bold; color: #2E7D32;
-                margin: 5px 0;
-            '>✅ 오늘 어레인지 끝!</div>
-        """, unsafe_allow_html=True)
-
     st.markdown("<div style='height: 5px;'></div>", unsafe_allow_html=True)
 
     notice_time = load_notice_time()
     if notice_time == "":
         notice_time = "-"
 
-    st.markdown(f"""
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; margin-top: 5px;">
-            <h5 style="margin:0; font-weight: bold; font-size: 1.35rem;">📢 공지사항</h5>
-            <span style="font-size: 12px; color: #D32F2F; font-weight: bold;">Update: {notice_time}</span>
+    # 공지사항 헤더 + 발송 버튼 한 줄
+    notice_col, send_col = st.columns([0.7, 0.3])
+    with notice_col:
+        st.markdown(f"""
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; margin-top: 5px;">
+                <h5 style="margin:0; font-weight: bold; font-size: 1.35rem;">📢 공지사항</h5>
+                <span style="font-size: 12px; color: #D32F2F; font-weight: bold;">Update: {notice_time}</span>
+            </div>
+        """, unsafe_allow_html=True)
+    with send_col:
+        import json
+        current_notice = st.session_state.get("notice_area", "").strip()
+        notice_json = json.dumps(current_notice)
+        now_time = get_korean_time_str()
+        title_json = json.dumps(f"📢 JNUH OR 공지 ({now_time})")
+        ntfy_topic = NTFY_TOPIC
+        st.markdown(f"""
+        <script>
+        function sendNtfy() {{
+            var body = {notice_json};
+            var title = {title_json};
+            if (!body) {{ alert('공지 내용을 먼저 입력하세요.'); return; }}
+            fetch('https://ntfy.sh/{ntfy_topic}', {{
+                method: 'POST',
+                headers: {{ 'Title': title, 'Priority': 'high', 'Tags': 'loudspeaker' }},
+                body: body
+            }}).then(function(r) {{
+                if(r.ok) {{ alert('✅ 알림 발송 완료!'); }}
+                else {{ alert('❌ 발송 실패: ' + r.status); }}
+            }}).catch(function(e) {{ alert('❌ 오류: ' + e); }});
+        }}
+        </script>
+        <div style="display:flex; align-items:center; height:100%; padding-top:8px;">
+        <button onclick="sendNtfy()" style="
+            background-color: #FF6B35; color: white; border: none;
+            border-radius: 8px; padding: 6px 10px; font-size: 12px;
+            font-weight: bold; cursor: pointer; width: 100%;
+        ">📣 발송</button>
         </div>
-    """, unsafe_allow_html=True)
+        """, unsafe_allow_html=True)
 
     st.text_area(
         "공지사항 내용", key="notice_area", height=120, label_visibility="collapsed",
@@ -611,40 +627,6 @@ with col_notice:
         save_notice_callback()
         save_data(df)
         st.toast("모든 변경사항이 저장되었습니다!", icon="✅")
-
-    # 📣 공지 알림 발송 버튼 (브라우저가 직접 ntfy.sh에 요청)
-    current_notice = st.session_state.get("notice_area", "").strip()
-    if current_notice:
-        import json
-        ntfy_topic = NTFY_TOPIC
-        now_time = get_korean_time_str()
-        notice_json = json.dumps(current_notice)  # JS-safe 문자열 이스케이프
-        title_json = json.dumps(f"📢 JNUH OR 공지 ({now_time})")
-        st.markdown(f"""
-        <script>
-        function sendNtfy() {{
-            var body = {notice_json};
-            var title = {title_json};
-            fetch('https://ntfy.sh/{ntfy_topic}', {{
-                method: 'POST',
-                headers: {{
-                    'Title': title,
-                    'Priority': 'high',
-                    'Tags': 'loudspeaker'
-                }},
-                body: body
-            }}).then(function(r) {{
-                if(r.ok) {{ alert('✅ 알림 발송 완료!'); }}
-                else {{ alert('❌ 발송 실패: ' + r.status); }}
-            }}).catch(function(e) {{ alert('❌ 오류: ' + e); }});
-        }}
-        </script>
-        <button onclick="sendNtfy()" style="
-            background-color: #FF6B35; color: white; border: none;
-            border-radius: 8px; padding: 6px 14px; font-size: 13px;
-            font-weight: bold; cursor: pointer; margin-top: 4px; width: 100%;
-        ">📣 공지 알림 발송</button>
-        """, unsafe_allow_html=True)
 
     st.markdown("<div style='margin-top: 3px; margin-bottom: 20px; font-weight: bold; font-size: 14px;'>🚀 빠른 이동</div>", unsafe_allow_html=True)
 
