@@ -52,6 +52,9 @@ OP_STATUS = ["▶ 수술", "Ⅱ 대기", "■ 종료"]
 SHIFT_OPTIONS = ["--", "오전교대+", "식사+", "오후교대+"]
 # 전공의 목록 (--는 제외, 실제 이름만)
 RESIDENTS = ["유수란", "임우희", "정우석", "남현우", "이형섭", "이예은", "이준오"]
+# [추가] OFF 선택지에서 뺄 사람
+OFF_EXCLUDE = ["유수란"]
+OFF_OPTIONS = [r for r in RESIDENTS if r not in OFF_EXCLUDE]
 
 # [추가] 밥교대 남은 방 계산 기준
 MEAL_EXCLUDE_ROOMS = ["회복실"]            # 밥교대 대상에서 빼는 방 (목록에 없으면 무시됨)
@@ -544,7 +547,7 @@ st.markdown("""
     /* [추가] 밥교대 남은 방 박스 */
     .meal-box {
         background-color: #FFF0F5; border: 2px solid #FF4081; border-radius: 10px;
-        padding: 8px 10px; margin-top: 10px; margin-bottom: 4px;
+        padding: 8px 10px; margin-top: 10px; margin-bottom: 22px;
     }
     .meal-box.meal-done { background-color: #E8F5E9; border-color: #4CAF50; }
     .meal-title { font-weight: bold; font-size: 15px; color: #C2185B; margin-bottom: 6px; }
@@ -649,10 +652,13 @@ with col_notice:
     # ---------------------------
     # OFF 전공의
     # ---------------------------
-    current_off_list = load_off_residents()
+    current_off_list = [x for x in load_off_residents() if x in OFF_OPTIONS]
 
     if "off_select" not in st.session_state:
         st.session_state["off_select"] = current_off_list
+    else:
+        # 선택지에서 빠진 이름이 남아 있으면 오류가 나므로 정리
+        st.session_state["off_select"] = [x for x in st.session_state["off_select"] if x in OFF_OPTIONS]
 
     def save_off_callback():
         save_off_residents(st.session_state.get("off_select", []))
@@ -667,7 +673,7 @@ with col_notice:
     with off_select_col:
         st.multiselect(
             "OFF 전공의",
-            options=RESIDENTS,
+            options=OFF_OPTIONS,
             key="off_select",
             label_visibility="collapsed",
             placeholder="선택...",
