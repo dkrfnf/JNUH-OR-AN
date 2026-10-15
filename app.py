@@ -9,12 +9,15 @@ from streamlit_autorefresh import st_autorefresh
 # --- ntfy 설정 ---
 NTFY_TOPIC = "oranda-jnuh-2025-xk9q"  # ← 이 이름을 원하는 대로 바꾸세요 (복잡할수록 보안상 좋음)
 NTFY_URL = f"https://ntfy.sh/{NTFY_TOPIC}"
+# [추가] 중앙 컴퓨터 전용 토픽 (중앙 컴퓨터만 이 토픽을 구독)
+NTFY_CENTER_TOPIC = f"{NTFY_TOPIC}-center"
+NTFY_CENTER_URL = f"https://ntfy.sh/{NTFY_CENTER_TOPIC}"
 
-def send_ntfy(title: str, message: str, priority: str = "high"):
+def send_ntfy(title: str, message: str, priority: str = "high", url: str = NTFY_URL):
     """ntfy 푸시 알림 발송"""
     try:
         resp = requests.post(
-            NTFY_URL,
+            url,
             data=message.encode("utf-8"),
             headers={
                 "Title": title,
@@ -731,6 +734,43 @@ with col_notice:
         else:
             st.error(f"공지 저장 실패: {result.get('reason', 'unknown error')}")
 
+    # ---------------------------
+    # [추가] 중앙 컴퓨터로만 보내기 (공지사항에는 저장되지 않음)
+    # ---------------------------
+    def send_center_callback():
+        msg = st.session_state.get("center_msg", "").strip()
+        if not msg:
+            st.session_state["center_result"] = ("warn", "보낼 내용을 먼저 입력하세요.")
+            return
+        result = send_ntfy(
+            title=f"JNUH OR → 중앙 ({get_korean_time_str()})",
+            message=msg,
+            priority="high",
+            url=NTFY_CENTER_URL
+        )
+        if result.get("ok"):
+            st.session_state["center_msg"] = ""
+            st.session_state["center_result"] = ("ok", "중앙 컴퓨터로 보냈습니다.")
+        else:
+            st.session_state["center_result"] = ("err", f"발송 실패: status={result.get('status_code')}, {result.get('text', '')}")
+
+    st.markdown("<div style='margin-top: 12px; margin-bottom: 4px; font-weight: bold; font-size: 14px;'>🖥️ 중앙으로 보내기</div>", unsafe_allow_html=True)
+    center_input_col, center_btn_col = st.columns([0.72, 0.28], gap="small")
+    with center_input_col:
+        st.text_input("중앙 메시지", key="center_msg", label_visibility="collapsed", placeholder="중앙 컴퓨터에만 뜹니다")
+    with center_btn_col:
+        st.button("보내기", key="send_center_btn", on_click=send_center_callback)
+
+    if "center_result" in st.session_state:
+        kind, text = st.session_state.pop("center_result")
+        if kind == "ok":
+            st.toast(text, icon="✅")
+        elif kind == "warn":
+            st.warning(text)
+        else:
+            st.error(text)
+
+    st.markdown("<div style='height: 8px;'></div>", unsafe_allow_html=True)
     st.markdown("<div style='margin-top: 3px; margin-bottom: 8px; font-weight: bold; font-size: 14px;'>🚀 빠른 이동</div>", unsafe_allow_html=True)
 
     links_a = "<div class='link-container'>"
