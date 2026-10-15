@@ -743,7 +743,7 @@ with col_notice:
             st.session_state["center_result"] = ("warn", "보낼 내용을 먼저 입력하세요.")
             return
         result = send_ntfy(
-            title=f"JNUH OR → 중앙 ({get_korean_time_str()})",
+            title=f"JNUH OR Center ({get_korean_time_str()})",  # 제목은 영어만 가능 (한글 넣으면 발송 실패)
             message=msg,
             priority="high",
             url=NTFY_CENTER_URL
