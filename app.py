@@ -4,6 +4,7 @@ from datetime import datetime, timedelta
 import os
 import time
 import requests
+import streamlit.components.v1 as components
 from streamlit_autorefresh import st_autorefresh
 
 # --- ntfy 설정 ---
@@ -27,12 +28,14 @@ def get_room_topic(room):
 SENDER_NAMES = {code: room for room, code in ROOM_TOPIC_CODE.items()}
 SENDER_NAMES["center"] = "중앙"
 
-def get_sender_code():
+PC_COOKIE = "oranda_pc"   # 이 컴퓨터가 누구인지 브라우저에 기억 (작업표시줄 앱으로 열어도 유지)
+
+def _code_from_url():
     try:
         code = str(st.query_params.get("from", "")).strip().lower()
         if code in SENDER_NAMES:
             return code
-        # [추가] ?a3 처럼 짧게 써도 인식
+        # ?a3 처럼 짧게 써도 인식
         for key in st.query_params.keys():
             if str(key).strip().lower() in SENDER_NAMES:
                 return str(key).strip().lower()
@@ -40,10 +43,41 @@ def get_sender_code():
         pass
     return ""
 
-def tag_message(msg):
-    """메시지 앞에 [A3에서] 처럼 보낸 컴퓨터를 붙임 (주소에 from이 없으면 그대로)"""
+def _code_from_cookie():
+    try:
+        code = str(st.context.cookies.get(PC_COOKIE, "")).strip().lower()
+        return code if code in SENDER_NAMES else ""
+    except Exception:
+        return ""
+
+def get_sender_code():
+    """우선순위: 주소 꼬리표(?a3) → 이번에 고른 값 → 브라우저에 기억된 값"""
+    code = _code_from_url()
+    if code:
+        return code
+    if "pc_code" in st.session_state:
+        return st.session_state["pc_code"]
+    return _code_from_cookie()
+
+def write_pc_cookie_if_needed():
+    """주소로 열었거나 설정에서 바꿨을 때, 브라우저에 1년간 기억 (한 번만 실행)"""
     code = get_sender_code()
-    return f"[{SENDER_NAMES[code]}에서] {msg}" if code else msg
+    if st.session_state.get("pc_cookie_written") == code:
+        return
+    if code == _code_from_cookie() and "pc_code" not in st.session_state:
+        st.session_state["pc_cookie_written"] = code
+        return
+    if code:
+        js = f"document.cookie = '{PC_COOKIE}={code}; max-age=31536000; path=/; SameSite=Lax';"
+    else:
+        js = f"document.cookie = '{PC_COOKIE}=; max-age=0; path=/; SameSite=Lax';"
+    components.html(f"<script>{js}</script>", height=0)
+    st.session_state["pc_cookie_written"] = code
+
+def tag_message(msg):
+    """메시지 앞에 [A3] 처럼 보낸 컴퓨터를 붙임 (설정 안 한 기기는 그대로)"""
+    code = get_sender_code()
+    return f"[{SENDER_NAMES[code]}] {msg}" if code else msg
 
 def tag_title(title):
     """알림 제목 뒤에 from A3 (영어만 가능)"""
@@ -681,6 +715,23 @@ st.markdown("""
     div[class*="st-key-roomsend_"] button p { font-size: 17px !important; color: #FFFFFF !important; }
     div[class*="st-key-roomsend_"] button:hover { background-color: #E65100 !important; }
 
+    /* [추가] '이 컴퓨터' 버튼: 제목 줄 오른쪽(알림함 왼쪽)으로 올림, 작고 연하게 */
+    div[class*="st-key-pc_toggle"] {
+        display: flex !important; justify-content: flex-end !important; width: 100% !important;
+        margin-top: -29px !important; padding-right: 92px !important; height: 34px !important; box-sizing: border-box;
+        position: relative; z-index: 5;
+    }
+    div[class*="st-key-pc_toggle"] > div, div[class*="st-key-pc_toggle"] div[data-testid="stButton"] {
+        display: flex !important; justify-content: flex-end !important; width: 100% !important;
+    }
+    div[class*="st-key-pc_toggle"] button {
+        background-color: #FFFFFF !important; border: 1px solid #BBBBBB !important;
+        min-height: 28px !important; height: 28px !important; padding: 0 10px !important;
+    }
+    div[class*="st-key-pc_toggle"] button p { color: #555 !important; font-size: 12px !important; }
+    @media (max-width: 600px) { div[class*="st-key-pc_toggle"] { display: none !important; } }
+    div[class*="st-key-pc_select"] { max-width: 320px !important; margin-left: auto !important; }
+
     /* [추가] 핸드폰용 📨 팝오버: 데스크탑(901px 이상)에서는 숨김 */
     @media (min-width: 901px) {
         div[data-testid="stColumn"]:has(div[data-testid="stPopover"]):not(:has(div[data-testid="stColumn"])),
@@ -756,23 +807,48 @@ st.markdown("""
     
     @media (max-width: 600px) {
         div[data-testid="stVerticalBlockBorderWrapper"] { max-width: 95vw; margin: auto; }
+        /* [추가] 핸드폰에서는 '이 컴퓨터 설정' 숨김 */
+        div[data-testid="stExpander"] { display: none !important; }
     }
     </style>
 """, unsafe_allow_html=True)
 
 # [변경] 제목 줄: 왼쪽 제목 / 오른쪽 이 컴퓨터 이름 + 알림함 바로가기
+# [변경] 제목 줄: 왼쪽 제목 / 오른쪽 [이 컴퓨터: A3 버튼] [🔔 알림함]
 _my_code = get_sender_code()
-_my_name = f"이 컴퓨터: {SENDER_NAMES[_my_code]}" if _my_code else ""
 st.markdown(f"""
-    <div style='display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;'>
+    <div style='display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; min-height:34px;'>
         <h3 style='margin:0;'>🩺 JNUH OR Dashboard</h3>
-        <div style='display:flex; align-items:center; gap:8px;'>
-            <span style='font-size:13px; color:#555; font-weight:bold;'>{_my_name}</span>
-            <a href='{get_my_ntfy_link()}' target='_blank' style='text-decoration:none; background:#FFF3E0; color:#E65100;
-               border:1px solid #FF6D00; border-radius:8px; padding:4px 10px; font-size:13px; font-weight:bold;'>🔔 알림함</a>
-        </div>
+        <a href='{get_my_ntfy_link()}' target='_blank' style='text-decoration:none; background:#FFF3E0; color:#E65100;
+           border:1px solid #FF6D00; border-radius:8px; padding:4px 10px; font-size:13px; font-weight:bold;'>🔔 알림함</a>
     </div>
 """, unsafe_allow_html=True)
+
+# '이 컴퓨터: A3' 버튼 — 누르면 아래에 설정이 열림 (CSS로 제목 줄 오른쪽, 알림함 왼쪽에 붙임)
+def toggle_pc_setting():
+    st.session_state["show_pc_setting"] = not st.session_state.get("show_pc_setting", False)
+
+_pc_btn_label = f"이 컴퓨터: {SENDER_NAMES[_my_code]}" if _my_code else "⚙️ 이 컴퓨터 설정"
+st.button(_pc_btn_label, key="pc_toggle", on_click=toggle_pc_setting)
+
+if st.session_state.get("show_pc_setting", False):
+    pc_labels = ["선택 안 함 (핸드폰 등)", "중앙"] + list(ROOM_TOPIC_CODE.keys())
+    pc_codes = ["", "center"] + list(ROOM_TOPIC_CODE.values())
+
+    def save_pc_callback():
+        label = st.session_state.get("pc_select", pc_labels[0])
+        st.session_state["pc_code"] = pc_codes[pc_labels.index(label)]
+        st.session_state["show_pc_setting"] = False   # 고르면 바로 닫힘
+
+    with st.container():   # 가로 칸(columns)을 쓰지 않음: 핸드폰 배치 CSS와 겹치지 않게
+        st.selectbox(
+            "이 컴퓨터는", pc_labels,
+            index=pc_codes.index(_my_code) if _my_code in pc_codes else 0,
+            key="pc_select", on_change=save_pc_callback,
+            help="한 번 고르면 이 브라우저가 기억해요. 보낼 때 [A3]처럼 표시되고, 🔔 알림함이 이 컴퓨터 알림으로 열려요."
+        )
+
+write_pc_cookie_if_needed()
 st.markdown("---")
 
 df = load_data()
@@ -932,5 +1008,6 @@ with col_notice:
     links_b += "</div>"
 
     st.markdown(links_a + links_b, unsafe_allow_html=True)
+
 
 st.markdown("<a href='#top' class='floating-top-btn'>🔝</a>", unsafe_allow_html=True)
