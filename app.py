@@ -14,7 +14,7 @@ NTFY_CENTER_TOPIC = "oranda-center"
 NTFY_CENTER_URL = f"https://ntfy.sh/{NTFY_CENTER_TOPIC}"
 # [추가] 방별 토픽 코드 (토픽 이름은 영어/숫자만 가능 → 외부는 ext)
 ROOM_TOPIC_CODE = {"A1": "a1", "A2": "a2", "A3": "a3", "A4": "a4", "A5": "a5", "A6": "a6", "A7": "a7",
-                   "B1": "b1", "B2": "b2", "B3": "b3", "B4": "b4", "C2": "c2", "외부": "ext"}
+                   "B1": "b1", "B2": "b2", "B3": "b3", "B4": "b4", "C2": "c2", "외부": "ext", "회복실": "pacu"}
 
 ROOM_TOPIC_PREFIX = "oranda"   # 방별·중앙 구독 이름 앞부분 (예: oranda-a1, oranda-center)
 
@@ -49,7 +49,7 @@ def send_ntfy(title: str, message: str, priority: str = "high", url: str = NTFY_
 
 # --- 설정 ---
 ZONE_A = ["A1", "A2", "A3", "A4", "A5", "A6", "A7"]
-ZONE_B = ["B1", "B2", "B3", "B4", "C2", "외부"]
+ZONE_B = ["B1", "B2", "B3", "B4", "C2", "외부", "회복실"]
 ALL_ROOMS = ZONE_A + ZONE_B
 DATA_FILE = 'or_status_kst.csv'
 NOTICE_FILE = 'notice.txt'
@@ -159,8 +159,15 @@ def load_data():
             df = pd.read_csv(DATA_FILE, encoding='utf-8')
             current_rooms = df['Room'].tolist()
             if len(df) != len(ALL_ROOMS) or current_rooms != ALL_ROOMS:
-                os.remove(DATA_FILE)
-                continue 
+                # [변경] 방 목록이 바뀌면 파일을 지우지 않고, 기존 방 상태는 유지한 채 새 방만 추가
+                df = df.drop_duplicates('Room')
+                df = df[df['Room'].isin(ALL_ROOMS)].set_index('Room').reindex(ALL_ROOMS).reset_index()
+                df['Status'] = df['Status'].fillna('▶ 수술')
+                df['Last_Update'] = df['Last_Update'].fillna(get_korean_time_str())
+                if 'Memo' in df.columns: df['Memo'] = df['Memo'].fillna('')
+                if 'Shift' in df.columns: df['Shift'] = df['Shift'].fillna('--')
+                if 'Meal_Done' in df.columns: df['Meal_Done'] = df['Meal_Done'].fillna(False)
+                df.to_csv(DATA_FILE, index=False, encoding='utf-8')
             
             # [변경] 구버전 파일 호환성 처리 (컬럼이 없으면 생성)
             if 'Memo' not in df.columns: df['Memo'] = ''
@@ -357,8 +364,8 @@ def update_data_callback(room_name, col_name, session_key):
             save_data(df)
 
 # --- [추가] 방으로 보내기 ---
-def send_room_callback(room_name):
-    key_msg = f"msg_{room_name}"
+def send_room_callback(room_name, key_msg=None):
+    key_msg = key_msg or f"msg_{room_name}"
     msg = st.session_state.get(key_msg, "").strip()
     if not msg:
         st.session_state["room_result"] = ("warn", f"{room_name}: 보낼 내용을 먼저 입력하세요.")
@@ -504,15 +511,24 @@ def render_final_card(room_name, df):
         st.markdown("<div style='height: 6px;'></div>", unsafe_allow_html=True)
 
         # [변경] 하단: 방으로 보내기(왼쪽) + 교대 상태 선택(오른쪽)
-        s1, s_btn, s2 = st.columns([1.15, 0.4, 1], gap="small")
+        # 데스크탑: [입력칸][📨][교대]  /  핸드폰: [📨(누르면 입력창)][교대]  — CSS로 둘 중 하나만 보임
+        s1, s_btn, s_pop, s2 = st.columns([1.05, 0.5, 0.5, 1], gap="small")
         
         key_msg = f"msg_{room_name}"
         key_shift = f"shift_{room_name}"
         
         # 1. 방으로 보낼 메시지 + 보내기 버튼
         s1.text_input("방으로 보내기", key=key_msg, placeholder="방으로 보내기", label_visibility="collapsed")
-        s_btn.button("📨", key=f"send_{room_name}", on_click=send_room_callback, args=(room_name,),
+        s_btn.button("📨", key=f"roomsend_{room_name}", on_click=send_room_callback, args=(room_name,),
                      help=f"{room_name} 컴퓨터로 보내기")
+
+        # 핸드폰용: 📨를 누르면 작은 입력창이 열림
+        with s_pop:
+            with st.popover("📨"):
+                key_mmsg = f"mmsg_{room_name}"
+                st.text_input(f"{room_name}로 보내기", key=key_mmsg, placeholder=f"{room_name} 컴퓨터로 보낼 내용")
+                st.button("보내기", key=f"mroomsend_{room_name}", on_click=send_room_callback,
+                          args=(room_name, key_mmsg))
         
         # 2. 교대/식사 상태 (선택)
         s2.selectbox("교대", SHIFT_OPTIONS, key=key_shift, label_visibility="collapsed",
@@ -619,6 +635,31 @@ st.markdown("""
     div[data-testid="stButton"] button:hover { background-color: #CCE4FF !important; border-color: #004080 !important; }
     div[data-testid="stButton"] button:hover p { color: #004080 !important; }
 
+    /* [추가] 방으로 보내기 버튼 (카드 안 📨) */
+    div[class*="st-key-roomsend_"] button {
+        background-color: #FF6D00 !important; border: 1px solid #E65100 !important;
+        width: 100% !important; max-width: 100% !important; min-width: 34px !important;
+        height: 32px !important; min-height: 32px !important; padding: 0 !important;
+    }
+    div[class*="st-key-roomsend_"] button p { font-size: 17px !important; color: #FFFFFF !important; }
+    div[class*="st-key-roomsend_"] button:hover { background-color: #E65100 !important; }
+
+    /* [추가] 핸드폰용 📨 팝오버: 데스크탑(901px 이상)에서는 숨김 */
+    @media (min-width: 901px) {
+        div[data-testid="stColumn"]:has(div[data-testid="stPopover"]):not(:has(div[data-testid="stColumn"])),
+        div[data-testid="column"]:has(div[data-testid="stPopover"]):not(:has(div[data-testid="column"])) {
+            display: none !important;
+        }
+    }
+    div[data-testid="stVerticalBlock"] div[data-testid="stPopover"] > div > button,
+    div[data-testid="stPopover"] button {
+        background-color: #FF6D00 !important; border: 1px solid #E65100 !important;
+        width: 100% !important; max-width: 100% !important; min-width: 34px !important;
+        height: 32px !important; min-height: 32px !important; padding: 0 !important;
+    }
+    div[data-testid="stPopover"] button p { font-size: 17px !important; color: #FFFFFF !important; }
+    div[data-testid="stPopover"] button svg { display: none !important; }
+
 
 
     @media (max-width: 900px) {
@@ -644,6 +685,22 @@ st.markdown("""
         .block-container > div > div > div[data-testid="stHorizontalBlock"] > div:nth-child(2) {
             grid-column: 2 !important;
             grid-row: 2 !important;
+        }
+        /* [추가] 모든 안쪽 가로줄은 한 줄 유지 (구버전 column / 신버전 stColumn 모두) */
+        div[data-testid="stColumn"] div[data-testid="stHorizontalBlock"],
+        div[data-testid="column"] div[data-testid="stHorizontalBlock"] {
+            flex-direction: row !important; flex-wrap: nowrap !important; gap: 6px !important;
+        }
+        div[data-testid="stColumn"] div[data-testid="stHorizontalBlock"] > div[data-testid="stColumn"],
+        div[data-testid="column"] div[data-testid="stHorizontalBlock"] > div[data-testid="column"] {
+            min-width: 0 !important;
+        }
+        /* [추가] 핸드폰에서는 카드 안 입력칸+📨 대신, 누르면 입력창이 열리는 📨 하나만 보이게 */
+        div[data-testid="stColumn"]:has(div[class*="st-key-msg_"]):not(:has(div[data-testid="stColumn"])),
+        div[data-testid="stColumn"]:has(div[class*="st-key-roomsend_"]):not(:has(div[data-testid="stColumn"])),
+        div[data-testid="column"]:has(div[class*="st-key-msg_"]):not(:has(div[data-testid="column"])),
+        div[data-testid="column"]:has(div[class*="st-key-roomsend_"]):not(:has(div[data-testid="column"])) {
+            display: none !important;
         }
         /* 카드 내부 horizontal block은 row 유지 */
         div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] { flex-direction: row !important; gap: 6px !important; }
@@ -729,7 +786,7 @@ with col_notice:
         notice_time = "-"
 
     # 공지사항 헤더
-    notice_title_col, notice_send_col = st.columns([0.72, 0.28], gap="small")
+    notice_title_col, notice_save_col, notice_send_col = st.columns([0.44, 0.22, 0.34], gap="small")
     with notice_title_col:
         st.markdown(f"""
             <div style="padding-top:2px; line-height:1.25; margin-bottom:2px;">
@@ -737,18 +794,18 @@ with col_notice:
                 <div style="font-size:11px; color:#D32F2F; font-weight:bold; margin-top:4px;">Update: {notice_time}</div>
             </div>
         """, unsafe_allow_html=True)
+    with notice_save_col:
+        st.markdown("<div style='height: 4px;'></div>", unsafe_allow_html=True)
+        save_only = st.button("저장", key="save_notice_btn", use_container_width=True)
     with notice_send_col:
         st.markdown("<div style='height: 4px;'></div>", unsafe_allow_html=True)
-        send_notice = st.button("📣 발송", key="send_notice_btn", use_container_width=True)
+        send_notice = st.button("📣 전체발송", key="send_notice_btn", use_container_width=True)
 
     st.text_area(
-        "공지사항 내용", key="notice_area", height=120, label_visibility="collapsed",
+        "공지사항 내용", key="notice_area", height=68, label_visibility="collapsed",
         placeholder="전달사항을 입력하세요..."
     )
 
-    st.markdown("<div style='height: 10px;'></div>", unsafe_allow_html=True)
-
-    save_only = st.button("변경사항 저장", key="save_notice_btn", use_container_width=False)
 
     if save_only:
         result = save_notice_callback(send_push=False)
@@ -793,7 +850,7 @@ with col_notice:
         else:
             st.session_state["center_result"] = ("err", f"발송 실패: status={result.get('status_code')}, {result.get('text', '')}")
 
-    st.markdown("<div style='margin-top: 12px; margin-bottom: 4px; font-weight: bold; font-size: 14px;'>🖥️ 중앙으로 보내기</div>", unsafe_allow_html=True)
+    st.markdown("<div style='margin-top: 22px; margin-bottom: 10px; font-weight: bold; font-size: 14px;'>🖥️ 중앙으로 보내기</div>", unsafe_allow_html=True)
     center_input_col, center_btn_col = st.columns([0.72, 0.28], gap="small")
     with center_input_col:
         st.text_input("중앙 메시지", key="center_msg", label_visibility="collapsed", placeholder="중앙 컴퓨터에만 뜹니다")
