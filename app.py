@@ -22,6 +22,43 @@ def get_room_topic(room):
     """방별 구독 이름. 예: oranda-a3"""
     return f"{ROOM_TOPIC_PREFIX}-{ROOM_TOPIC_CODE.get(room, room.lower())}"
 
+# --- [추가] 보내는 컴퓨터 표시 ---
+# 각 컴퓨터는 oranda를 주소 뒤에 ?from=코드 를 붙여서 엽니다. 예: oranda.streamlit.app/?from=a3
+SENDER_NAMES = {code: room for room, code in ROOM_TOPIC_CODE.items()}
+SENDER_NAMES["center"] = "중앙"
+
+def get_sender_code():
+    try:
+        code = str(st.query_params.get("from", "")).strip().lower()
+        if code in SENDER_NAMES:
+            return code
+        # [추가] ?a3 처럼 짧게 써도 인식
+        for key in st.query_params.keys():
+            if str(key).strip().lower() in SENDER_NAMES:
+                return str(key).strip().lower()
+    except Exception:
+        pass
+    return ""
+
+def tag_message(msg):
+    """메시지 앞에 [A3에서] 처럼 보낸 컴퓨터를 붙임 (주소에 from이 없으면 그대로)"""
+    code = get_sender_code()
+    return f"[{SENDER_NAMES[code]}에서] {msg}" if code else msg
+
+def tag_title(title):
+    """알림 제목 뒤에 from A3 (영어만 가능)"""
+    code = get_sender_code()
+    return f"{title} from {code.upper()}" if code else title
+
+def get_my_ntfy_link():
+    """이 컴퓨터의 알림함 주소 (from이 없으면 ntfy 앱 첫 화면)"""
+    code = get_sender_code()
+    if code == "center":
+        return f"https://ntfy.sh/{NTFY_CENTER_TOPIC}"
+    if code:
+        return f"https://ntfy.sh/{ROOM_TOPIC_PREFIX}-{code}"
+    return "https://ntfy.sh/app"
+
 def send_ntfy(title: str, message: str, priority: str = "high", url: str = NTFY_URL):
     """ntfy 푸시 알림 발송"""
     try:
@@ -241,8 +278,8 @@ def save_notice_callback(send_push: bool = False):
                 }
 
             result = send_ntfy(
-                title=f"JNUH OR Notice ({now_time})",
-                message=stripped_notice,
+                title=tag_title(f"JNUH OR Notice ({now_time})"),
+                message=tag_message(stripped_notice),
                 priority="high"
             )
             return {
@@ -373,8 +410,8 @@ def send_room_callback(room_name, key_msg=None):
     now = get_korean_time_str()
     code = ROOM_TOPIC_CODE.get(room_name, room_name.lower()).upper()
     result = send_ntfy(
-        title=f"JNUH OR {code} ({now})",   # 제목은 영어만 가능
-        message=msg,
+        title=tag_title(f"JNUH OR {code} ({now})"),   # 제목은 영어만 가능
+        message=tag_message(msg),
         priority="high",
         url=f"https://ntfy.sh/{get_room_topic(room_name)}"
     )
@@ -723,7 +760,19 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-st.markdown("### 🩺 JNUH OR Dashboard")
+# [변경] 제목 줄: 왼쪽 제목 / 오른쪽 이 컴퓨터 이름 + 알림함 바로가기
+_my_code = get_sender_code()
+_my_name = f"이 컴퓨터: {SENDER_NAMES[_my_code]}" if _my_code else ""
+st.markdown(f"""
+    <div style='display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap;'>
+        <h3 style='margin:0;'>🩺 JNUH OR Dashboard</h3>
+        <div style='display:flex; align-items:center; gap:8px;'>
+            <span style='font-size:13px; color:#555; font-weight:bold;'>{_my_name}</span>
+            <a href='{get_my_ntfy_link()}' target='_blank' style='text-decoration:none; background:#FFF3E0; color:#E65100;
+               border:1px solid #FF6D00; border-radius:8px; padding:4px 10px; font-size:13px; font-weight:bold;'>🔔 알림함</a>
+        </div>
+    </div>
+""", unsafe_allow_html=True)
 st.markdown("---")
 
 df = load_data()
@@ -839,8 +888,8 @@ with col_notice:
             st.session_state["center_result"] = ("warn", "보낼 내용을 먼저 입력하세요.")
             return
         result = send_ntfy(
-            title=f"JNUH OR Center ({get_korean_time_str()})",  # 제목은 영어만 가능 (한글 넣으면 발송 실패)
-            message=msg,
+            title=tag_title(f"JNUH OR Center ({get_korean_time_str()})"),  # 제목은 영어만 가능 (한글 넣으면 발송 실패)
+            message=tag_message(msg),
             priority="high",
             url=NTFY_CENTER_URL
         )
