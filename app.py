@@ -10,8 +10,17 @@ from streamlit_autorefresh import st_autorefresh
 NTFY_TOPIC = "oranda-jnuh-2025-xk9q"  # ← 이 이름을 원하는 대로 바꾸세요 (복잡할수록 보안상 좋음)
 NTFY_URL = f"https://ntfy.sh/{NTFY_TOPIC}"
 # [추가] 중앙 컴퓨터 전용 토픽 (중앙 컴퓨터만 이 토픽을 구독)
-NTFY_CENTER_TOPIC = f"{NTFY_TOPIC}-center"
+NTFY_CENTER_TOPIC = "oranda-center"
 NTFY_CENTER_URL = f"https://ntfy.sh/{NTFY_CENTER_TOPIC}"
+# [추가] 방별 토픽 코드 (토픽 이름은 영어/숫자만 가능 → 외부는 ext)
+ROOM_TOPIC_CODE = {"A1": "a1", "A2": "a2", "A3": "a3", "A4": "a4", "A5": "a5", "A6": "a6", "A7": "a7",
+                   "B1": "b1", "B2": "b2", "B3": "b3", "B4": "b4", "C2": "c2", "외부": "ext"}
+
+ROOM_TOPIC_PREFIX = "oranda"   # 방별·중앙 구독 이름 앞부분 (예: oranda-a1, oranda-center)
+
+def get_room_topic(room):
+    """방별 구독 이름. 예: oranda-a3"""
+    return f"{ROOM_TOPIC_PREFIX}-{ROOM_TOPIC_CODE.get(room, room.lower())}"
 
 def send_ntfy(title: str, message: str, priority: str = "high", url: str = NTFY_URL):
     """ntfy 푸시 알림 발송"""
@@ -347,6 +356,27 @@ def update_data_callback(room_name, col_name, session_key):
 
             save_data(df)
 
+# --- [추가] 방으로 보내기 ---
+def send_room_callback(room_name):
+    key_msg = f"msg_{room_name}"
+    msg = st.session_state.get(key_msg, "").strip()
+    if not msg:
+        st.session_state["room_result"] = ("warn", f"{room_name}: 보낼 내용을 먼저 입력하세요.")
+        return
+    now = get_korean_time_str()
+    code = ROOM_TOPIC_CODE.get(room_name, room_name.lower()).upper()
+    result = send_ntfy(
+        title=f"JNUH OR {code} ({now})",   # 제목은 영어만 가능
+        message=msg,
+        priority="high",
+        url=f"https://ntfy.sh/{get_room_topic(room_name)}"
+    )
+    if result.get("ok"):
+        st.session_state[key_msg] = ""
+        st.session_state["room_result"] = ("ok", f"{room_name}로 보냈습니다.")
+    else:
+        st.session_state["room_result"] = ("err", f"{room_name} 발송 실패: {result.get('text', '')}")
+
 # --- [중요] 스타일 헬퍼 함수 (테두리 색상 로직) ---
 def get_status_style(room, df):
     try:
@@ -473,15 +503,16 @@ def render_final_card(room_name, df):
             
         st.markdown("<div style='height: 6px;'></div>", unsafe_allow_html=True)
 
-        # [변경] 하단: 메모 입력창(왼쪽) + 교대 상태 선택(오른쪽)
-        s1, s2 = st.columns([1.5, 1], gap="small")
+        # [변경] 하단: 방으로 보내기(왼쪽) + 교대 상태 선택(오른쪽)
+        s1, s_btn, s2 = st.columns([1.15, 0.4, 1], gap="small")
         
-        key_memo = f"memo_{room_name}"
+        key_msg = f"msg_{room_name}"
         key_shift = f"shift_{room_name}"
         
-        # 1. 메모 (Free Text)
-        s1.text_input("메모", key=key_memo, placeholder="메모", label_visibility="collapsed",
-                      on_change=update_data_callback, args=(room_name, 'Memo', key_memo))
+        # 1. 방으로 보낼 메시지 + 보내기 버튼
+        s1.text_input("방으로 보내기", key=key_msg, placeholder="방으로 보내기", label_visibility="collapsed")
+        s_btn.button("📨", key=f"send_{room_name}", on_click=send_room_callback, args=(room_name,),
+                     help=f"{room_name} 컴퓨터로 보내기")
         
         # 2. 교대/식사 상태 (선택)
         s2.selectbox("교대", SHIFT_OPTIONS, key=key_shift, label_visibility="collapsed",
@@ -615,7 +646,7 @@ st.markdown("""
             grid-row: 2 !important;
         }
         /* 카드 내부 horizontal block은 row 유지 */
-        div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] { flex-direction: row !important; gap: 20px !important; }
+        div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] { flex-direction: row !important; gap: 6px !important; }
         div[data-testid="stVerticalBlockBorderWrapper"] div[data-testid="stHorizontalBlock"] > div { order: unset !important; margin-bottom: 0px !important; }
 
 
@@ -647,6 +678,14 @@ col_a, col_b, col_notice = st.columns([1, 1, 0.55], gap="small")
 
 render_zone(col_a, "A 구역", ZONE_A, df)
 render_zone(col_b, "B / C / 기타", ZONE_B, df)
+
+# [추가] 방으로 보내기 결과 표시
+if "room_result" in st.session_state:
+    _kind, _text = st.session_state.pop("room_result")
+    if _kind == "ok":
+        st.toast(_text, icon="📨")
+    else:
+        st.toast(_text, icon="⚠️")
 
 with col_notice:
     # [추가] 밥교대 남은 방 (오른쪽 열 맨 위 / 모바일에서는 화면 맨 위)
