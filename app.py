@@ -590,12 +590,12 @@ def render_final_card(room_name, df):
         
         # 1. 방으로 보낼 메시지 + 보내기 버튼
         s1.text_input("방으로 보내기", key=key_msg, placeholder="방으로 보내기", label_visibility="collapsed")
-        s_btn.button("📨", key=f"roomsend_{room_name}", on_click=send_room_callback, args=(room_name,),
+        s_btn.button("➤", key=f"roomsend_{room_name}", on_click=send_room_callback, args=(room_name,),
                      help=f"{room_name} 컴퓨터로 보내기")
 
         # 핸드폰용: 📨를 누르면 작은 입력창이 열림
         with s_pop:
-            with st.popover("📨"):
+            with st.popover("➤"):
                 key_mmsg = f"mmsg_{room_name}"
                 st.text_input(f"{room_name}로 보내기", key=key_mmsg, placeholder=f"{room_name} 컴퓨터로 보낼 내용")
                 st.button("보내기", key=f"mroomsend_{room_name}", on_click=send_room_callback,
@@ -708,12 +708,12 @@ st.markdown("""
 
     /* [추가] 방으로 보내기 버튼 (카드 안 📨) */
     div[class*="st-key-roomsend_"] button {
-        background-color: #0057A4 !important; border: 1px solid #004080 !important;
-        width: 100% !important; max-width: 100% !important; min-width: 34px !important;
-        height: 32px !important; min-height: 32px !important; padding: 0 !important;
+        background-color: #7E6FD0 !important; border: 1px solid #7E6FD0 !important; border-radius: 50% !important;
+        width: 34px !important; max-width: 34px !important; min-width: 34px !important;
+        height: 34px !important; min-height: 34px !important; padding: 0 !important;
     }
-    div[class*="st-key-roomsend_"] button p { font-size: 17px !important; color: #FFFFFF !important; }
-    div[class*="st-key-roomsend_"] button:hover { background-color: #004080 !important; }
+    div[class*="st-key-roomsend_"] button p { font-size: 16px !important; color: #FFFFFF !important; }
+    div[class*="st-key-roomsend_"] button:hover { background-color: #6A5BC0 !important; border-color: #6A5BC0 !important; }
 
     /* [추가] '이 컴퓨터' 버튼: 제목 줄 오른쪽(알림함 왼쪽)으로 올림, 작고 연하게 */
     div[class*="st-key-pc_toggle"] {
@@ -743,12 +743,17 @@ st.markdown("""
     }
     div[data-testid="stVerticalBlock"] div[data-testid="stPopover"] > div > button,
     div[data-testid="stPopover"] button {
-        background-color: #0057A4 !important; border: 1px solid #004080 !important;
-        width: 100% !important; max-width: 100% !important; min-width: 34px !important;
-        height: 32px !important; min-height: 32px !important; padding: 0 !important;
+        background-color: #7E6FD0 !important; border: 1px solid #7E6FD0 !important; border-radius: 50% !important;
+        width: 34px !important; max-width: 34px !important; min-width: 34px !important;
+        height: 34px !important; min-height: 34px !important; padding: 0 !important;
     }
-    div[data-testid="stPopover"] button p { font-size: 17px !important; color: #FFFFFF !important; }
-    div[data-testid="stPopover"] button svg { display: none !important; }
+    div[data-testid="stPopover"] button p { font-size: 16px !important; color: #FFFFFF !important; }
+    div[data-testid="stPopover"] button:hover { background-color: #6A5BC0 !important; border-color: #6A5BC0 !important; }
+    div[data-testid="stPopover"] button svg, div[data-testid="stPopover"] button [data-testid="stIconMaterial"] { display: none !important; }
+    div[data-testid="stPopover"] button > div > div:has([data-testid="stIconMaterial"]),
+    div[data-testid="stPopover"] button > div > div:has(svg) { display: none !important; }
+    div[data-testid="stPopover"] button > div, div[data-testid="stPopover"] button > div > div,
+    div[data-testid="stPopover"] button > div > div > span { justify-content: center !important; width: 100% !important; margin: 0 !important; }
 
 
 
