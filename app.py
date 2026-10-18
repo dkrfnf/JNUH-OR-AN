@@ -708,19 +708,21 @@ st.markdown("""
 
     /* [추가] 방으로 보내기 버튼 (카드 안 📨) */
     div[class*="st-key-roomsend_"] button {
-        background-color: #FF6D00 !important; border: 1px solid #E65100 !important;
+        background-color: #0057A4 !important; border: 1px solid #004080 !important;
         width: 100% !important; max-width: 100% !important; min-width: 34px !important;
         height: 32px !important; min-height: 32px !important; padding: 0 !important;
     }
     div[class*="st-key-roomsend_"] button p { font-size: 17px !important; color: #FFFFFF !important; }
-    div[class*="st-key-roomsend_"] button:hover { background-color: #E65100 !important; }
+    div[class*="st-key-roomsend_"] button:hover { background-color: #004080 !important; }
 
     /* [추가] '이 컴퓨터' 버튼: 제목 줄 오른쪽(알림함 왼쪽)으로 올림, 작고 연하게 */
     div[class*="st-key-pc_toggle"] {
         display: flex !important; justify-content: flex-end !important; width: 100% !important;
-        margin-top: -29px !important; padding-right: 92px !important; height: 34px !important; box-sizing: border-box;
+        margin-top: -29px !important; padding-right: 72px !important; height: 34px !important; box-sizing: border-box;
         position: relative; z-index: 5;
+        pointer-events: none;   /* 투명한 칸이 알림함 클릭을 가로막지 않게 */
     }
+    div[class*="st-key-pc_toggle"] button { pointer-events: auto !important; }
     div[class*="st-key-pc_toggle"] > div, div[class*="st-key-pc_toggle"] div[data-testid="stButton"] {
         display: flex !important; justify-content: flex-end !important; width: 100% !important;
     }
@@ -741,7 +743,7 @@ st.markdown("""
     }
     div[data-testid="stVerticalBlock"] div[data-testid="stPopover"] > div > button,
     div[data-testid="stPopover"] button {
-        background-color: #FF6D00 !important; border: 1px solid #E65100 !important;
+        background-color: #0057A4 !important; border: 1px solid #004080 !important;
         width: 100% !important; max-width: 100% !important; min-width: 34px !important;
         height: 32px !important; min-height: 32px !important; padding: 0 !important;
     }
@@ -819,8 +821,8 @@ _my_code = get_sender_code()
 st.markdown(f"""
     <div style='display:flex; justify-content:space-between; align-items:center; gap:8px; flex-wrap:wrap; min-height:34px;'>
         <h3 style='margin:0;'>🩺 JNUH OR Dashboard</h3>
-        <a href='{get_my_ntfy_link()}' target='_blank' style='text-decoration:none; background:#FFF3E0; color:#E65100;
-           border:1px solid #FF6D00; border-radius:8px; padding:4px 10px; font-size:13px; font-weight:bold;'>🔔 알림함</a>
+        <a href='{get_my_ntfy_link()}' target='_blank' style='text-decoration:none; background:#E6F2FF; color:#0057A4;
+           border:1px solid #0057A4; border-radius:8px; padding:4px 10px; font-size:13px; font-weight:bold;'>🔔 ntfy</a>
     </div>
 """, unsafe_allow_html=True)
 
@@ -845,7 +847,7 @@ if st.session_state.get("show_pc_setting", False):
             "이 컴퓨터는", pc_labels,
             index=pc_codes.index(_my_code) if _my_code in pc_codes else 0,
             key="pc_select", on_change=save_pc_callback,
-            help="한 번 고르면 이 브라우저가 기억해요. 보낼 때 [A3]처럼 표시되고, 🔔 알림함이 이 컴퓨터 알림으로 열려요."
+            help="한 번 고르면 이 브라우저가 기억해요. 보낼 때 [A3]처럼 표시되고, 🔔 ntfy 버튼이 이 컴퓨터 알림으로 열려요."
         )
 
 write_pc_cookie_if_needed()
